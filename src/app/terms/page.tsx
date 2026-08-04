@@ -20,7 +20,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
               <p className="text-gray-600 leading-relaxed">
-                By accessing and using HireRight ("the Platform"), you agree to be bound by these Terms of Service. 
+                By accessing and using Techcitta ("the Platform"), you agree to be bound by these Terms of Service. 
                 If you do not agree to these terms, please do not use our services.
               </p>
             </section>
@@ -28,7 +28,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Description of Services</h2>
               <p className="text-gray-600 leading-relaxed">
-                HireRight provides an AI-powered background screening and job matching platform. Our services include:
+                Techcitta provides an AI-powered background screening and job matching platform. Our services include:
               </p>
               <ul className="list-disc list-inside text-gray-600 mt-2 space-y-1">
                 <li>Profile creation and verification</li>
@@ -72,7 +72,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">6. Intellectual Property</h2>
               <p className="text-gray-600 leading-relaxed">
-                All content, features, and functionality of the Platform are owned by HireRight and are protected 
+                All content, features, and functionality of the Platform are owned by Techcitta and are protected 
                 by international copyright, trademark, patent, trade secret, and other intellectual property laws.
               </p>
             </section>
@@ -80,7 +80,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">7. Limitation of Liability</h2>
               <p className="text-gray-600 leading-relaxed">
-                HireRight shall not be liable for any indirect, incidental, special, consequential, or punitive 
+                Techcitta shall not be liable for any indirect, incidental, special, consequential, or punitive 
                 damages resulting from your use of or inability to use the Platform. We do not guarantee employment 
                 outcomes or the accuracy of third-party information.
               </p>
@@ -110,8 +110,8 @@ export default function TermsPage() {
                 For questions about these Terms, please contact us at:
               </p>
               <p className="text-gray-600 mt-2">
-                <strong>Email:</strong> legal@hreright.com<br />
-                <strong>Address:</strong> HireRight, Bangalore, India
+                <strong>Email:</strong> legal@techcitta.com<br />
+                <strong>Address:</strong> Techcitta, Bangalore, India
               </p>
             </section>
           </div>

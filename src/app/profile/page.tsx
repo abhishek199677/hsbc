@@ -136,7 +136,7 @@ export default function ProfilePage() {
       });
       const data = await response.json();
       if (!data.success) {
-        console.error("Failed to save profile");
+        console.error("Failed to save profile:", data.error || "Unknown error");
         return false;
       }
       return true;

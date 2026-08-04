@@ -18,7 +18,7 @@ export default function CTA() {
                 Take the <span className="text-yellow-300">Right</span> Step Today
               </h2>
               <p className="text-white/80 mb-6">
-                Join millions of job seekers who trust HireRight for their career journey. 
+                Join millions of job seekers who trust Techcitta for their career journey. 
                 Get verified, get matched, get hired.
               </p>
               <div className="space-y-3 mb-8">

@@ -1,8 +1,8 @@
-# HireRight - Client Documentation
+# Techcitta - Client Documentation
 
-## What is HireRight?
+## What is Techcitta?
 
-**HireRight** is a modern background screening and job matching platform that connects talented professionals with the right opportunities. It uses AI-powered technology to verify candidate information and match them with employers who are looking for their specific skill set.
+**Techcitta** is a modern background screening and job matching platform that connects talented professionals with the right opportunities. It uses AI-powered technology to verify candidate information and match them with employers who are looking for their specific skill set.
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### For Job Seekers
 
-HireRight makes the job search process faster, more secure, and more transparent. Here's the step-by-step journey:
+Techcitta makes the job search process faster, more secure, and more transparent. Here's the step-by-step journey:
 
 ---
 
@@ -127,7 +127,7 @@ Once your interview is scheduled:
 
 ## Trusted By
 
-HireRight is trusted by leading companies worldwide:
+Techcitta is trusted by leading companies worldwide:
 
 - TATA
 - Wipro
@@ -159,7 +159,7 @@ HireRight is trusted by leading companies worldwide:
 ### Project Structure
 
 ```
-hreright/
+techcitta/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx              # Landing page
@@ -237,7 +237,7 @@ Post-booking confirmation with:
 git clone [repository-url]
 
 # Navigate to project directory
-cd hreright
+cd techcitta
 
 # Install dependencies
 npm install
@@ -261,8 +261,8 @@ npm run dev
 
 For any questions or assistance:
 
-- **Email**: care@hreright.com
-- **Website**: www.hreright.com
+- **Email**: care@techcitta.com
+- **Website**: www.techcitta.com
 
 ---
 

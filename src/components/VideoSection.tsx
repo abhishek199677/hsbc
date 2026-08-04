@@ -22,7 +22,7 @@ export default function VideoSection() {
               See It In Action
             </span>
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              See How <span className="text-indigo-600">HireRight</span> Works
+              See How <span className="text-indigo-600">Techcitta</span> Works
             </h2>
             <p className="text-gray-600 mb-8">
               Watch how our AI-powered platform connects you with the right opportunities in just a few simple steps.
@@ -49,7 +49,7 @@ export default function VideoSection() {
                           <path d="M40 30 L70 50 L40 70 Z" fill="white" opacity="0.9" />
                         </svg>
                       </div>
-                      <h3 className="text-2xl font-bold mb-2">HireRight Demo</h3>
+                      <h3 className="text-2xl font-bold mb-2">Techcitta Demo</h3>
                       <p className="text-indigo-100">Watch how it works in 60 seconds</p>
                     </div>
                   </div>

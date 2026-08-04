@@ -56,7 +56,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex mb-4">
-              <img src="/logo.jpeg" alt="HireRight" className="h-12 w-auto" />
+              <img src="/logo.jpeg" alt="Techcitta" className="h-12 w-auto" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
             <p className="text-gray-500 mt-1">Sign in to continue your journey</p>

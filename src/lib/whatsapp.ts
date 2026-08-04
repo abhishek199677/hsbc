@@ -85,7 +85,7 @@ Your 15-minute AI Interview is confirmed.
 
 We're excited to connect with you and help you find the right opportunities.
 
-– Team HireRight`;
+– Team Techcitta`;
 }
 
 export function generateReminderWhatsApp(data: {
@@ -103,5 +103,5 @@ Interview Reminder: Your AI interview is in ${data.type}.
 
 Get ready and make sure you're in a quiet location!
 
-– Team HireRight`;
+– Team Techcitta`;
 }

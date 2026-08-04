@@ -19,7 +19,7 @@ interface SendEmailParams {
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   try {
     const info = await transporter.sendMail({
-      from: `"HireRight" <${process.env.SMTP_USER || "noreply@hreright.com"}>`,
+      from: `"Techcitta" <${process.env.SMTP_USER || "noreply@techcitta.com"}>`,
       to,
       subject,
       html,
@@ -86,7 +86,7 @@ export function generateInterviewConfirmationEmail(data: {
           </div>
         </div>
         <div class="footer">
-          <p>© 2026 HireRight. All rights reserved.</p>
+          <p>© 2026 Techcitta. All rights reserved.</p>
           <p>Right People. Right Decisions.</p>
         </div>
       </div>
@@ -149,7 +149,7 @@ export function generateReminderEmail(data: {
           </div>
         </div>
         <div class="footer">
-          <p>© 2026 HireRight. All rights reserved.</p>
+          <p>© 2026 Techcitta. All rights reserved.</p>
           <p>Right People. Right Decisions.</p>
         </div>
       </div>
@@ -175,12 +175,12 @@ export function generateWelcomeEmail(name: string) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Welcome to HireRight! 🚀</h1>
+          <h1>Welcome to Techcitta! 🚀</h1>
           <p>Your journey to the right opportunity starts here</p>
         </div>
         <div class="content">
           <p>Hi ${name},</p>
-          <p>Welcome to HireRight! We're excited to have you on board.</p>
+          <p>Welcome to Techcitta! We're excited to have you on board.</p>
           <p>Start building your profile to get matched with the right opportunities.</p>
           
           <div style="text-align: center;">
@@ -188,7 +188,7 @@ export function generateWelcomeEmail(name: string) {
           </div>
         </div>
         <div class="footer">
-          <p>© 2026 HireRight. All rights reserved.</p>
+          <p>© 2026 Techcitta. All rights reserved.</p>
         </div>
       </div>
     </body>

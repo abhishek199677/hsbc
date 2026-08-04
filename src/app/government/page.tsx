@@ -126,7 +126,7 @@ export default function GovernmentPage() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Transform Your Verification Process?</h2>
           <p className="text-white/80 mb-8">
-            Join 50+ government departments already using HireRight for secure, efficient background screening.
+            Join 50+ government departments already using Techcitta for secure, efficient background screening.
           </p>
           <Link
             href="/signup"

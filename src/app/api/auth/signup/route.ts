@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     if (user.email) {
       await sendEmail({
         to: user.email,
-        subject: "Welcome to HireRight! 🚀",
+        subject: "Welcome to Techcitta! 🚀",
         html: generateWelcomeEmail(user.name || "there"),
       });
     }

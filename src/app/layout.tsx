@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HireRight - Talent to Talent",
+  title: "Techcitta - Talent to Talent",
   description: "Your Journey to the Right Opportunity Starts Here. Background screening you can trust.",
 };
 

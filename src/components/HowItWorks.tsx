@@ -47,7 +47,7 @@ export default function HowItWorks() {
             Simple Process
           </span>
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            How <span className="text-indigo-600">HireRight</span> Works
+            How <span className="text-indigo-600">Techcitta</span> Works
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Get verified and matched with the right opportunities in just 4 simple steps

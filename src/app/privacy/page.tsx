@@ -20,7 +20,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-600 leading-relaxed">
-                Welcome to HireRight ("we," "our," or "us"). We are committed to protecting your personal 
+                Welcome to Techcitta ("we," "our," or "us"). We are committed to protecting your personal 
                 information and your right to privacy. This Privacy Policy explains how we collect, use, 
                 disclose, and safeguard your information when you use our platform.
               </p>
@@ -136,8 +136,8 @@ export default function PrivacyPage() {
                 If you have questions about this Privacy Policy, please contact us:
               </p>
               <p className="text-gray-600 mt-2">
-                <strong>Email:</strong> privacy@hreright.com<br />
-                <strong>Address:</strong> HireRight, Bangalore, India
+                <strong>Email:</strong> privacy@techcitta.com<br />
+                <strong>Address:</strong> Techcitta, Bangalore, India
               </p>
             </section>
           </div>

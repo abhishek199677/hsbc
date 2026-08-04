@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     if (action === "start") {
       // Start interview - generate introduction and first question
-      const systemPrompt = `You are an AI interviewer for HireRight, a job screening platform. 
+      const systemPrompt = `You are an AI interviewer for Techcitta, a job screening platform. 
       You are conducting a 15-minute professional interview.
       
       Candidate Profile:
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
     if (action === "respond") {
       // Continue conversation
-      const systemPrompt = `You are an AI interviewer for HireRight. 
+      const systemPrompt = `You are an AI interviewer for Techcitta. 
       Continue the interview professionally. 
       Ask relevant follow-up questions or move to the next topic.
       Keep responses concise (2-3 sentences max).

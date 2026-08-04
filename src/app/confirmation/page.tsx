@@ -79,8 +79,8 @@ export default function ConfirmationPage() {
   const addToCalendar = () => {
     const dateStr = interviewDate.replace(/-/g, "");
     const startTime = interviewTime.replace(/[^0-9]/g, "");
-    const title = encodeURIComponent("HireRight AI Interview");
-    const details = encodeURIComponent(`Your 15-minute AI interview with HireRight.\n\nMode: AI Video Interview\nType: Technical + Behavioral Assessment\n\nWe look forward to meeting you!\n– Team HireRight`);
+    const title = encodeURIComponent("Techcitta AI Interview");
+    const details = encodeURIComponent(`Your 15-minute AI interview with Techcitta.\n\nMode: AI Video Interview\nType: Technical + Behavioral Assessment\n\nWe look forward to meeting you!\n– Team Techcitta`);
     const location = encodeURIComponent("Online - AI Video Interview");
     
     // Google Calendar link
@@ -244,12 +244,12 @@ export default function ConfirmationPage() {
                 <p className="mt-2">📅 Date: {formatDate(interviewDate)}</p>
                 <p>🕐 Time: {interviewTime} (IST)</p>
                 <p className="mt-2">We look forward to meeting you!</p>
-                <p className="mt-2 text-gray-500">– Team HRERIGHTTTT</p>
+                <p className="mt-2 text-gray-500">– Team Techcitta</p>
               </div>
               <button 
                 onClick={() => {
                   const subject = encodeURIComponent(`Your AI Interview is Confirmed – ${formatShortDate(interviewDate)}`);
-                  const body = encodeURIComponent(`Hi ${displayName},\n\nGreat news! Your 15-minute AI interview is confirmed.\n\n📅 Date: ${formatDate(interviewDate)}\n🕐 Time: ${interviewTime} (IST)\n\nWe look forward to meeting you!\n\n– Team HRERIGHTTTT`);
+                  const body = encodeURIComponent(`Hi ${displayName},\n\nGreat news! Your 15-minute AI interview is confirmed.\n\n📅 Date: ${formatDate(interviewDate)}\n🕐 Time: ${interviewTime} (IST)\n\nWe look forward to meeting you!\n\n– Team Techcitta`);
                   window.open(`mailto:${displayEmail}?subject=${subject}&body=${body}`, "_blank");
                 }}
                 className="w-full mt-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -280,13 +280,13 @@ export default function ConfirmationPage() {
                 <p className="mt-2">📅 <strong>{formatShortDate(interviewDate)}</strong></p>
                 <p>🕐 {interviewTime} (IST)</p>
                 <p className="mt-2">We&apos;re excited to connect with you and help you find the right opportunities.</p>
-                <p className="mt-2 text-gray-500">– Team HRERIGHTTTT</p>
+                <p className="mt-2 text-gray-500">– Team Techcitta</p>
                 <p className="text-right text-xs text-gray-400 mt-2">10:42 AM ✓✓</p>
               </div>
               <button 
                 onClick={() => {
                   const phone = displayPhone.replace(/[^0-9]/g, "");
-                  const message = encodeURIComponent(`Hi ${displayName}! 👋\n\nYour 15-minute AI Interview is confirmed.\n\n📅 ${formatShortDate(interviewDate)}\n🕐 ${interviewTime} (IST)\n\nWe're excited to connect with you and help you find the right opportunities.\n\n– Team HRERIGHTTTT`);
+                  const message = encodeURIComponent(`Hi ${displayName}! 👋\n\nYour 15-minute AI Interview is confirmed.\n\n📅 ${formatShortDate(interviewDate)}\n🕐 ${interviewTime} (IST)\n\nWe're excited to connect with you and help you find the right opportunities.\n\n– Team Techcitta`);
                   window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
                 }}
                 className="w-full mt-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
@@ -368,7 +368,7 @@ export default function ConfirmationPage() {
             </div>
           </div>
           <p className="text-center text-xs text-gray-500 mt-4">
-            If you need any help, reach out to us at <span className="text-indigo-600">care@hreright.com</span>
+            If you need any help, reach out to us at <span className="text-indigo-600">care@techcitta.com</span>
           </p>
         </div>
       </main>

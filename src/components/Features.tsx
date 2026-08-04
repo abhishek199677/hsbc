@@ -61,7 +61,7 @@ export default function Features() {
             Why Choose Us
           </span>
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Why Job Seekers Choose <span className="text-indigo-600">HireRight</span>
+            Why Job Seekers Choose <span className="text-indigo-600">Techcitta</span>
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             We provide the tools and trust you need to advance your career

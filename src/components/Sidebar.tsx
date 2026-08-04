@@ -19,7 +19,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
   return (
     <aside className="w-full lg:w-80 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white p-8 flex flex-col">
       <div className="mb-8">
-        <img src="/logo.jpeg" alt="HireRight" className="h-12 w-auto" />
+        <img src="/logo.jpeg" alt="Techcitta" className="h-12 w-auto" />
       </div>
 
       <div className="mb-8">
@@ -60,7 +60,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
       </div>
 
       <div className="mb-8">
-        <h3 className="text-sm font-semibold mb-4">Why HireRight?</h3>
+        <h3 className="text-sm font-semibold mb-4">Why Techcitta?</h3>
         <ul className="space-y-3">
           {features.map((feature, i) => (
             <li key={i} className="flex items-start gap-2">
@@ -76,7 +76,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
           <Headphones className="w-4 h-4" />
           <div>
             <p className="font-medium text-white">Need help?</p>
-            <p>care@hreright.com</p>
+            <p>care@techcitta.com</p>
           </div>
         </div>
       </div>

@@ -76,7 +76,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center">
-                <img src="/logo.jpeg" alt="HireRight" className="h-10 w-auto" />
+                <img src="/logo.jpeg" alt="Techcitta" className="h-10 w-auto" />
               </Link>
               <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">Admin</span>
             </div>

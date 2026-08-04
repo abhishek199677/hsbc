@@ -22,7 +22,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-12">
             <Link href="/" className="flex items-center">
-              <img src="/logo.jpeg" alt="HireRight" className="h-10 w-auto" />
+              <img src="/logo.jpeg" alt="Techcitta" className="h-10 w-auto" />
             </Link>
             <div className="hidden md:flex items-center gap-6">
               <Link href="/profile" className="text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
