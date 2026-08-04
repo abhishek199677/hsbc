@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Calendar, FileText, TrendingUp, ArrowRight, Eye, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Users, Calendar, FileText, TrendingUp, ArrowRight, Eye, CheckCircle, Clock, XCircle, Video } from "lucide-react";
 import Link from "next/link";
 
 interface Stats {
@@ -28,6 +28,8 @@ interface User {
     date: string;
     time: string;
     status: string;
+    videoUrl: string | null;
+    evaluationScore: number | null;
   };
 }
 
@@ -310,13 +312,32 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <Link
-                            href={`/interview/live?userId=${user.id}`}
-                            className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1"
-                          >
-                            Start Interview
-                            <ArrowRight className="w-4 h-4" />
-                          </Link>
+                          <div className="flex items-center gap-4">
+                            {user.interview?.status === "completed" && user.interview?.videoUrl ? (
+                              <a
+                                href={user.interview.videoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1"
+                              >
+                                <Video className="w-4 h-4" />
+                                View Recording
+                              </a>
+                            ) : (
+                              <Link
+                                href={`/interview/live?userId=${user.id}`}
+                                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1"
+                              >
+                                Start Interview
+                                <ArrowRight className="w-4 h-4" />
+                              </Link>
+                            )}
+                            {user.interview?.status === "completed" && (
+                              <span className={`text-sm font-medium ${user.interview?.evaluationScore && user.interview.evaluationScore >= 7 ? "text-green-600" : user.interview?.evaluationScore && user.interview.evaluationScore >= 5 ? "text-yellow-600" : "text-gray-600"}`}>
+                                Score: {user.interview?.evaluationScore ?? "—"}/10
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

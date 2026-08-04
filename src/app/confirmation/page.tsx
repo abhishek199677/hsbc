@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle, Calendar, Clock, Video, Info, Mail, MessageCircle, ExternalLink, ChevronRight, Shield, Lock, Star, X } from "lucide-react";
+import { CheckCircle, Calendar, Clock, Video, Info, Mail, MessageCircle, ExternalLink, ChevronRight, Shield, Lock, Star, X, ArrowRight } from "lucide-react";
 
 const steps = [
   { number: 1, label: "Profile", sublabel: "Tell us who you are" },
@@ -143,6 +144,26 @@ export default function ConfirmationPage() {
             <div className="hidden lg:block w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center">
               <span className="text-4xl">🤖</span>
             </div>
+          </div>
+
+          {/* Start Live Interview CTA */}
+          <div className="bg-white rounded-xl border p-6 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Video className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Ready when you are!</p>
+                <p className="text-sm text-gray-500">Start your 15-minute AI video interview now.</p>
+              </div>
+            </div>
+            <Link
+              href="/interview/live"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex-shrink-0"
+            >
+              Start Live Interview
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
           {/* Interview Details */}

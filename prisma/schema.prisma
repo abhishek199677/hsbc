@@ -76,6 +76,12 @@ model Interview {
   duration        Int       @default(15)
   
   status          String    @default("scheduled") // scheduled, completed, cancelled
+
+  // Video recording & evaluation
+  videoUrl        String?
+  transcript      String?
+  evaluation      String?
+  evaluationScore Int?
   
   emailSent       Boolean   @default(false)
   whatsappSent    Boolean   @default(false)

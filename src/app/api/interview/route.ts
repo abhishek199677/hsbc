@@ -28,8 +28,7 @@ export async function GET(request: Request) {
 }
 
 // POST - Schedule interview
-export async function POST(request: Request) {
-  try {
+export async function POST(request: Request) {  try {
     const user = getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -131,6 +130,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, interview });
   } catch (error) {
     console.error("Schedule interview error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// PATCH - Complete interview (save video recording & evaluation)
+export async function PATCH(request: Request) {
+  try {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { videoUrl, evaluation, evaluationScore, transcript, status } = body;
+
+    const existingInterview = await prisma.interview.findUnique({
+      where: { userId: user.userId },
+    });
+
+    if (!existingInterview) {
+      return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+    }
+
+    const interview = await prisma.interview.update({
+      where: { id: existingInterview.id },
+      data: {
+        videoUrl: videoUrl ?? existingInterview.videoUrl,
+        evaluation: evaluation ?? existingInterview.evaluation,
+        evaluationScore: evaluationScore ?? existingInterview.evaluationScore,
+        transcript: transcript ?? existingInterview.transcript,
+        status: status ?? "completed",
+      },
+    });
+
+    return NextResponse.json({ success: true, interview });
+  } catch (error) {
+    console.error("Complete interview error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

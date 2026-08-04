@@ -24,6 +24,11 @@ yarn-error.log*
 dev.db
 dev.db-journal
 prisma/migrations/
+auth
+auth-wal
+
+# user uploads
+public/uploads/
 
 # generated
 src/generated/

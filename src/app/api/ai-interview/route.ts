@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 interface Message {
   role: "system" | "user" | "assistant";
@@ -36,14 +36,14 @@ export async function POST(request: Request) {
       
       Start by introducing yourself and asking the first question.`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+      const completion = await getOpenAI().chat.completions.create({
+        model: "gpt-5-nano",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: "Start the interview" },
         ],
-        max_tokens: 500,
-        temperature: 0.7,
+        max_completion_tokens: 1000,
+        reasoning_effort: "low",
       });
 
       const assistantMessage = completion.choices[0]?.message?.content;
@@ -69,11 +69,11 @@ export async function POST(request: Request) {
         { role: "user", content: userMessage },
       ];
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+      const completion = await getOpenAI().chat.completions.create({
+        model: "gpt-5-nano",
         messages,
-        max_tokens: 500,
-        temperature: 0.7,
+        max_completion_tokens: 1000,
+        reasoning_effort: "low",
       });
 
       const assistantMessage = completion.choices[0]?.message?.content;
@@ -100,19 +100,20 @@ export async function POST(request: Request) {
       Provide:
       1. Score (1-10)
       2. Strengths (3 bullet points)
-      3. Areas for improvement (3 bullet points)
-      4. Overall recommendation (Hire/Consider/Pass)
+      3. Weaknesses / Areas for improvement (3 bullet points)
+      4. Topics to learn and grow (3-5 specific topics the candidate should study to improve, based on the answers they gave — be concrete, e.g. specific technologies, concepts, or skills)
+      5. Overall recommendation (Hire/Consider/Reject)
       
-      Format as JSON.`;
+      Format as JSON with keys: score, strengths, weaknesses, areasForImprovement, topicsToLearn, recommendation.`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+      const completion = await getOpenAI().chat.completions.create({
+        model: "gpt-5-nano",
         messages: [
-          { role: "system", content: "You are an interview evaluator. Provide structured feedback." },
+          { role: "system", content: "You are an interview evaluator. Provide structured feedback. Always return valid JSON." },
           { role: "user", content: evaluationPrompt },
         ],
-        max_tokens: 1000,
-        temperature: 0.3,
+        max_completion_tokens: 2000,
+        reasoning_effort: "low",
       });
 
       const evaluation = completion.choices[0]?.message?.content;

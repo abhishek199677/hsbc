@@ -25,6 +25,8 @@ export async function GET() {
             time: true,
             status: true,
             mode: true,
+            videoUrl: true,
+            evaluationScore: true,
           },
         },
       },

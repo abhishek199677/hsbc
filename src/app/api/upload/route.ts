@@ -20,28 +20,30 @@ export async function POST(request: Request) {
 
     // Validate file type
     const allowedTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
-    if (!allowedTypes.includes(file.type)) {
+    const videoTypes = ["video/webm", "video/mp4", "video/quicktime"];
+    const isVideo = videoTypes.some((t) => file.type.startsWith(t));
+    if (!isVideo && !allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Please upload PDF, DOC, or DOCX" },
+        { error: "Invalid file type. Please upload PDF, DOC, DOCX, or a video recording" },
         { status: 400 }
       );
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024;
+    // Validate file size (5MB for resumes, 200MB for videos)
+    const maxSize = isVideo ? 200 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: "File size exceeds 5MB limit" },
+        { error: `File size exceeds ${isVideo ? "200MB" : "5MB"} limit` },
         { status: 400 }
       );
     }
 
     // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), "public", "uploads", "resumes");
+    const uploadDir = join(process.cwd(), "public", "uploads", isVideo ? "interviews" : "resumes");
     await mkdir(uploadDir, { recursive: true });
 
     // Generate unique filename
-    const fileExtension = file.name.split(".").pop();
+    const fileExtension = file.name.split(".").pop() || (isVideo ? "webm" : "pdf");
     const uniqueFilename = `${uuidv4()}.${fileExtension}`;
     const filePath = join(uploadDir, uniqueFilename);
 
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
     await writeFile(filePath, buffer);
 
     // Return file URL
-    const fileUrl = `/uploads/resumes/${uniqueFilename}`;
+    const fileUrl = `/uploads/${isVideo ? "interviews" : "resumes"}/${uniqueFilename}`;
 
     return NextResponse.json({
       success: true,

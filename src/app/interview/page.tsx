@@ -294,7 +294,7 @@ export default function InterviewSchedulePage() {
           {/* Navigation */}
           <div className="flex justify-between">
             <button
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+              onClick={() => router.push("/profile")}
               className="flex items-center gap-2 px-6 py-3 border rounded-lg text-sm font-medium hover:bg-gray-50"
             >
               <ArrowLeft className="w-4 h-4" />
