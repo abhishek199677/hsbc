@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String?
+  phone         String?
+  role          String    @default("jobseeker") // jobseeker, employer, admin
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  profile       Profile?
+  interview     Interview?
+}
+
+model Profile {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Resume
+  resumeUrl       String?
+  resumeFileName  String?
+  
+  // About You
+  aboutYou        String?
+  whatDrivesYou   String?
+  strengths       String?
+  
+  // Current Snapshot
+  currentRole     String?
+  totalExperience String?
+  currentLocation String?
+  noticePeriod    String?
+  
+  // Skills
+  skills          String?
+  currentCompany  String?
+  education       String?
+  
+  // Preferences
+  jobType         String?
+  salaryRange     String?
+  preferredLocation String?
+  workMode        String?
+  
+  // Interview Preferences
+  preferredDate   String?
+  preferredTimeSlot String?
+  
+  // Status
+  step            Int       @default(1)
+  isComplete      Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Interview {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  date            String
+  time            String
+  timezone        String    @default("Asia/Kolkata")
+  mode            String    @default("AI Video Interview")
+  type            String    @default("Technical + Behavioral Assessment")
+  duration        Int       @default(15)
+  
+  status          String    @default("scheduled") // scheduled, completed, cancelled
+  
+  emailSent       Boolean   @default(false)
+  whatsappSent    Boolean   @default(false)
+  
+  // Reminder tracking
+  reminder24hSent Boolean   @default(false)
+  reminder1hSent  Boolean   @default(false)
+  reminder15mSent Boolean   @default(false)
+  reminderNowSent Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
