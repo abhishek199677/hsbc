@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Users, Calendar, FileText, TrendingUp, ArrowRight, Eye, CheckCircle, Clock, XCircle, Video } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Stats {
   totalUsers: number;
@@ -29,24 +31,40 @@ interface User {
     time: string;
     status: string;
     videoUrl: string | null;
+    captionUrl: string | null;
     evaluationScore: number | null;
   };
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const { token, user, organization, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "interviews">("overview");
 
   useEffect(() => {
+    if (!authLoading && (!user || (user.role !== "admin" && user.role !== "employer"))) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (!token) return;
     fetchStats();
     fetchUsers();
-  }, []);
+  }, [token]);
 
   const fetchStats = async () => {
     try {
-      const response = await fetch("/api/admin/stats");
+      const response = await fetch("/api/admin/stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401 || response.status === 403) {
+        router.push("/login");
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         setStats(data.stats);
@@ -58,7 +76,13 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/admin/users");
+      const response = await fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401 || response.status === 403) {
+        router.push("/login");
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         setUsers(data.users);
@@ -70,6 +94,14 @@ export default function AdminDashboard() {
     }
   };
 
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -78,9 +110,11 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center">
-                <img src="/logo.jpeg" alt="Techcitta" className="h-10 w-auto" />
+                <img src={organization?.logoUrl || "/logo.jpeg"} alt={organization?.name || "Techcitta"} className="h-10 w-auto" />
               </Link>
-              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">Admin</span>
+              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                {organization?.name || "Admin"} Admin
+              </span>
             </div>
             <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
               Back to Site
@@ -314,19 +348,27 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
                             {user.interview?.status === "completed" && user.interview?.videoUrl ? (
-                              <a
-                                href={user.interview.videoUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1"
-                              >
-                                <Video className="w-4 h-4" />
-                                View Recording
-                              </a>
+                              <details className="group">
+                                <summary className="text-primary hover:text-primary-dark text-sm font-medium flex items-center gap-1 cursor-pointer list-none">
+                                  <Video className="w-4 h-4" />
+                                  View Recording
+                                </summary>
+                                <div className="mt-2 w-80">
+                                  <video
+                                    src={user.interview.videoUrl}
+                                    controls
+                                    className="w-full rounded-lg bg-gray-900"
+                                  >
+                                    {user.interview?.captionUrl && (
+                                      <track kind="captions" src={user.interview.captionUrl} srcLang="en" label="Simple English" default />
+                                    )}
+                                  </video>
+                                </div>
+                              </details>
                             ) : (
                               <Link
                                 href={`/interview/live?userId=${user.id}`}
-                                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1"
+                                className="text-primary hover:text-primary-dark text-sm font-medium flex items-center gap-1"
                               >
                                 Start Interview
                                 <ArrowRight className="w-4 h-4" />

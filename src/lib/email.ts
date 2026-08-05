@@ -158,7 +158,7 @@ export function generateReminderEmail(data: {
   `;
 }
 
-export function generateWelcomeEmail(name: string) {
+export function generateWelcomeEmail(name: string, orgName: string = "Techcitta") {
   return `
     <!DOCTYPE html>
     <html>
@@ -175,12 +175,12 @@ export function generateWelcomeEmail(name: string) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Welcome to Techcitta! 🚀</h1>
+          <h1>Welcome to ${orgName}! 🚀</h1>
           <p>Your journey to the right opportunity starts here</p>
         </div>
         <div class="content">
           <p>Hi ${name},</p>
-          <p>Welcome to Techcitta! We're excited to have you on board.</p>
+          <p>Welcome to ${orgName}! We're excited to have you on board.</p>
           <p>Start building your profile to get matched with the right opportunities.</p>
           
           <div style="text-align: center;">

@@ -5,6 +5,7 @@ import { Play, X, CheckCircle } from "lucide-react";
 
 export default function VideoSection() {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   const benefits = [
     "AI-powered job matching",
@@ -66,6 +67,11 @@ export default function VideoSection() {
                   <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-white/30 rounded-bl-lg" />
                   <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-white/30 rounded-br-lg" />
                 </>
+              ) : videoError ? (
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 flex flex-col items-center justify-center text-white p-6 text-center">
+                  <h3 className="text-xl font-bold mb-2">Demo video unavailable</h3>
+                  <p className="text-indigo-100 text-sm">Please try again later.</p>
+                </div>
               ) : (
                 <>
                   <video
@@ -74,9 +80,16 @@ export default function VideoSection() {
                     controls
                     autoPlay
                     muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    onError={() => setVideoError(true)}
                   />
                   <button
-                    onClick={() => setIsPlaying(false)}
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setVideoError(false);
+                    }}
                     className="absolute top-4 right-4 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors z-10"
                   >
                     <X className="w-5 h-5" />

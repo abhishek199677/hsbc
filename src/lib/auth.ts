@@ -11,13 +11,19 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateToken(userId: string, email: string): string {
-  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
+export interface AuthUser {
+  userId: string;
+  email: string;
+  organizationId: string;
 }
 
-export function verifyToken(token: string): { userId: string; email: string } | null {
+export function generateToken(userId: string, email: string, organizationId: string): string {
+  return jwt.sign({ userId, email, organizationId }, JWT_SECRET, { expiresIn: "7d" });
+}
+
+export function verifyToken(token: string): AuthUser | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+    return jwt.verify(token, JWT_SECRET) as AuthUser;
   } catch {
     return null;
   }
@@ -31,7 +37,7 @@ export function getTokenFromRequest(request: Request): string | null {
   return null;
 }
 
-export function getUserFromRequest(request: Request): { userId: string; email: string } | null {
+export function getUserFromRequest(request: Request): AuthUser | null {
   const token = getTokenFromRequest(request);
   if (!token) return null;
   return verifyToken(token);

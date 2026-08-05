@@ -49,7 +49,7 @@ const getSpeechRecognition = (): SpeechRecognitionClass | null => {
 
 export default function LiveInterviewContent() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
 
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewEnded, setInterviewEnded] = useState(false);
@@ -65,6 +65,7 @@ export default function LiveInterviewContent() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [evaluation, setEvaluation] = useState<any>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [captionUrl, setCaptionUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savingStatus, setSavingStatus] = useState("");
@@ -74,6 +75,7 @@ export default function LiveInterviewContent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const streamGenRef = useRef(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recorderChunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
@@ -81,6 +83,8 @@ export default function LiveInterviewContent() {
   const endedRef = useRef(false);
   const aiTypingRef = useRef(false);
   const messagesRef = useRef<Message[]>([]);
+  const recordingStartRef = useRef<number>(0);
+  const cuesRef = useRef<{ role: "user" | "assistant"; startMs: number }[]>([]);
 
   useEffect(() => {
     setSupportsSpeech(getSpeechRecognition() !== null);
@@ -115,13 +119,20 @@ export default function LiveInterviewContent() {
   }, []);
 
   const startPreview = async () => {
+    const gen = ++streamGenRef.current;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (gen !== streamGenRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+      setVideoEnabled(true);
     } catch (error) {
+      if (gen !== streamGenRef.current) return;
       console.error("Failed to get media:", error);
       setStartError(
         "Camera and microphone access is required for the recorded video interview. Please allow camera and mic access and reload the page."
@@ -131,6 +142,7 @@ export default function LiveInterviewContent() {
   };
 
   const stopMedia = () => {
+    streamGenRef.current++;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -142,10 +154,15 @@ export default function LiveInterviewContent() {
     try {
       const recorder = new MediaRecorder(streamRef.current);
       recorderChunksRef.current = [];
+      recordingStartRef.current = performance.now();
+      cuesRef.current = [];
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) recorderChunksRef.current.push(e.data);
       };
-      recorder.start();
+      recorder.onerror = (e) => {
+        console.error("Recorder error:", e);
+      };
+      recorder.start(1000);
       mediaRecorderRef.current = recorder;
     } catch (error) {
       console.error("Failed to start recorder:", error);
@@ -176,6 +193,35 @@ export default function LiveInterviewContent() {
     const next = [...messagesRef.current, msg];
     messagesRef.current = next;
     setMessages(next);
+    if (recordingStartRef.current) {
+      cuesRef.current.push({ role, startMs: performance.now() - recordingStartRef.current });
+    }
+  };
+
+  const formatVttTime = (ms: number) => {
+    const total = Math.max(0, Math.floor(ms));
+    const hh = Math.floor(total / 3600000);
+    const mm = Math.floor((total % 3600000) / 60000);
+    const ss = Math.floor((total % 60000) / 1000);
+    const mmm = total % 1000;
+    const pad = (n: number, l = 2) => n.toString().padStart(l, "0");
+    return `${pad(hh)}:${pad(mm)}:${pad(ss)}.${pad(mmm, 3)}`;
+  };
+
+  const buildVtt = (messages: Message[], cues: { role: "user" | "assistant"; startMs: number }[], durationMs: number) => {
+    const lines: string[] = ["WEBVTT", ""];
+    cues.forEach((cue, i) => {
+      const msg = messages[i];
+      if (!msg) return;
+      const start = cue.startMs;
+      const end = cues[i + 1] ? cues[i + 1].startMs : Math.min(durationMs, start + Math.max(4000, msg.content.length * 100));
+      if (end <= start) return;
+      const speaker = msg.role === "user" ? "Candidate" : "AI Interviewer";
+      lines.push(`${formatVttTime(start)} --> ${formatVttTime(end)}`);
+      lines.push(`${speaker}: ${msg.content}`);
+      lines.push("");
+    });
+    return lines.join("\n");
   };
 
   const callAI = async (action: string, extra: any = {}) => {
@@ -197,8 +243,14 @@ export default function LiveInterviewContent() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1;
       utterance.pitch = 1;
-      utterance.onend = () => { setIsAiSpeaking(false); resolve(); };
-      utterance.onerror = () => { setIsAiSpeaking(false); resolve(); };
+      const done = () => {
+        clearTimeout(timeout);
+        setIsAiSpeaking(false);
+        resolve();
+      };
+      const timeout = setTimeout(done, Math.min(Math.max(text.length * 120, 4000), 20000));
+      utterance.onend = done;
+      utterance.onerror = done;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     });
@@ -212,7 +264,7 @@ export default function LiveInterviewContent() {
     setLiveTranscript("");
 
     const recognition = new SR();
-    recognition.lang = "en-US";
+    recognition.lang = "en-IN";
     recognition.interimResults = true;
     recognition.continuous = false;
     recognition.maxAlternatives = 1;
@@ -237,19 +289,17 @@ export default function LiveInterviewContent() {
         setLiveTranscript("");
         handleAnswer(text);
       } else if (!endedRef.current) {
-        startListening();
+        setTimeout(() => startListening(), 400);
       }
     };
 
     recognition.onerror = (event) => {
+      listeningRef.current = false;
+      setIsListening(false);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        listeningRef.current = false;
-        setIsListening(false);
         setShowManualInput(true);
-      } else if (event.error === "no-speech" || event.error === "audio-capture") {
-        if (!endedRef.current) {
-          setTimeout(() => startListening(), 400);
-        }
+      } else if (!endedRef.current) {
+        setTimeout(() => startListening(), 600);
       }
     };
 
@@ -313,7 +363,8 @@ export default function LiveInterviewContent() {
     setLoading(true);
     setStartError(null);
     try {
-      if (!streamRef.current) {
+      const videoTrack = streamRef.current?.getVideoTracks()[0];
+      if (!streamRef.current || !videoTrack || videoTrack.readyState === "ended") {
         await startPreview();
         if (!streamRef.current) throw new Error("No media stream");
       }
@@ -365,6 +416,7 @@ export default function LiveInterviewContent() {
         formData.append("file", new File([blob], `interview-${Date.now()}.${ext}`, { type: blob.type || "video/webm" }));
         const uploadResponse = await fetch("/api/upload", {
           method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
         const uploadData = await uploadResponse.json();
@@ -374,6 +426,26 @@ export default function LiveInterviewContent() {
       }
     }
     if (url) setVideoUrl(url);
+
+    let captionFileUrl: string | null = null;
+    try {
+      const vtt = buildVtt(messagesRef.current, cuesRef.current, elapsedTime * 1000);
+      if (vtt.trim() !== "WEBVTT") {
+        setSavingStatus("Adding captions to your video...");
+        const captionForm = new FormData();
+        captionForm.append("file", new File([vtt], `captions-${Date.now()}.vtt`, { type: "text/vtt" }));
+        const captionResponse = await fetch("/api/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: captionForm,
+        });
+        const captionData = await captionResponse.json();
+        if (captionData.success) captionFileUrl = captionData.file.url;
+      }
+    } catch (error) {
+      console.error("Caption upload failed:", error);
+    }
+    if (captionFileUrl) setCaptionUrl(captionFileUrl);
 
     setSavingStatus("Evaluating your interview...");
     let parsedEvaluation: any = null;
@@ -404,9 +476,13 @@ export default function LiveInterviewContent() {
     try {
       await fetch("/api/interview", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           videoUrl: url,
+          captionUrl,
           evaluation: rawEvaluation,
           evaluationScore: score,
           transcript,
@@ -419,6 +495,7 @@ export default function LiveInterviewContent() {
 
     setSaving(false);
     setSavingStatus("");
+    stopMedia();
     setInterviewEnded(true);
   };
 
@@ -494,7 +571,11 @@ export default function LiveInterviewContent() {
                     controls
                     className="w-full rounded-xl bg-gray-900"
                     style={{ aspectRatio: "16/9" }}
-                  />
+                  >
+                    {captionUrl && (
+                      <track kind="captions" src={captionUrl} srcLang="en" label="Simple English" default />
+                    )}
+                  </video>
                 </div>
               )}
 

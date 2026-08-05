@@ -37,7 +37,11 @@ export async function POST(request: Request) {
     }
 
     // Generate token
-    const token = generateToken(user.id, user.email);
+    const token = generateToken(user.id, user.email, user.organizationId);
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+    });
 
     return NextResponse.json({
       success: true,
@@ -47,7 +51,20 @@ export async function POST(request: Request) {
         name: user.name,
         phone: user.phone,
         role: user.role,
+        organizationId: user.organizationId,
       },
+      organization: organization
+        ? {
+            id: organization.id,
+            name: organization.name,
+            slug: organization.slug,
+            logoUrl: organization.logoUrl,
+            primaryColor: organization.primaryColor,
+            accentColor: organization.accentColor,
+            isGovernment: organization.isGovernment,
+            plan: organization.plan,
+          }
+        : null,
       token,
     });
   } catch (error) {

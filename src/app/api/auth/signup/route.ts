@@ -3,10 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, generateToken } from "@/lib/auth";
 import { sendEmail, generateWelcomeEmail } from "@/lib/email";
 
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name, phone, role } = body;
+    const { email, password, name, phone, role, orgName } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -30,6 +39,22 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
+    // Create (or reuse) an organization for this signup
+    const orgDisplayName = (orgName || "").trim() || `${name || email.split("@")[0]}'s Workspace`;
+    const baseSlug = slugify(orgName || name || "workspace") || "workspace";
+    let slug = baseSlug;
+    let suffix = 1;
+    while (await prisma.organization.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${suffix++}`;
+    }
+
+    const organization = await prisma.organization.create({
+      data: {
+        name: orgDisplayName,
+        slug,
+      },
+    });
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -38,6 +63,7 @@ export async function POST(request: Request) {
         name: name || null,
         phone: phone || null,
         role: role || "jobseeker",
+        organizationId: organization.id,
       },
     });
 
@@ -49,14 +75,14 @@ export async function POST(request: Request) {
     });
 
     // Generate token
-    const token = generateToken(user.id, user.email);
+    const token = generateToken(user.id, user.email, organization.id);
 
     // Send welcome email
     if (user.email) {
       await sendEmail({
         to: user.email,
-        subject: "Welcome to Techcitta! 🚀",
-        html: generateWelcomeEmail(user.name || "there"),
+        subject: `Welcome to ${organization.name}! 🚀`,
+        html: generateWelcomeEmail(user.name || "there", organization.name),
       });
     }
 
@@ -68,6 +94,17 @@ export async function POST(request: Request) {
         name: user.name,
         phone: user.phone,
         role: user.role,
+        organizationId: user.organizationId,
+      },
+      organization: {
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        logoUrl: organization.logoUrl,
+        primaryColor: organization.primaryColor,
+        accentColor: organization.accentColor,
+        isGovernment: organization.isGovernment,
+        plan: organization.plan,
       },
       token,
     });

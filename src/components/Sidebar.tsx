@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle, Shield, Users, Lock, Heart, Headphones, Mail } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   currentStep: number;
@@ -8,6 +9,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ currentStep, progress }: SidebarProps) {
+  const { organization } = useAuth();
+  const brandName = organization?.name || "Techcitta";
   const features = [
     "AI-powered matching with the right roles",
     "Interview with confidence",
@@ -19,7 +22,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
   return (
     <aside className="w-full lg:w-80 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white p-8 flex flex-col">
       <div className="mb-8">
-        <img src="/logo.jpeg" alt="Techcitta" className="h-12 w-auto" />
+        <img src={organization?.logoUrl || "/logo.jpeg"} alt={brandName} className="h-12 w-auto" />
       </div>
 
       <div className="mb-8">
@@ -43,7 +46,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
               cx="50"
               cy="50"
               r="40"
-              stroke="#4f46e5"
+              stroke="var(--primary, #4f46e5)"
               strokeWidth="8"
               fill="none"
               strokeDasharray={`${progress * 2.51} 251`}
@@ -60,7 +63,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
       </div>
 
       <div className="mb-8">
-        <h3 className="text-sm font-semibold mb-4">Why Techcitta?</h3>
+        <h3 className="text-sm font-semibold mb-4">Why {brandName}?</h3>
         <ul className="space-y-3">
           {features.map((feature, i) => (
             <li key={i} className="flex items-start gap-2">

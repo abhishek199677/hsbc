@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const { user, logout } = useAuth();
+  const { user, organization, logout } = useAuth();
 
   const solutions = [
     { name: "For Job Seekers", href: "/profile", icon: Users, description: "Build your profile and get matched" },
@@ -22,7 +22,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-12">
             <Link href="/" className="flex items-center">
-              <img src="/logo.jpeg" alt="Techcitta" className="h-10 w-auto" />
+              <img src={organization?.logoUrl || "/logo.jpeg"} alt={organization?.name || "Techcitta"} className="h-10 w-auto" />
             </Link>
             <div className="hidden md:flex items-center gap-6">
               <Link href="/profile" className="text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
@@ -83,6 +83,11 @@ export default function Navbar() {
                   </Link>
                 )}
                 <span className="text-sm text-gray-500">{user.name || user.email}</span>
+                {organization?.name && (
+                  <span className="hidden lg:block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                    {organization.name}
+                  </span>
+                )}
                 <button
                   onClick={logout}
                   className="flex items-center gap-1 text-sm text-gray-600 hover:text-red-600 transition-colors"
@@ -106,7 +111,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+                  className="bg-primary text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm"
                 >
                   Get Started
                 </Link>
@@ -144,7 +149,7 @@ export default function Navbar() {
               <>
                 <hr className="my-2" />
                 <Link href="/login" className="block text-sm font-medium text-gray-700">Sign In</Link>
-                <Link href="/signup" className="block bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium text-center">
+                <Link href="/signup" className="block bg-primary text-white px-4 py-2 rounded-full text-sm font-medium text-center">
                   Get Started
                 </Link>
               </>

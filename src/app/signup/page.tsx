@@ -4,12 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Phone, Briefcase, Building2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { login, organization } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [orgName, setOrgName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("jobseeker");
@@ -37,7 +40,7 @@ export default function SignupPage() {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password, role }),
+        body: JSON.stringify({ name, email, phone, orgName, password, role }),
       });
 
       const data = await response.json();
@@ -46,9 +49,8 @@ export default function SignupPage() {
         throw new Error(data.error || "Signup failed");
       }
 
-      // Store token
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // Store session (token, user, organization branding)
+      login(data.token, data.user, data.organization);
 
       // Redirect based on role
       if (data.user.role === "employer") {
@@ -69,10 +71,10 @@ export default function SignupPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex mb-4">
-              <img src="/logo.jpeg" alt="Techcitta" className="h-12 w-auto" />
+              <img src={organization?.logoUrl || "/logo.jpeg"} alt={organization?.name || "Techcitta"} className="h-12 w-auto" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-            <p className="text-gray-500 mt-1">Start your journey to the right opportunity</p>
+            <p className="text-gray-500 mt-1">Start your journey to the right opportunity{organization ? ` with ${organization.name}` : ""}</p>
           </div>
 
           {error && (
@@ -90,6 +92,8 @@ export default function SignupPage() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
+                  name="name"
+                  autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -107,6 +111,8 @@ export default function SignupPage() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -124,12 +130,32 @@ export default function SignupPage() {
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="tel"
+                  name="phone"
+                  autoComplete="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="+91 98765 43210"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Company / Organization <span className="text-gray-400">(optional)</span>
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="organization"
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g. Acme Corp, Ministry of Skill Development"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">This creates a dedicated workspace for your company or department.</p>
             </div>
 
             <div>
@@ -174,6 +200,8 @@ export default function SignupPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -199,6 +227,8 @@ export default function SignupPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -211,7 +241,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

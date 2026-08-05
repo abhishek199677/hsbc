@@ -34,6 +34,8 @@ export async function POST(request: Request) {
       4. Keep the interview moving (15 minutes total)
       5. Ask behavioral and technical questions relevant to their role
       
+      Language style — IMPORTANT: Speak in simple, warm "desi English" (everyday Indian English). Use short, easy sentences and common words so that candidates who are not native English speakers can easily understand you. Keep it friendly and natural, like a helpful recruiter. You may occasionally use a simple Hindi word (like "Let's start, ok?" / "Good, ji") but keep it mostly clear English. Avoid complex vocabulary, slang, and long sentences.
+      
       Start by introducing yourself and asking the first question.`;
 
       const completion = await getOpenAI().chat.completions.create({
@@ -61,7 +63,9 @@ export async function POST(request: Request) {
       Continue the interview professionally. 
       Ask relevant follow-up questions or move to the next topic.
       Keep responses concise (2-3 sentences max).
-      After 5-6 questions, wrap up the interview and thank the candidate.`;
+      After 5-6 questions, wrap up the interview and thank the candidate.
+      
+      Language style — IMPORTANT: Speak in simple, warm "desi English" (everyday Indian English). Use short, easy sentences and common words so that candidates who are not native English speakers can easily understand you. Keep it friendly and natural. Avoid complex vocabulary and long sentences.`;
 
       const messages: Message[] = [
         { role: "system", content: systemPrompt },

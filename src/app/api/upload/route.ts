@@ -21,10 +21,12 @@ export async function POST(request: Request) {
     // Validate file type
     const allowedTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
     const videoTypes = ["video/webm", "video/mp4", "video/quicktime"];
+    const captionTypes = ["text/vtt"];
     const isVideo = videoTypes.some((t) => file.type.startsWith(t));
-    if (!isVideo && !allowedTypes.includes(file.type)) {
+    const isCaption = captionTypes.includes(file.type);
+    if (!isVideo && !isCaption && !allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Please upload PDF, DOC, DOCX, or a video recording" },
+        { error: "Invalid file type. Please upload PDF, DOC, DOCX, a video recording, or a caption (.vtt) file" },
         { status: 400 }
       );
     }
@@ -39,7 +41,14 @@ export async function POST(request: Request) {
     }
 
     // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), "public", "uploads", isVideo ? "interviews" : "resumes");
+    const orgFolder = `org-${user.organizationId}`;
+    const uploadDir = join(
+      process.cwd(),
+      "public",
+      "uploads",
+      orgFolder,
+      isVideo || isCaption ? "interviews" : "resumes"
+    );
     await mkdir(uploadDir, { recursive: true });
 
     // Generate unique filename
@@ -53,7 +62,7 @@ export async function POST(request: Request) {
     await writeFile(filePath, buffer);
 
     // Return file URL
-    const fileUrl = `/uploads/${isVideo ? "interviews" : "resumes"}/${uniqueFilename}`;
+    const fileUrl = `/api/files/${orgFolder}/${isVideo || isCaption ? "interviews" : "resumes"}/${uniqueFilename}`;
 
     return NextResponse.json({
       success: true,

@@ -7,17 +7,34 @@ datasource db {
   provider = "sqlite"
 }
 
-model User {
+model Organization {
   id            String    @id @default(uuid())
-  email         String    @unique
-  password      String
-  name          String?
-  phone         String?
-  role          String    @default("jobseeker") // jobseeker, employer, admin
+  name          String
+  slug          String    @unique
+  logoUrl       String?
+  primaryColor  String    @default("#4f46e5")
+  accentColor   String    @default("#7c3aed")
+  isGovernment  Boolean   @default(false)
+  plan          String    @default("starter") // starter, pro, enterprise
+  status        String    @default("active") // active, suspended
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  profile       Profile?
-  interview     Interview?
+  users         User[]
+}
+
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  password       String
+  name           String?
+  phone          String?
+  role           String       @default("jobseeker") // jobseeker, employer, admin
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  profile        Profile?
+  interview      Interview?
 }
 
 model Profile {
@@ -79,6 +96,7 @@ model Interview {
 
   // Video recording & evaluation
   videoUrl        String?
+  captionUrl      String?
   transcript      String?
   evaluation      String?
   evaluationScore Int?

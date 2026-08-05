@@ -92,8 +92,8 @@ export default function InterviewSchedulePage() {
             Your data is safe with us
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-indigo-600">{displayName.charAt(0).toUpperCase()}</span>
+            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-primary">{displayName.charAt(0).toUpperCase()}</span>
             </div>
             <span className="text-sm font-medium">Hi, {displayName} 👋</span>
           </div>
@@ -112,17 +112,17 @@ export default function InterviewSchedulePage() {
           </div>
 
           {/* AI Interview Info */}
-          <div className="bg-indigo-50 rounded-xl p-6 mb-6 flex items-center gap-6">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="bg-primary/10 rounded-xl p-6 mb-6 flex items-center gap-6">
+            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-2xl">✨</span>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-indigo-900">Just 15 minutes to open doors to endless opportunities.</p>
-              <p className="text-xs text-indigo-700 mt-1">Our AI interview is designed to understand you better and match you with roles where you can shine.</p>
+              <p className="text-sm font-medium text-primary">Just 15 minutes to open doors to endless opportunities.</p>
+              <p className="text-xs text-primary-dark mt-1">Our AI interview is designed to understand you better and match you with roles where you can shine.</p>
             </div>
             <div className="flex gap-6">
               <div className="text-center">
-                <Clock className="w-6 h-6 text-indigo-600 mx-auto" />
+                <Clock className="w-6 h-6 text-primary mx-auto" />
                 <p className="text-[10px] text-gray-600 mt-1">15 Min<br/>Interview</p>
               </div>
               <div className="text-center">
@@ -130,7 +130,7 @@ export default function InterviewSchedulePage() {
                 <p className="text-[10px] text-gray-600 mt-1">AI-Powered<br/>Assessment</p>
               </div>
               <div className="text-center">
-                <Lock className="w-6 h-6 text-indigo-600 mx-auto" />
+                <Lock className="w-6 h-6 text-primary mx-auto" />
                 <p className="text-[10px] text-gray-600 mt-1">Secure &<br/>Private</p>
               </div>
             </div>
@@ -145,7 +145,7 @@ export default function InterviewSchedulePage() {
                 Interview duration: 15 minutes
               </span>
             </div>
-            <p className="text-sm text-gray-500 mb-6">All times are shown in <span className="font-medium text-indigo-600">(IST) Asia/Kolkata</span></p>
+            <p className="text-sm text-gray-500 mb-6">All times are shown in <span className="font-medium text-primary">(IST) Asia/Kolkata</span></p>
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* Calendar */}
@@ -188,7 +188,7 @@ export default function InterviewSchedulePage() {
                         disabled={!isAvailable || isPast}
                         className={`relative w-full aspect-square rounded-lg flex items-center justify-center text-sm transition-colors ${
                           isSelected
-                            ? "bg-indigo-600 text-white"
+                            ? "bg-primary text-white"
                             : isAvailable && !isPast
                             ? "hover:bg-gray-100 text-gray-900"
                             : "text-gray-300 cursor-not-allowed"
@@ -311,7 +311,7 @@ export default function InterviewSchedulePage() {
               <button
                 onClick={handleConfirm}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Confirm & Continue"}
                 <ArrowRight className="w-4 h-4" />

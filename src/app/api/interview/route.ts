@@ -143,7 +143,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { videoUrl, evaluation, evaluationScore, transcript, status } = body;
+    const { videoUrl, captionUrl, evaluation, evaluationScore, transcript, status } = body;
 
     const existingInterview = await prisma.interview.findUnique({
       where: { userId: user.userId },
@@ -157,6 +157,7 @@ export async function PATCH(request: Request) {
       where: { id: existingInterview.id },
       data: {
         videoUrl: videoUrl ?? existingInterview.videoUrl,
+        captionUrl: captionUrl ?? existingInterview.captionUrl,
         evaluation: evaluation ?? existingInterview.evaluation,
         evaluationScore: evaluationScore ?? existingInterview.evaluationScore,
         transcript: transcript ?? existingInterview.transcript,
