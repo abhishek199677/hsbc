@@ -1,4 +1,4 @@
-`# Intern Guide — HireRight (Techcitta)
+# Intern Guide — HireRight (Techcitta)
 
 A complete background-screening / job-matching platform. Candidates sign up, build a
 profile, schedule an interview, and get interviewed by an **AI** (OpenAI) instead of a
