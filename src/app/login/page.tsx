@@ -36,6 +36,12 @@ export default function LoginPage() {
       // Store session (token, user, organization branding)
       login(data.token, data.user, data.organization);
 
+      // Require email verification before entering the app
+      if (!data.user.emailVerified) {
+        router.push("/verify-email");
+        return;
+      }
+
       // Redirect based on role
       if (data.user.role === "employer") {
         router.push("/employer");
@@ -135,6 +141,12 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+
+            <div className="text-right">
+              <Link href="/forgot-password" className="text-sm text-indigo-600 font-medium hover:text-indigo-700">
+                Forgot password?
+              </Link>
+            </div>
           </form>
 
           <div className="mt-6 text-center">

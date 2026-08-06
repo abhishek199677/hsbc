@@ -5,6 +5,7 @@ import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
+import { timezoneLabel } from "@/lib/timezone";
 import { CheckCircle, Calendar, Clock, Video, Info, Mail, MessageCircle, ChevronRight, Shield, Star, X, ArrowRight } from "lucide-react";
 
 const steps = [
@@ -30,6 +31,7 @@ interface InterviewData {
 
 interface ProfileData {
   phone?: string | null;
+  timezone?: string | null;
   [key: string]: unknown;
 }
 
@@ -87,6 +89,7 @@ export default function ConfirmationPage() {
   const displayPhone = user?.phone || profile?.phone || "Not provided";
   const interviewDate = interview?.date || "2025-05-19";
   const interviewTime = interview?.time || "01:30 PM";
+  const tzLabel = timezoneLabel(profile?.timezone || "Asia/Kolkata");
 
   const addToCalendar = () => {
     const dateStr = interviewDate.replace(/-/g, "");
@@ -206,7 +209,7 @@ export default function ConfirmationPage() {
                   <Clock className="w-5 h-5 text-indigo-600 mt-0.5" />
                   <div>
                     <p className="text-xs text-gray-500">Time</p>
-                    <p className="text-sm font-medium text-gray-900">01:30 PM (IST) <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs">15 Min Interview</span></p>
+                    <p className="text-sm font-medium text-gray-900">{interviewTime} ({tzLabel}) <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs">15 Min Interview</span></p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -287,14 +290,14 @@ export default function ConfirmationPage() {
                 <p>Hi {displayName},</p>
                 <p className="mt-2">Great news! Your 15-minute AI interview is confirmed.</p>
                 <p className="mt-2">📅 Date: {formatDate(interviewDate)}</p>
-                <p>🕐 Time: {interviewTime} (IST)</p>
+                <p>🕐 Time: {interviewTime} ({tzLabel})</p>
                 <p className="mt-2">We look forward to meeting you!</p>
                 <p className="mt-2 text-gray-500">– Team Techcitta</p>
               </div>
               <button 
                 onClick={() => {
                   const subject = encodeURIComponent(`Your AI Interview is Confirmed – ${formatShortDate(interviewDate)}`);
-                  const body = encodeURIComponent(`Hi ${displayName},\n\nGreat news! Your 15-minute AI interview is confirmed.\n\n📅 Date: ${formatDate(interviewDate)}\n🕐 Time: ${interviewTime} (IST)\n\nWe look forward to meeting you!\n\n– Team Techcitta`);
+                  const body = encodeURIComponent(`Hi ${displayName},\n\nGreat news! Your 15-minute AI interview is confirmed.\n\n📅 Date: ${formatDate(interviewDate)}\n🕐 Time: ${interviewTime} (${tzLabel})\n\nWe look forward to meeting you!\n\n– Team Techcitta`);
                   window.open(`mailto:${displayEmail}?subject=${subject}&body=${body}`, "_blank");
                 }}
                 className="w-full mt-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -323,14 +326,14 @@ export default function ConfirmationPage() {
                 <p>Hi {displayName}! 👋</p>
                 <p className="mt-2">Your 15-minute AI Interview is confirmed.</p>
                 <p className="mt-2">📅 <strong>{formatShortDate(interviewDate)}</strong></p>
-                <p>🕐 {interviewTime} (IST)</p>
+                <p>🕐 {interviewTime} ({tzLabel})</p>
                 <p className="mt-2">We&apos;re excited to connect with you and help you find the right opportunities.</p>
                 <p className="mt-2 text-gray-500">– Team Techcitta</p>
               </div>
               <button 
                 onClick={() => {
                   const phone = displayPhone.replace(/[^0-9]/g, "");
-                  const message = encodeURIComponent(`Hi ${displayName}! 👋\n\nYour 15-minute AI Interview is confirmed.\n\n📅 ${formatShortDate(interviewDate)}\n🕐 ${interviewTime} (IST)\n\nWe're excited to connect with you and help you find the right opportunities.\n\n– Team Techcitta`);
+                  const message = encodeURIComponent(`Hi ${displayName}! 👋\n\nYour 15-minute AI Interview is confirmed.\n\n📅 ${formatShortDate(interviewDate)}\n🕐 ${interviewTime} (${tzLabel})\n\nWe're excited to connect with you and help you find the right opportunities.\n\n– Team Techcitta`);
                   window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
                 }}
                 className="w-full mt-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"

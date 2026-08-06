@@ -53,6 +53,7 @@ export async function PUT(request: Request) {
       workMode,
       preferredDate,
       preferredTimeSlot,
+      timezone,
       resumeUrl,
       resumeFileName,
     } = body;
@@ -77,6 +78,7 @@ export async function PUT(request: Request) {
         ...(workMode !== undefined && { workMode }),
         ...(preferredDate !== undefined && { preferredDate }),
         ...(preferredTimeSlot !== undefined && { preferredTimeSlot }),
+        ...(timezone !== undefined && { timezone }),
         ...(resumeUrl !== undefined && { resumeUrl }),
         ...(resumeFileName !== undefined && { resumeFileName }),
       },
@@ -99,6 +101,7 @@ export async function PUT(request: Request) {
         workMode,
         preferredDate,
         preferredTimeSlot,
+        timezone,
         resumeUrl,
         resumeFileName,
       },

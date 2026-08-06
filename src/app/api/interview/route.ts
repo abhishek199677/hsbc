@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { sendEmail, generateInterviewConfirmationEmail } from "@/lib/email";
 import { sendWhatsAppMessage, generateInterviewConfirmationWhatsApp } from "@/lib/whatsapp";
+import { getPlanLimits, isPlanActive } from "@/lib/plan";
 
 // GET - Fetch interview
 export async function GET(request: Request) {
@@ -28,10 +29,52 @@ export async function GET(request: Request) {
 }
 
 // POST - Schedule interview
-export async function POST(request: Request) {  try {
+export async function POST(request: Request) {
+  try {
     const user = getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userData = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { organization: true },
+    });
+
+    const orgPlan = userData?.organization?.plan || "starter";
+    const planStatus = userData?.organization?.planStatus || null;
+
+    // Enforce plan limits: block new interviews once the monthly quota is used
+    // or when a paid subscription is no longer active.
+    if (!isPlanActive(orgPlan, planStatus)) {
+      return NextResponse.json(
+        {
+          error: "Your subscription is inactive. Please update your payment method.",
+          plan: "starter",
+          billingRequired: true,
+        },
+        { status: 402 }
+      );
+    }
+
+    const limits = getPlanLimits(orgPlan);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const interviewsThisMonth = await prisma.interview.count({
+      where: { userId: user.userId, createdAt: { gte: monthStart } },
+    });
+
+    if (interviewsThisMonth >= limits.interviewsPerMonth) {
+      return NextResponse.json(
+        {
+          error: `You have reached your monthly limit of ${limits.interviewsPerMonth} interviews on the ${orgPlan} plan. Upgrade to continue.`,
+          plan: orgPlan,
+          upgradeRequired: true,
+        },
+        { status: 402 }
+      );
     }
 
     const body = await request.json();
@@ -43,6 +86,12 @@ export async function POST(request: Request) {  try {
         { status: 400 }
       );
     }
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId: user.userId },
+      select: { timezone: true },
+    });
+    const timezone = profile?.timezone || "Asia/Kolkata";
 
     // Check if interview already exists
     const existingInterview = await prisma.interview.findUnique({
@@ -58,6 +107,7 @@ export async function POST(request: Request) {  try {
         data: {
           date,
           time,
+          timezone: timezone || "Asia/Kolkata",
           mode: mode || "AI Video Interview",
           type: type || "Technical + Behavioral Assessment",
           duration: duration || 15,
@@ -71,17 +121,13 @@ export async function POST(request: Request) {  try {
           userId: user.userId,
           date,
           time,
+          timezone: timezone || "Asia/Kolkata",
           mode: mode || "AI Video Interview",
           type: type || "Technical + Behavioral Assessment",
           duration: duration || 15,
         },
       });
     }
-
-    // Get user details for email and WhatsApp
-    const userData = await prisma.user.findUnique({
-      where: { id: user.userId },
-    });
 
     // Send confirmation email
     if (userData?.email) {
@@ -93,6 +139,7 @@ export async function POST(request: Request) {  try {
           date,
           time,
           mode: mode || "AI Video Interview",
+          timezone,
         }),
       });
 
@@ -111,6 +158,7 @@ export async function POST(request: Request) {  try {
         name: userData.name || "there",
         date,
         time,
+        timezone,
       });
       
       const whatsappResult = await sendWhatsAppMessage({

@@ -4,6 +4,8 @@
 // 2. Meta (Facebook) Developer account
 // 3. WhatsApp Business API credentials
 
+import { timezoneLabel } from "@/lib/timezone";
+
 interface SendWhatsAppParams {
   to: string;
   message: string;
@@ -75,13 +77,15 @@ export function generateInterviewConfirmationWhatsApp(data: {
   name: string;
   date: string;
   time: string;
+  timezone?: string;
 }): string {
+  const tz = timezoneLabel(data.timezone);
   return `Hi ${data.name}! 👋
 
 Your 15-minute AI Interview is confirmed.
 
 📅 ${data.date}
-🕐 ${data.time} (IST)
+🕐 ${data.time} (${tz})
 
 We're excited to connect with you and help you find the right opportunities.
 
@@ -93,13 +97,15 @@ export function generateReminderWhatsApp(data: {
   type: string;
   date: string;
   time: string;
+  timezone?: string;
 }): string {
+  const tz = timezoneLabel(data.timezone);
   return `Hi ${data.name}! ⏰
 
 Interview Reminder: Your AI interview is in ${data.type}.
 
 📅 ${data.date}
-🕐 ${data.time} (IST)
+🕐 ${data.time} (${tz})
 
 Get ready and make sure you're in a quiet location!
 

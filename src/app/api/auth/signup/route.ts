@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, generateToken } from "@/lib/auth";
-import { sendEmail, generateWelcomeEmail } from "@/lib/email";
+import { sendEmail, generateVerificationEmail, getAppBaseUrl } from "@/lib/email";
+import { isValidEmail, isValidPassword } from "@/lib/security";
+import { rateLimitByIp } from "@/lib/rateLimit";
+import { generateVerificationToken, hashToken, tokenExpiryDate } from "@/lib/tokens";
 
 function slugify(input: string): string {
   return input
@@ -14,12 +17,34 @@ function slugify(input: string): string {
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = rateLimitByIp(request, "signup", { limit: 5, windowMs: 60_000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many signup attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { email, password, name, phone, role, orgName } = body;
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidPassword(password)) {
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters long" },
         { status: 400 }
       );
     }
@@ -52,6 +77,7 @@ export async function POST(request: Request) {
       data: {
         name: orgDisplayName,
         slug,
+        plan: "starter",
       },
     });
 
@@ -77,14 +103,26 @@ export async function POST(request: Request) {
     // Generate token
     const token = generateToken(user.id, user.email, organization.id);
 
-    // Send welcome email
-    if (user.email) {
-      await sendEmail({
-        to: user.email,
-        subject: `Welcome to ${organization.name}! 🚀`,
-        html: generateWelcomeEmail(user.name || "there", organization.name),
-      });
-    }
+    // Create email verification token
+    const verifyToken = generateVerificationToken();
+    await prisma.verificationToken.create({
+      data: {
+        token: hashToken(verifyToken),
+        type: "email_verification",
+        userId: user.id,
+        expiresAt: tokenExpiryDate(),
+      },
+    });
+
+    // Send verification email (best-effort; login still works with a banner)
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your Techcitta email address",
+      html: generateVerificationEmail(
+        user.name || "there",
+        `${getAppBaseUrl()}/verify-email?token=${verifyToken}`
+      ),
+    });
 
     return NextResponse.json({
       success: true,
@@ -95,6 +133,7 @@ export async function POST(request: Request) {
         phone: user.phone,
         role: user.role,
         organizationId: user.organizationId,
+        emailVerified: !!user.emailVerifiedAt,
       },
       organization: {
         id: organization.id,
@@ -105,6 +144,7 @@ export async function POST(request: Request) {
         accentColor: organization.accentColor,
         isGovernment: organization.isGovernment,
         plan: organization.plan,
+        planStatus: organization.planStatus,
       },
       token,
     });

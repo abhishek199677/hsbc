@@ -1,6 +1,6 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { readFile, writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
@@ -57,8 +57,7 @@ export async function saveFile(
   await writeFile(filePath, data);
 }
 
-export async function getFile(key: string): Promise<Uint8Array | null> {
-  if (isR2Enabled) {
+export async function getFile(key: string): Promise<Uint8Array | null> {  if (isR2Enabled) {
     const result = await getS3().send(
       new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key })
     );
@@ -70,6 +69,20 @@ export async function getFile(key: string): Promise<Uint8Array | null> {
     return await readFile(localPathFor(key));
   } catch {
     return null;
+  }
+}
+
+export async function deleteFile(key: string): Promise<void> {
+  if (isR2Enabled) {
+    await getS3().send(
+      new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key })
+    );
+    return;
+  }
+  try {
+    await unlink(localPathFor(key));
+  } catch {
+    // Ignore missing files
   }
 }
 

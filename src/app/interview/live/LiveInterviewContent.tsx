@@ -259,7 +259,10 @@ export default function LiveInterviewContent() {
   const callAI = async (action: string, extra: Record<string, unknown> = {}) => {
     const response = await fetch("/api/ai-interview", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ action, ...extra }),
     });
     return response.json();

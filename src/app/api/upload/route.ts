@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
+import { rateLimitByIp } from "@/lib/rateLimit";
 import {
-  isR2Enabled,
   saveFile,
   canonicalUrl,
   getPresignedUploadUrl,
@@ -29,6 +29,11 @@ export async function POST(request: Request) {
     const user = getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimit = rateLimitByIp(request, "upload", { limit: 60, windowMs: 60_000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const contentType = request.headers.get("content-type") || "";

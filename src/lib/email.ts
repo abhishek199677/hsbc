@@ -10,6 +10,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export function getAppBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
+
 interface SendEmailParams {
   to: string;
   subject: string;
@@ -37,6 +41,7 @@ export function generateInterviewConfirmationEmail(data: {
   date: string;
   time: string;
   mode: string;
+  timezone?: string;
 }) {
   return `
     <!DOCTYPE html>
@@ -69,15 +74,15 @@ export function generateInterviewConfirmationEmail(data: {
             <div class="detail-value">${data.date}</div>
           </div>
           
-          <div class="detail-box">
-            <div class="detail-label">🕐 Time</div>
-            <div class="detail-value">${data.time} (IST)</div>
-          </div>
-          
-          <div class="detail-box">
-            <div class="detail-label">🎥 Interview Mode</div>
-            <div class="detail-value">${data.mode}</div>
-          </div>
+            <div class="detail-box">
+              <div class="detail-label">🕐 Time</div>
+              <div class="detail-value">${data.time} (${data.timezone || "Asia/Kolkata"})</div>
+            </div>
+            
+            <div class="detail-box">
+              <div class="detail-label">🎥 Interview Mode</div>
+              <div class="detail-value">${data.mode}</div>
+            </div>
           
           <p style="margin-top: 20px;">We look forward to meeting you!</p>
           
@@ -101,6 +106,7 @@ export function generateReminderEmail(data: {
   date: string;
   time: string;
   message: string;
+  timezone?: string;
 }) {
   return `
     <!DOCTYPE html>
@@ -137,12 +143,12 @@ export function generateReminderEmail(data: {
             <div class="detail-value">${data.date}</div>
           </div>
           
-          <div class="detail-box">
-            <div class="detail-label">🕐 Time</div>
-            <div class="detail-value">${data.time} (IST)</div>
-          </div>
-          
-          <p style="margin-top: 20px;">Make sure you're prepared and in a quiet location with a stable internet connection.</p>
+            <div class="detail-box">
+              <div class="detail-label">🕐 Time</div>
+              <div class="detail-value">${data.time} (${data.timezone || "Asia/Kolkata"})</div>
+            </div>
+            
+            <p style="margin-top: 20px;">Make sure you're prepared and in a quiet location with a stable internet connection.</p>
           
           <div style="text-align: center;">
             <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/interview/live" class="button">Join Interview</a>
@@ -185,6 +191,78 @@ export function generateWelcomeEmail(name: string, orgName: string = "Techcitta"
           
           <div style="text-align: center;">
             <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile" class="button">Complete Your Profile</a>
+          </div>
+        </div>
+        <div class="footer">
+          <p>© 2026 Techcitta. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+export function generateVerificationEmail(name: string, verifyUrl: string) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+        .button { display: inline-block; background: #4f46e5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Confirm your email ✉️</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${name},</p>
+          <p>Thanks for signing up for Techcitta. Please confirm your email address to secure your account and unlock all features.</p>
+          <p>This link expires in 1 hour.</p>
+          <div style="text-align: center;">
+            <a href="${verifyUrl}" class="button">Verify Email</a>
+          </div>
+        </div>
+        <div class="footer">
+          <p>© 2026 Techcitta. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+export function generatePasswordResetEmail(name: string, resetUrl: string) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+        .button { display: inline-block; background: #4f46e5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Reset your password 🔐</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${name},</p>
+          <p>We received a request to reset your password. Click the button below to choose a new one.</p>
+          <p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+          <div style="text-align: center;">
+            <a href="${resetUrl}" class="button">Reset Password</a>
           </div>
         </div>
         <div class="footer">

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
+import { timezoneLabel } from "@/lib/timezone";
 import { ChevronLeft, ChevronRight, CheckCircle, Clock, Lock, ArrowLeft, ArrowRight, Shield, Calendar, Video, Info } from "lucide-react";
 
 const steps = [
@@ -29,6 +30,30 @@ export default function InterviewSchedulePage() {
   const [currentStep, setCurrentStep] = useState(4);
   const [selectedTime, setSelectedTime] = useState("01:30 PM");
   const [saving, setSaving] = useState(false);
+  const [timezone, setTimezone] = useState("Asia/Kolkata");
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch("/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (!cancelled && data.success && data.profile?.timezone) {
+          setTimezone(data.profile.timezone);
+        }
+      } catch {
+        // keep default
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const tzLabel = timezoneLabel(timezone);
 
   const today = new Date();
   const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -193,7 +218,7 @@ export default function InterviewSchedulePage() {
                 Interview duration: 15 minutes
               </span>
             </div>
-            <p className="text-sm text-gray-500 mb-6">All times are shown in <span className="font-medium text-primary">(IST) Asia/Kolkata</span></p>
+            <p className="text-sm text-gray-500 mb-6">All times are shown in <span className="font-medium text-primary">{tzLabel} ({timezone})</span></p>
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* Calendar */}
@@ -316,7 +341,7 @@ export default function InterviewSchedulePage() {
               <div>
                 <p className="text-sm font-medium text-gray-900">You&apos;ve selected</p>
                 <p className="text-sm text-gray-600">{selectedDateShort}</p>
-                <p className="text-sm text-gray-600">{selectedTime} (IST)</p>
+                <p className="text-sm text-gray-600">{selectedTime} ({tzLabel})</p>
               </div>
             </div>
             <div className="flex items-center gap-6 text-xs text-gray-500">

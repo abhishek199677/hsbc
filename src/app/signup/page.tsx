@@ -29,8 +29,8 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
 
@@ -51,6 +51,12 @@ export default function SignupPage() {
 
       // Store session (token, user, organization branding)
       login(data.token, data.user, data.organization);
+
+      // Ask new users to verify their email before proceeding
+      if (!data.user.emailVerified) {
+        router.push("/verify-email");
+        return;
+      }
 
       // Redirect based on role
       if (data.user.role === "employer") {

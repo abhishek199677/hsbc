@@ -63,6 +63,7 @@ export async function GET(request: Request) {
       const diffMs = interviewDateTime.getTime() - now.getTime();
       const diffHours = diffMs / (1000 * 60 * 60);
       const diffMinutes = diffMs / (1000 * 60);
+      const timezone = interview.timezone || "Asia/Kolkata";
 
       // 24 hours before reminder
       if (diffHours <= 24 && diffHours > 1 && !interview.reminder24hSent) {
@@ -77,6 +78,7 @@ export async function GET(request: Request) {
               date: interview.date,
               time: interview.time,
               message: "Your AI interview is tomorrow. Make sure you're prepared!",
+              timezone,
             }),
           });
 
@@ -89,6 +91,7 @@ export async function GET(request: Request) {
                 type: "24 Hours",
                 date: interview.date,
                 time: interview.time,
+                timezone,
               }),
             });
           }
@@ -117,6 +120,7 @@ export async function GET(request: Request) {
               date: interview.date,
               time: interview.time,
               message: "Your AI interview starts in 1 hour. Final preparations time!",
+              timezone,
             }),
           });
 
@@ -129,6 +133,7 @@ export async function GET(request: Request) {
                 type: "1 Hour",
                 date: interview.date,
                 time: interview.time,
+                timezone,
               }),
             });
           }
@@ -157,6 +162,7 @@ export async function GET(request: Request) {
               date: interview.date,
               time: interview.time,
               message: "Your AI interview starts in 15 minutes. Get ready to join!",
+              timezone,
             }),
           });
 
@@ -169,6 +175,7 @@ export async function GET(request: Request) {
                 type: "15 Minutes",
                 date: interview.date,
                 time: interview.time,
+                timezone,
               }),
             });
           }
@@ -197,6 +204,7 @@ export async function GET(request: Request) {
               date: interview.date,
               time: interview.time,
               message: "Your AI interview is starting now! Click the link below to join.",
+              timezone,
             }),
           });
 
@@ -209,6 +217,7 @@ export async function GET(request: Request) {
                 type: "Now",
                 date: interview.date,
                 time: interview.time,
+                timezone,
               }),
             });
           }

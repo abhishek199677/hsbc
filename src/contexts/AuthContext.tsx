@@ -10,6 +10,7 @@ interface User {
   phone?: string | null;
   role?: string;
   organizationId?: string;
+  emailVerified?: boolean;
 }
 
 export interface Organization {

@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, generateToken } from "@/lib/auth";
+import { rateLimitByIp } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = rateLimitByIp(request, "login", { limit: 10, windowMs: 60_000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -52,6 +61,7 @@ export async function POST(request: Request) {
         phone: user.phone,
         role: user.role,
         organizationId: user.organizationId,
+        emailVerified: !!user.emailVerifiedAt,
       },
       organization: organization
         ? {
