@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Calendar, FileText, TrendingUp, ArrowRight, Eye, CheckCircle, Clock, XCircle, Video } from "lucide-react";
+import { Users, Calendar, FileText, TrendingUp, ArrowRight, CheckCircle, Clock, Video } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildPlaybackUrl } from "@/lib/uploadFile";
 
 interface Stats {
   totalUsers: number;
@@ -52,47 +53,34 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!token) return;
-    fetchStats();
-    fetchUsers();
-  }, [token]);
+    let cancelled = false;
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch("/api/admin/stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        router.push("/login");
-        return;
+    (async () => {
+      try {
+        const [statsRes, usersRes] = await Promise.all([
+          fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        if (statsRes.status === 401 || statsRes.status === 403 || usersRes.status === 401 || usersRes.status === 403) {
+          router.push("/login");
+          return;
+        }
+        const statsData = await statsRes.json();
+        const usersData = await usersRes.json();
+        if (cancelled) return;
+        if (statsData.success) setStats(statsData.stats);
+        if (usersData.success) setUsers(usersData.users);
+      } catch (error) {
+        console.error("Failed to load admin data:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      const data = await response.json();
-      if (data.success) {
-        setStats(data.stats);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
-    }
-  };
+    })();
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch("/api/admin/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        router.push("/login");
-        return;
-      }
-      const data = await response.json();
-      if (data.success) {
-        setUsers(data.users);
-      }
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [token, router]);
 
   if (authLoading || !user) {
     return (
@@ -126,14 +114,14 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
         <div className="flex gap-4 mb-8">
-          {[
+          {([
             { id: "overview", label: "Overview", icon: TrendingUp },
             { id: "users", label: "Users", icon: Users },
             { id: "interviews", label: "Interviews", icon: Calendar },
-          ].map((tab) => (
+          ] as const).map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeTab === tab.id
                   ? "bg-indigo-600 text-white"
@@ -355,12 +343,12 @@ export default function AdminDashboard() {
                                 </summary>
                                 <div className="mt-2 w-80">
                                   <video
-                                    src={user.interview.videoUrl}
+                                    src={buildPlaybackUrl(user.interview.videoUrl, token)}
                                     controls
                                     className="w-full rounded-lg bg-gray-900"
                                   >
                                     {user.interview?.captionUrl && (
-                                      <track kind="captions" src={user.interview.captionUrl} srcLang="en" label="Simple English" default />
+                                      <track kind="captions" src={buildPlaybackUrl(user.interview.captionUrl, token)} srcLang="en" label="Simple English" default />
                                     )}
                                   </video>
                                 </div>

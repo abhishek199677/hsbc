@@ -5,7 +5,7 @@ import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle, Calendar, Clock, Video, Info, Mail, MessageCircle, ExternalLink, ChevronRight, Shield, Lock, Star, X, ArrowRight } from "lucide-react";
+import { CheckCircle, Calendar, Clock, Video, Info, Mail, MessageCircle, ChevronRight, Shield, Star, X, ArrowRight } from "lucide-react";
 
 const steps = [
   { number: 1, label: "Profile", sublabel: "Tell us who you are" },
@@ -16,48 +16,59 @@ const steps = [
   { number: 6, label: "All Set!", sublabel: "You're all set!" },
 ];
 
+interface InterviewData {
+  date: string;
+  time: string;
+  emailSent?: boolean;
+  whatsappSent?: boolean;
+  reminder24hSent?: boolean;
+  reminder1hSent?: boolean;
+  reminder15mSent?: boolean;
+  reminderNowSent?: boolean;
+  [key: string]: unknown;
+}
+
+interface ProfileData {
+  phone?: string | null;
+  [key: string]: unknown;
+}
+
 export default function ConfirmationPage() {
   const { user, token } = useAuth();
   const [currentStep] = useState(6);
-  const [interview, setInterview] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [interview, setInterview] = useState<InterviewData | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const progress = Math.round((currentStep / steps.length) * 100);
 
   useEffect(() => {
-    if (token) {
-      fetchInterview();
-      fetchProfile();
-    }
+    if (!token) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [interviewRes, profileRes] = await Promise.all([
+          fetch("/api/interview", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        const interviewData = await interviewRes.json();
+        const profileData = await profileRes.json();
+        if (cancelled) return;
+        if (interviewData.success && interviewData.interview) {
+          setInterview(interviewData.interview as InterviewData);
+        }
+        if (profileData.success && profileData.profile) {
+          setProfile(profileData.profile as ProfileData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch interview details:", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
-
-  const fetchInterview = async () => {
-    try {
-      const response = await fetch("/api/interview", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (data.success && data.interview) {
-        setInterview(data.interview);
-      }
-    } catch (error) {
-      console.error("Failed to fetch interview:", error);
-    }
-  };
-
-  const fetchProfile = async () => {
-    try {
-      const response = await fetch("/api/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (data.success && data.profile) {
-        setProfile(data.profile);
-      }
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-    }
-  };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "TBD";
@@ -79,13 +90,26 @@ export default function ConfirmationPage() {
 
   const addToCalendar = () => {
     const dateStr = interviewDate.replace(/-/g, "");
-    const startTime = interviewTime.replace(/[^0-9]/g, "");
+    const timeMatch = interviewTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!timeMatch) return;
+
+    let hours = parseInt(timeMatch[1]);
+    const minutes = parseInt(timeMatch[2]);
+    const period = timeMatch[3].toUpperCase();
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+
+    const end = new Date(2000, 0, 1, hours, minutes + 15);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const startTimeStr = `${pad(hours)}${pad(minutes)}00`;
+    const endTimeStr = `${pad(end.getHours())}${pad(end.getMinutes())}00`;
+
     const title = encodeURIComponent("Techcitta AI Interview");
     const details = encodeURIComponent(`Your 15-minute AI interview with Techcitta.\n\nMode: AI Video Interview\nType: Technical + Behavioral Assessment\n\nWe look forward to meeting you!\n– Team Techcitta`);
     const location = encodeURIComponent("Online - AI Video Interview");
     
     // Google Calendar link
-    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}T${startTime}00/${dateStr}T${parseInt(startTime) + 15}00&details=${details}&location=${location}`;
+    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}T${startTimeStr}/${dateStr}T${endTimeStr}&details=${details}&location=${location}`;
     
     window.open(googleUrl, "_blank");
   };
@@ -158,7 +182,7 @@ export default function ConfirmationPage() {
               </div>
             </div>
             <Link
-              href="/interview/live"
+              href="/interview/room"
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex-shrink-0"
             >
               Start Live Interview
@@ -175,7 +199,7 @@ export default function ConfirmationPage() {
                   <Calendar className="w-5 h-5 text-indigo-600 mt-0.5" />
                   <div>
                     <p className="text-xs text-gray-500">Date</p>
-                    <p className="text-sm font-medium text-gray-900">Monday, 19 May 2025</p>
+                    <p className="text-sm font-medium text-gray-900">{formatDate(interviewDate)}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -302,7 +326,6 @@ export default function ConfirmationPage() {
                 <p>🕐 {interviewTime} (IST)</p>
                 <p className="mt-2">We&apos;re excited to connect with you and help you find the right opportunities.</p>
                 <p className="mt-2 text-gray-500">– Team Techcitta</p>
-                <p className="text-right text-xs text-gray-400 mt-2">10:42 AM ✓✓</p>
               </div>
               <button 
                 onClick={() => {

@@ -1,7 +1,16 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "techcitta-secret-key-change-in-production";
+const DEV_SECRET = "techcitta-dev-only-secret";
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET environment variable is required in production.");
+  }
+  return DEV_SECRET;
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -18,12 +27,12 @@ export interface AuthUser {
 }
 
 export function generateToken(userId: string, email: string, organizationId: string): string {
-  return jwt.sign({ userId, email, organizationId }, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ userId, email, organizationId }, getJwtSecret(), { expiresIn: "7d" });
 }
 
 export function verifyToken(token: string): AuthUser | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as AuthUser;
+    return jwt.verify(token, getJwtSecret()) as AuthUser;
   } catch {
     return null;
   }

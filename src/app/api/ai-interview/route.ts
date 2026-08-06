@@ -93,22 +93,72 @@ export async function POST(request: Request) {
 
     if (action === "evaluate") {
       // Evaluate the entire interview
+      const history = (conversationHistory || []) as Message[];
+      const candidateAnswers = history.filter(
+        (m) => m.role === "user" && m.content && m.content.trim().length >= 3
+      );
+      const candidateWordCount = candidateAnswers.reduce(
+        (sum, m) => sum + m.content.trim().split(/\s+/).length,
+        0
+      );
+
+      // If the candidate provided no substantive answers, return an honest evaluation
+      // instead of letting the model fabricate weaknesses or topics from nothing.
+      if (candidateAnswers.length === 0 || candidateWordCount < 5) {
+        const questions = history
+          .filter((m) => m.role === "assistant" && m.content && m.content.includes("?"))
+          .map((m) => m.content.trim());
+
+        const noAnswer = questions.length > 0
+          ? "The interview ended before any substantive answers were provided, so your skills could not be assessed."
+          : "No interview responses were recorded, so your skills could not be assessed.";
+
+        return NextResponse.json({
+          success: true,
+          evaluation: JSON.stringify({
+            score: 0,
+            strengths: [],
+            weaknesses: [
+              noAnswer,
+              "Please complete the interview and answer each question (speak clearly or type your answer) so your skills can be evaluated.",
+            ],
+            areasForImprovement: [
+              "Complete the full interview and provide responses to every question asked.",
+            ],
+            topicsToLearn: [],
+            recommendation: "Reject",
+            questionScores: questions.map((question) => ({
+              question,
+              answer: "No answer provided",
+              score: 0,
+              feedback: "No response was given for this question.",
+            })),
+          }),
+        });
+      }
+
       const evaluationPrompt = `Evaluate this interview and provide a score and feedback.
       
       Candidate: ${profile?.name}
       Role: ${profile?.currentRole}
       
       Interview Conversation:
-      ${conversationHistory?.map((m: Message) => `${m.role}: ${m.content}`).join("\n")}
+      ${history.map((m: Message) => `${m.role}: ${m.content}`).join("\n")}
+      
+      IMPORTANT — Base your feedback ONLY on the actual interview conversation above. Never invent or fabricate:
+      - Do not list weaknesses, topics, or strengths that are not supported by the candidate's actual answers.
+      - If the candidate gave no answer to a question, mark that question score 0 with feedback "No response provided" and do not guess what they might have said.
+      - If the transcript is sparse, keep strengths/weaknesses/topicsToLearn sparse too — never pad with generic advice.
       
       Provide:
-      1. Score (1-10)
+      1. Score (1-10) as a number (allow one decimal, e.g. 7.5)
       2. Strengths (3 bullet points)
       3. Weaknesses / Areas for improvement (3 bullet points)
       4. Topics to learn and grow (3-5 specific topics the candidate should study to improve, based on the answers they gave — be concrete, e.g. specific technologies, concepts, or skills)
       5. Overall recommendation (Hire/Consider/Reject)
+      6. questionScores: an array with one entry for every question the interviewer asked (skip the final wrap-up/thank-you message). Each entry must be an object with: question, answer, score (number 0-10), feedback (one short line).
       
-      Format as JSON with keys: score, strengths, weaknesses, areasForImprovement, topicsToLearn, recommendation.`;
+      Format as JSON with keys: score, strengths, weaknesses, areasForImprovement, topicsToLearn, recommendation, questionScores.`;
 
       const completion = await getOpenAI().chat.completions.create({
         model: "gpt-5-nano",

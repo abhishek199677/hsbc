@@ -5,7 +5,7 @@ const footerLinks = {
   "For Job Seekers": [
     { name: "Create Profile", href: "/signup" },
     { name: "Background Checks", href: "/profile" },
-    { name: "AI Interview", href: "/interview/live" },
+    { name: "AI Interview", href: "/interview/room" },
     { name: "Career Resources", href: "#" },
     { name: "Success Stories", href: "#" },
   ],

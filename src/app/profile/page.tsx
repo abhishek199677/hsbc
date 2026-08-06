@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
-import { Upload, Calendar, FileText, CheckCircle, ChevronLeft, ChevronRight, ArrowRight, Shield, Lock, Eye, Clock } from "lucide-react";
+import { Upload, FileText, CheckCircle, ChevronLeft, ChevronRight, ArrowRight, Shield, Lock, Eye, Clock } from "lucide-react";
 
 const steps = [
   { number: 1, label: "Profile", sublabel: "Tell us who you are" },
@@ -78,45 +78,49 @@ export default function ProfilePage() {
 
   // Fetch profile data on mount
   useEffect(() => {
-    if (user && token) {
-      fetchProfile();
-    }
-  }, [user, token]);
+    if (!user || !token) return;
+    let cancelled = false;
 
-  const fetchProfile = async () => {
-    try {
-      const response = await fetch("/api/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (data.success && data.profile) {
-        setFormData((prev) => ({
-          ...prev,
-          resumeUrl: data.profile.resumeUrl || "",
-          resumeFileName: data.profile.resumeFileName || "",
-          aboutYou: data.profile.aboutYou || "",
-          whatDrivesYou: data.profile.whatDrivesYou || "",
-          strengths: data.profile.strengths || "",
-          currentRole: data.profile.currentRole || "",
-          totalExperience: data.profile.totalExperience || "",
-          currentLocation: data.profile.currentLocation || "",
-          noticePeriod: data.profile.noticePeriod || "",
-          skills: data.profile.skills || "",
-          currentCompany: data.profile.currentCompany || "",
-          education: data.profile.education || "",
-          jobType: data.profile.jobType || "",
-          salaryRange: data.profile.salaryRange || "",
-          preferredLocation: data.profile.preferredLocation || "",
-          workMode: data.profile.workMode || "",
-          preferredDate: data.profile.preferredDate || "",
-          preferredTimeSlot: data.profile.preferredTimeSlot || "",
-        }));
-        setCurrentStep(data.profile.step || 1);
+    (async () => {
+      try {
+        const response = await fetch("/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (cancelled) return;
+        if (data.success && data.profile) {
+          setFormData((prev) => ({
+            ...prev,
+            resumeUrl: data.profile.resumeUrl || "",
+            resumeFileName: data.profile.resumeFileName || "",
+            aboutYou: data.profile.aboutYou || "",
+            whatDrivesYou: data.profile.whatDrivesYou || "",
+            strengths: data.profile.strengths || "",
+            currentRole: data.profile.currentRole || "",
+            totalExperience: data.profile.totalExperience || "",
+            currentLocation: data.profile.currentLocation || "",
+            noticePeriod: data.profile.noticePeriod || "",
+            skills: data.profile.skills || "",
+            currentCompany: data.profile.currentCompany || "",
+            education: data.profile.education || "",
+            jobType: data.profile.jobType || "",
+            salaryRange: data.profile.salaryRange || "",
+            preferredLocation: data.profile.preferredLocation || "",
+            workMode: data.profile.workMode || "",
+            preferredDate: data.profile.preferredDate || "",
+            preferredTimeSlot: data.profile.preferredTimeSlot || "",
+          }));
+          setCurrentStep(data.profile.step || 1);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
       }
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-    }
-  };
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, token]);
 
   const saveProfile = async (stepUpdate?: number): Promise<boolean> => {
     if (!token) return false;

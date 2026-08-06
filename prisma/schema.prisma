@@ -99,7 +99,7 @@ model Interview {
   captionUrl      String?
   transcript      String?
   evaluation      String?
-  evaluationScore Int?
+  evaluationScore Float?
   
   emailSent       Boolean   @default(false)
   whatsappSent    Boolean   @default(false)

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
 import { sendEmail, generateReminderEmail } from "@/lib/email";
 import { sendWhatsAppMessage, generateReminderWhatsApp } from "@/lib/whatsapp";
 
@@ -43,6 +44,11 @@ function getInterviewDateTime(date: string, time: string): Date {
 // GET - Check and send reminders for upcoming interviews
 export async function GET(request: Request) {
   try {
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const now = new Date();
     const results: string[] = [];
 

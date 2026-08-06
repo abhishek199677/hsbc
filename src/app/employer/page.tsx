@@ -23,15 +23,67 @@ interface Candidate {
   location: string;
 }
 
+// Mock data for demo
+const mockCandidates: Candidate[] = [
+  {
+    id: "1",
+    name: "Priya Sharma",
+    email: "priya@example.com",
+    phone: "+91 98765 43210",
+    role: "Software Engineer",
+    status: "verified",
+    appliedDate: "2026-01-15",
+    skills: "React, Node.js, TypeScript",
+    experience: "5 years",
+    location: "Bangalore",
+  },
+  {
+    id: "2",
+    name: "Rahul Verma",
+    email: "rahul@example.com",
+    phone: "+91 87654 32109",
+    role: "Product Manager",
+    status: "pending",
+    appliedDate: "2026-01-14",
+    skills: "Agile, Scrum, JIRA",
+    experience: "7 years",
+    location: "Mumbai",
+  },
+  {
+    id: "3",
+    name: "Anjali Patel",
+    email: "anjali@example.com",
+    phone: "+91 76543 21098",
+    role: "UX Designer",
+    status: "shortlisted",
+    appliedDate: "2026-01-13",
+    skills: "Figma, Adobe XD, CSS",
+    experience: "4 years",
+    location: "Delhi",
+  },
+  {
+    id: "4",
+    name: "Vikram Singh",
+    email: "vikram@example.com",
+    phone: "+91 65432 10987",
+    role: "Data Analyst",
+    status: "verified",
+    appliedDate: "2026-01-12",
+    skills: "Python, SQL, Tableau",
+    experience: "3 years",
+    location: "Hyderabad",
+  },
+];
+
 export default function EmployerDashboard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    verified: 0,
-    shortlisted: 0,
+  const [candidates] = useState<Candidate[]>(mockCandidates);
+  const [stats] = useState({
+    total: mockCandidates.length,
+    pending: mockCandidates.filter((c) => c.status === "pending").length,
+    verified: mockCandidates.filter((c) => c.status === "verified").length,
+    shortlisted: mockCandidates.filter((c) => c.status === "shortlisted").length,
   });
 
   useEffect(() => {
@@ -42,68 +94,6 @@ export default function EmployerDashboard() {
       router.push("/profile");
     }
   }, [user, isLoading, router]);
-
-  useEffect(() => {
-    // Mock data for demo
-    const mockCandidates: Candidate[] = [
-      {
-        id: "1",
-        name: "Priya Sharma",
-        email: "priya@example.com",
-        phone: "+91 98765 43210",
-        role: "Software Engineer",
-        status: "verified",
-        appliedDate: "2026-01-15",
-        skills: "React, Node.js, TypeScript",
-        experience: "5 years",
-        location: "Bangalore",
-      },
-      {
-        id: "2",
-        name: "Rahul Verma",
-        email: "rahul@example.com",
-        phone: "+91 87654 32109",
-        role: "Product Manager",
-        status: "pending",
-        appliedDate: "2026-01-14",
-        skills: "Agile, Scrum, JIRA",
-        experience: "7 years",
-        location: "Mumbai",
-      },
-      {
-        id: "3",
-        name: "Anjali Patel",
-        email: "anjali@example.com",
-        phone: "+91 76543 21098",
-        role: "UX Designer",
-        status: "shortlisted",
-        appliedDate: "2026-01-13",
-        skills: "Figma, Adobe XD, CSS",
-        experience: "4 years",
-        location: "Delhi",
-      },
-      {
-        id: "4",
-        name: "Vikram Singh",
-        email: "vikram@example.com",
-        phone: "+91 65432 10987",
-        role: "Data Analyst",
-        status: "verified",
-        appliedDate: "2026-01-12",
-        skills: "Python, SQL, Tableau",
-        experience: "3 years",
-        location: "Hyderabad",
-      },
-    ];
-
-    setCandidates(mockCandidates);
-    setStats({
-      total: mockCandidates.length,
-      pending: mockCandidates.filter((c) => c.status === "pending").length,
-      verified: mockCandidates.filter((c) => c.status === "verified").length,
-      shortlisted: mockCandidates.filter((c) => c.status === "shortlisted").length,
-    });
-  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {

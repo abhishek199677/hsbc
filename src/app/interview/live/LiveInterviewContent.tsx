@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { uploadFile, buildPlaybackUrl } from "@/lib/uploadFile";
 import { 
   Video, VideoOff, Mic, MicOff, Phone, MessageSquare, 
-  Clock, CheckCircle, ArrowRight, Star, Loader, Send, Upload, Film
+  Clock, CheckCircle, ArrowRight, Star, Loader, Send, Upload, Film,
+  Captions, Keyboard, Download, X, ScrollText, ListChecks, Volume2
 } from "lucide-react";
 
 interface Message {
@@ -41,10 +43,31 @@ type SpeechRecognitionClass = new () => {
   stop: () => void;
 };
 
+interface QuestionScore {
+  question: string;
+  answer: string;
+  score: number;
+  feedback?: string;
+}
+
+interface Evaluation {
+  score?: number;
+  recommendation?: "Hire" | "Consider" | "Reject";
+  strengths?: string[];
+  weaknesses?: string[];
+  areasForImprovement?: string[];
+  topicsToLearn?: string[];
+  questionScores?: QuestionScore[];
+  [key: string]: unknown;
+}
+
 const getSpeechRecognition = (): SpeechRecognitionClass | null => {
   if (typeof window === "undefined") return null;
-  const w = window as any;
-  return (w.SpeechRecognition || w.webkitSpeechRecognition) as SpeechRecognitionClass || null;
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionClass;
+    webkitSpeechRecognition?: SpeechRecognitionClass;
+  };
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 };
 
 export default function LiveInterviewContent() {
@@ -62,15 +85,20 @@ export default function LiveInterviewContent() {
   const [showManualInput, setShowManualInput] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [noCamera, setNoCamera] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [evaluation, setEvaluation] = useState<any>(null);
+  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [captionUrl, setCaptionUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savingStatus, setSavingStatus] = useState("");
   const [startError, setStartError] = useState<string | null>(null);
-  const [supportsSpeech, setSupportsSpeech] = useState(true);
+  const [supportsSpeech] = useState(() => typeof window !== "undefined" && getSpeechRecognition() !== null);
+  const [showTranscript, setShowTranscript] = useState(true);
+  const [showCaptions, setShowCaptions] = useState(true);
+  const [useKeyboard, setUseKeyboard] = useState(false);
+  const [hasStream, setHasStream] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -78,17 +106,13 @@ export default function LiveInterviewContent() {
   const streamGenRef = useRef(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recorderChunksRef = useRef<Blob[]>([]);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<InstanceType<SpeechRecognitionClass> | null>(null);
   const listeningRef = useRef(false);
   const endedRef = useRef(false);
   const aiTypingRef = useRef(false);
   const messagesRef = useRef<Message[]>([]);
   const recordingStartRef = useRef<number>(0);
   const cuesRef = useRef<{ role: "user" | "assistant"; startMs: number }[]>([]);
-
-  useEffect(() => {
-    setSupportsSpeech(getSpeechRecognition() !== null);
-  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -118,10 +142,13 @@ export default function LiveInterviewContent() {
     };
   }, []);
 
-  const startPreview = async () => {
+  async function startPreview() {
     const gen = ++streamGenRef.current;
+    const noCamera = typeof window !== "undefined" && sessionStorage.getItem("tcNoCamera") === "1";
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia(
+        noCamera ? { video: false, audio: true } : { video: true, audio: true }
+      );
       if (gen !== streamGenRef.current) {
         stream.getTracks().forEach((track) => track.stop());
         return;
@@ -130,24 +157,29 @@ export default function LiveInterviewContent() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-      setVideoEnabled(true);
+      setHasStream(true);
+      setNoCamera(noCamera);
+      setVideoEnabled(!noCamera);
     } catch (error) {
       if (gen !== streamGenRef.current) return;
       console.error("Failed to get media:", error);
-      setStartError(
-        "Camera and microphone access is required for the recorded video interview. Please allow camera and mic access and reload the page."
-      );
+      setHasStream(false);
+      setNoCamera(noCamera);
       setVideoEnabled(false);
+      setStartError(
+        "Microphone access is required for the recorded interview. Please allow mic access and reload the page."
+      );
     }
-  };
+  }
 
-  const stopMedia = () => {
+  function stopMedia() {
     streamGenRef.current++;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-  };
+    setHasStream(false);
+  }
 
   const startRecorder = () => {
     if (!streamRef.current || typeof MediaRecorder === "undefined") return;
@@ -224,7 +256,7 @@ export default function LiveInterviewContent() {
     return lines.join("\n");
   };
 
-  const callAI = async (action: string, extra: any = {}) => {
+  const callAI = async (action: string, extra: Record<string, unknown> = {}) => {
     const response = await fetch("/api/ai-interview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -312,14 +344,14 @@ export default function LiveInterviewContent() {
     }
   };
 
-  const stopListening = () => {
+  function stopListening() {
     listeningRef.current = false;
     setIsListening(false);
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
     }
-  };
+  }
 
   const handleAnswer = async (text: string) => {
     if (aiTypingRef.current || endedRef.current) return;
@@ -345,7 +377,7 @@ export default function LiveInterviewContent() {
           await finishInterview();
         } else {
           await speakText(data.message);
-          if (!endedRef.current) startListening();
+          if (!endedRef.current && !useKeyboard) startListening();
         }
       } else {
         setShowManualInput(true);
@@ -364,18 +396,22 @@ export default function LiveInterviewContent() {
     setStartError(null);
     try {
       const videoTrack = streamRef.current?.getVideoTracks()[0];
-      if (!streamRef.current || !videoTrack || videoTrack.readyState === "ended") {
+      const noCameraMode = typeof window !== "undefined" && sessionStorage.getItem("tcNoCamera") === "1";
+      if (!streamRef.current || (!noCameraMode && (!videoTrack || videoTrack.readyState === "ended"))) {
         await startPreview();
         if (!streamRef.current) throw new Error("No media stream");
       }
       startRecorder();
 
+      const storedRole = typeof window !== "undefined" ? sessionStorage.getItem("tcRole") : null;
+      const storedLevel = typeof window !== "undefined" ? sessionStorage.getItem("tcLevel") : null;
+
       const data = await callAI("start", {
         profile: {
           name: user?.name || "Candidate",
-          currentRole: "Software Engineer",
-          totalExperience: "3+ years",
-          skills: "JavaScript, React, Node.js",
+          currentRole: storedRole || "Software Engineer",
+          totalExperience: storedLevel || "1-3 years",
+          skills: "As per candidate profile",
         },
       });
 
@@ -408,39 +444,29 @@ export default function LiveInterviewContent() {
     const blob = await stopRecorder();
 
     let url: string | null = null;
+    let playbackUrl: string | null = null;
     if (blob) {
       setSavingStatus("Uploading your interview video...");
       try {
-        const formData = new FormData();
         const ext = blob.type.includes("mp4") ? "mp4" : "webm";
-        formData.append("file", new File([blob], `interview-${Date.now()}.${ext}`, { type: blob.type || "video/webm" }));
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-        const uploadData = await uploadResponse.json();
-        if (uploadData.success) url = uploadData.file.url;
+        const file = new File([blob], `interview-${Date.now()}.${ext}`, { type: blob.type || "video/webm" });
+        const result = await uploadFile(file, "video", token);
+        url = result.url;
+        playbackUrl = result.publicUrl;
       } catch (error) {
         console.error("Upload failed:", error);
       }
     }
-    if (url) setVideoUrl(url);
+    if (url) setVideoUrl(playbackUrl || url);
 
     let captionFileUrl: string | null = null;
     try {
       const vtt = buildVtt(messagesRef.current, cuesRef.current, elapsedTime * 1000);
       if (vtt.trim() !== "WEBVTT") {
         setSavingStatus("Adding captions to your video...");
-        const captionForm = new FormData();
-        captionForm.append("file", new File([vtt], `captions-${Date.now()}.vtt`, { type: "text/vtt" }));
-        const captionResponse = await fetch("/api/upload", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: captionForm,
-        });
-        const captionData = await captionResponse.json();
-        if (captionData.success) captionFileUrl = captionData.file.url;
+        const captionFile = new File([vtt], `captions-${Date.now()}.vtt`, { type: "text/vtt" });
+        const captionResult = await uploadFile(captionFile, "caption", token);
+        captionFileUrl = captionResult.url;
       }
     } catch (error) {
       console.error("Caption upload failed:", error);
@@ -448,7 +474,7 @@ export default function LiveInterviewContent() {
     if (captionFileUrl) setCaptionUrl(captionFileUrl);
 
     setSavingStatus("Evaluating your interview...");
-    let parsedEvaluation: any = null;
+    let parsedEvaluation: Evaluation | null = null;
     let rawEvaluation = "";
     try {
       const data = await callAI("evaluate", {
@@ -472,7 +498,13 @@ export default function LiveInterviewContent() {
     const transcript = messagesRef.current
       .map((m) => `${m.role === "user" ? "Candidate" : "AI Interviewer"}: ${m.content}`)
       .join("\n");
-    const score = parsedEvaluation?.score ?? null;
+    const rawScore: unknown = parsedEvaluation?.score ?? null;
+    const score =
+      typeof rawScore === "number" && Number.isFinite(rawScore)
+        ? rawScore
+        : typeof rawScore === "string" && rawScore.trim() !== "" && !Number.isNaN(Number(rawScore))
+          ? Number(rawScore)
+          : null;
     try {
       await fetch("/api/interview", {
         method: "PATCH",
@@ -529,6 +561,42 @@ export default function LiveInterviewContent() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const wordCount = liveTranscript.trim() ? liveTranscript.trim().split(/\s+/).filter(Boolean).length : 0;
+  const questionNumber = messages.filter((m) => m.role === "assistant").length;
+  const lastAiMessage = [...messages].reverse().find((m) => m.role === "assistant");
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+
+  const pairedQa = (() => {
+    const pairs: { question: string; answer: string }[] = [];
+    for (let i = 0; i < messages.length - 1; i++) {
+      if (messages[i].role === "assistant" && messages[i + 1].role === "user") {
+        pairs.push({ question: messages[i].content, answer: messages[i + 1].content });
+      }
+    }
+    return pairs;
+  })();
+
+  const downloadTranscript = () => {
+    const text = messagesRef.current
+      .map((m) => `${m.role === "user" ? "Candidate" : "AI Interviewer"}: ${m.content}`)
+      .join("\n");
+    const blob = new Blob([`TECHCITTA AI INTERVIEW TRANSCRIPT\n${new Date().toLocaleString()}\n\n${text}`], {
+      type: "text/plain",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `interview-transcript-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const switchToKeyboard = () => {
+    stopListening();
+    setUseKeyboard(true);
+    setShowManualInput(true);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -567,13 +635,13 @@ export default function LiveInterviewContent() {
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Interview Recording</h3>
                   <video
-                    src={videoUrl}
+                    src={buildPlaybackUrl(videoUrl, token)}
                     controls
                     className="w-full rounded-xl bg-gray-900"
                     style={{ aspectRatio: "16/9" }}
                   >
                     {captionUrl && (
-                      <track kind="captions" src={captionUrl} srcLang="en" label="Simple English" default />
+                      <track kind="captions" src={buildPlaybackUrl(captionUrl, token)} srcLang="en" label="Simple English" default />
                     )}
                   </video>
                 </div>
@@ -583,15 +651,42 @@ export default function LiveInterviewContent() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900">Interview Evaluation</h3>
 
-                  {evaluation.score && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Score:</span>
-                      <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <Star key={i} className={`w-5 h-5 ${i <= evaluation.score / 2 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
-                        ))}
+                  {evaluation.score != null && Number.isFinite(Number(evaluation.score)) && (
+                    <div className="flex items-center gap-5 p-4 rounded-xl border border-gray-200 bg-gray-50">
+                      <div className="relative w-20 h-20 flex-shrink-0">
+                        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 48 48">
+                          <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" strokeWidth="5" />
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="20"
+                            fill="none"
+                            stroke={Number(evaluation.score) >= 7 ? "#22c55e" : Number(evaluation.score) >= 5 ? "#f59e0b" : "#ef4444"}
+                            strokeWidth="5"
+                            strokeLinecap="round"
+                            strokeDasharray={2 * Math.PI * 20}
+                            strokeDashoffset={2 * Math.PI * 20 * (1 - Math.min(Number(evaluation.score), 10) / 10)}
+                            className="transition-all duration-1000"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-900">
+                          {Number(evaluation.score).toFixed(1)}
+                        </span>
                       </div>
-                      <span className="font-bold text-gray-900">{evaluation.score}/10</span>
+                      <div>
+                        <p className="text-sm text-gray-500">Exact Interview Score</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <Star key={i} className={`w-5 h-5 ${i <= Math.round(Number(evaluation.score) / 2) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                            ))}
+                          </div>
+                          <span className="font-bold text-2xl text-gray-900">
+                            {Number(evaluation.score).toFixed(1)}
+                            <span className="text-sm text-gray-400 font-normal">/10</span>
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -648,11 +743,79 @@ export default function LiveInterviewContent() {
                       </p>
                     </div>
                   )}
+
+                  {evaluation.questionScores && evaluation.questionScores.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                        <ListChecks className="w-4 h-4 text-indigo-600" />
+                        Per-Question Breakdown
+                      </h4>
+                      <div className="space-y-3">
+                        {evaluation.questionScores.map((q: QuestionScore, i: number) => (
+                          <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
+                            <div className="p-3 bg-gray-50 border-b border-gray-100 flex items-start justify-between gap-3">
+                              <p className="text-sm text-gray-800 font-medium">
+                                <span className="text-indigo-600 font-bold">Q{i + 1}.</span> {q.question}
+                              </p>
+                              <span className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-bold ${
+                                Number(q.score) >= 7 ? "bg-green-100 text-green-700" : Number(q.score) >= 5 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
+                              }`}>
+                                {Number(q.score).toFixed(1)}/10
+                              </span>
+                            </div>
+                            <div className="p-3">
+                              <p className="text-xs text-gray-500 mb-1">
+                                <span className="font-semibold text-gray-700">Your answer:</span> {q.answer}
+                              </p>
+                              {q.feedback && (
+                                <p className="text-xs text-gray-600 mt-2 flex items-start gap-1.5">
+                                  <Volume2 className="w-3.5 h-3.5 mt-0.5 text-indigo-500 flex-shrink-0" />
+                                  {q.feedback}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-4">
                   <Loader className="animate-spin h-8 w-8 text-indigo-600 mx-auto" />
                   <p className="text-gray-500 mt-2">Generating evaluation...</p>
+                </div>
+              )}
+
+              {pairedQa.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <ScrollText className="w-5 h-5 text-indigo-600" />
+                    Questions & Your Answers
+                  </h3>
+                  <div className="space-y-4">
+                    {pairedQa.map((item, idx) => (
+                      <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="p-3 bg-indigo-50 border-b border-indigo-100">
+                          <p className="text-sm text-gray-800">
+                            <span className="font-bold text-indigo-700">Q{idx + 1}.</span> {item.question}
+                          </p>
+                        </div>
+                        <div className="p-3">
+                          <p className="text-sm text-gray-700">
+                            <span className="font-bold text-emerald-700 mr-1">You:</span> {item.answer}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={downloadTranscript}
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-200 text-indigo-600 text-sm font-medium hover:bg-indigo-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download full transcript (.txt)
+                  </button>
                 </div>
               )}
 
@@ -707,6 +870,11 @@ export default function LiveInterviewContent() {
               </div>
             )}
             <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-xs text-white">You</div>
+            {interviewStarted && showCaptions && (isListening || liveTranscript) && (
+              <div className="absolute bottom-10 left-2 right-2 px-3 py-2 bg-black/70 backdrop-blur rounded-lg text-sm text-white text-center">
+                {liveTranscript || <span className="text-white/70 animate-pulse">Listening — speak now…</span>}
+              </div>
+            )}
             {interviewStarted && !interviewEnded && (
               <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs text-white flex items-center gap-1">
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse" /> REC
@@ -722,27 +890,58 @@ export default function LiveInterviewContent() {
                 </div>
                 <p className="text-white font-medium">AI Interviewer</p>
                 <p className="text-white/70 text-sm">Techcitta</p>
+                {questionNumber > 0 && (
+                  <p className="text-white/80 text-xs mt-2 font-medium">Q{questionNumber}/5</p>
+                )}
               </div>
             </div>
             {isAiSpeaking && (
               <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-xs text-white">Speaking...</div>
             )}
+            {interviewStarted && showCaptions && isAiSpeaking && lastAiMessage && (
+              <div className="absolute bottom-10 left-2 right-2 px-3 py-2 bg-black/70 backdrop-blur rounded-lg text-sm text-white text-center">
+                {lastAiMessage.content.length > 180 ? lastAiMessage.content.slice(0, 180) + "…" : lastAiMessage.content}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-center gap-4 mt-4">
-            <button onClick={toggleVideo} disabled={!streamRef.current} className={`w-12 h-12 rounded-full flex items-center justify-center ${videoEnabled ? "bg-gray-700 text-white" : "bg-red-600 text-white"} disabled:opacity-50`}>
+            <button onClick={toggleVideo} disabled={!hasStream || noCamera} className={`w-12 h-12 rounded-full flex items-center justify-center ${videoEnabled ? "bg-gray-700 text-white" : "bg-red-600 text-white"} disabled:opacity-50`}>
               {videoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
             </button>
-            <button onClick={toggleAudio} disabled={!streamRef.current} className={`w-12 h-12 rounded-full flex items-center justify-center ${audioEnabled ? "bg-gray-700 text-white" : "bg-red-600 text-white"} disabled:opacity-50`}>
+            <button onClick={toggleAudio} disabled={!hasStream} className={`w-12 h-12 rounded-full flex items-center justify-center ${audioEnabled ? "bg-gray-700 text-white" : "bg-red-600 text-white"} disabled:opacity-50`}>
               {audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
             </button>
             <button onClick={finishInterview} disabled={!interviewStarted || saving} className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 disabled:opacity-50">
               <Phone className="w-5 h-5 rotate-[135deg]" />
             </button>
           </div>
+
+          <div className="flex justify-center gap-2 mt-3">
+            <button
+              onClick={() => setShowCaptions((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showCaptions ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
+            >
+              <Captions className="w-3.5 h-3.5" /> Captions
+            </button>
+            <button
+              onClick={() => setShowTranscript((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showTranscript ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
+            >
+              <ScrollText className="w-3.5 h-3.5" /> Transcript
+            </button>
+            {interviewStarted && (
+              <button
+                onClick={switchToKeyboard}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${useKeyboard ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
+              >
+                <Keyboard className="w-3.5 h-3.5" /> Keyboard
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="w-2/3 p-4 flex flex-col">
+        <div className="flex-1 p-4 flex flex-col">
           <div className="bg-gray-800 rounded-xl flex-1 flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -761,8 +960,9 @@ export default function LiveInterviewContent() {
                     </div>
                     <h3 className="text-xl font-semibold text-white mb-2">Ready to Start?</h3>
                     <p className="text-gray-400 mb-6 max-w-md">
-                      The AI interviewer will ask questions out loud and you answer by speaking.
-                      Your camera and voice are recorded for the evaluator to review.
+                      {noCamera
+                        ? "The AI interviewer will ask questions out loud and you answer by speaking. Your voice is recorded for the evaluator to review."
+                        : "The AI interviewer will ask questions out loud and you answer by speaking. Your camera and voice are recorded for the evaluator to review."}
                     </p>
                     {startError && (
                       <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 mb-4">
@@ -841,14 +1041,19 @@ export default function LiveInterviewContent() {
                       <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: "400ms" }} />
                     </div>
                     <span className="text-indigo-200 text-sm">Listening — speak your answer now</span>
+                    {wordCount > 0 && (
+                      <span className="px-2 py-0.5 bg-indigo-500/30 text-indigo-100 rounded-full text-xs font-medium">
+                        {wordCount} words
+                      </span>
+                    )}
                     <button
-                      onClick={() => setShowManualInput(true)}
-                      className="ml-auto text-xs text-indigo-300 hover:text-white underline"
+                      onClick={switchToKeyboard}
+                      className="ml-auto text-xs text-indigo-300 hover:text-white underline flex items-center gap-1"
                     >
-                      Type instead
+                      <Keyboard className="w-3.5 h-3.5" /> Type instead
                     </button>
                   </div>
-                ) : showManualInput || !supportsSpeech ? (
+                ) : showManualInput || !supportsSpeech || useKeyboard ? (
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -857,9 +1062,9 @@ export default function LiveInterviewContent() {
                       onKeyPress={(e) => e.key === "Enter" && sendManual()}
                       placeholder="Type your answer..."
                       className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
-                      disabled={aiTypingRef.current}
+                      disabled={isAiTyping}
                     />
-                    <button onClick={sendManual} disabled={!manualInput.trim() || aiTypingRef.current} className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                    <button onClick={sendManual} disabled={!manualInput.trim() || isAiTyping} className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
                       <Send className="w-5 h-5" />
                     </button>
                   </div>
@@ -873,6 +1078,95 @@ export default function LiveInterviewContent() {
             )}
           </div>
         </div>
+
+        {showTranscript && (
+          <div className="w-80 shrink-0 p-4 pl-0 flex flex-col">
+            <div className="bg-gray-800 rounded-xl flex-1 flex flex-col overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ScrollText className="w-5 h-5 text-emerald-400" />
+                  <span className="text-white font-medium">Live Transcript</span>
+                </div>
+                <button
+                  onClick={() => setShowTranscript(false)}
+                  className="text-gray-400 hover:text-white"
+                  aria-label="Close transcript"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {!interviewStarted ? (
+                  <div className="text-center py-10">
+                    <Captions className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+                    <p className="text-sm text-gray-400">Live captions will appear here once the interview starts.</p>
+                  </div>
+                ) : (
+                  <>
+                    {lastAiMessage && (
+                      <div>
+                        <p className="text-xs text-indigo-300 font-medium mb-2 flex items-center gap-1.5">
+                          <MessageSquare className="w-3.5 h-3.5" /> Question {questionNumber}
+                        </p>
+                        <div className="bg-gray-700/60 rounded-xl p-3 text-sm text-white leading-relaxed">
+                          {lastAiMessage.content}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-emerald-300 font-medium flex items-center gap-1.5">
+                          <Mic className="w-3.5 h-3.5" /> Your answer
+                        </p>
+                        <span className="text-[11px] text-gray-400">
+                          {isListening ? `${wordCount} words` : lastUserMessage ? `${(lastUserMessage.content.trim().split(/\s+/).filter(Boolean) || []).length} words` : "0 words"}
+                        </span>
+                      </div>
+                      <div className="rounded-xl p-3 text-sm min-h-[90px] leading-relaxed border border-indigo-500/30 bg-indigo-600/10 text-indigo-100">
+                        {isListening ? (
+                          liveTranscript ? (
+                            liveTranscript
+                          ) : (
+                            <span className="text-indigo-300 animate-pulse">Listening — speak your answer now…</span>
+                          )
+                        ) : lastUserMessage ? (
+                          lastUserMessage.content
+                        ) : (
+                          <span className="text-indigo-300/70">Speak now. Your answer appears here in real time.</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {isAiSpeaking && (
+                      <div className="text-xs text-gray-500 flex items-center gap-2">
+                        <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+                        The interviewer is speaking the question out loud…
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {interviewStarted && (
+                <div className="p-4 border-t border-gray-700">
+                  <button
+                    onClick={switchToKeyboard}
+                    className={`w-full py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                      useKeyboard
+                        ? "bg-emerald-600 text-white"
+                        : "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                    }`}
+                  >
+                    <Keyboard className="w-4 h-4" />
+                    {useKeyboard ? "Keyboard mode on" : "Use keyboard to answer"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {saving && (

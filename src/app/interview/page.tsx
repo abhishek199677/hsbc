@@ -27,10 +27,49 @@ export default function InterviewSchedulePage() {
   const router = useRouter();
   const { user, token } = useAuth();
   const [currentStep, setCurrentStep] = useState(4);
-  const [selectedDate, setSelectedDate] = useState(19);
   const [selectedTime, setSelectedTime] = useState("01:30 PM");
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 4)); // May 2025
   const [saving, setSaving] = useState(false);
+
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const [currentMonth, setCurrentMonth] = useState(() =>
+    new Date(today.getFullYear(), today.getMonth() + (today.getDate() > 25 ? 1 : 0), 1)
+  );
+
+  const isWeekend = (day: number) => {
+    const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).getDay();
+    return d === 0 || d === 6;
+  };
+
+  const isPastDay = (day: number) =>
+    new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) < todayMidnight;
+
+  const [selectedDate, setSelectedDate] = useState<number | null>(() => {
+    const y = currentMonth.getFullYear();
+    const m = currentMonth.getMonth();
+    for (let d = 1; d <= 28; d++) {
+      const date = new Date(y, m, d);
+      if (date.getDay() === 0 || date.getDay() === 6) continue;
+      if (date >= todayMidnight) return d;
+    }
+    return null;
+  });
+
+  const changeMonth = (offset: number) => {
+    const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
+    setCurrentMonth(next);
+    if (selectedDate === null) return;
+    const selected = new Date(next.getFullYear(), next.getMonth(), selectedDate);
+    if (selected.getDay() === 0 || selected.getDay() === 6 || selected < todayMidnight) {
+      for (let day = 1; day <= 28; day++) {
+        const cand = new Date(next.getFullYear(), next.getMonth(), day);
+        if (cand.getDay() !== 0 && cand.getDay() !== 6 && cand >= todayMidnight) {
+          setSelectedDate(day);
+          break;
+        }
+      }
+    }
+  };
 
   const progress = Math.round((currentStep / steps.length) * 100);
   const displayName = user?.name || "User";
@@ -46,14 +85,23 @@ export default function InterviewSchedulePage() {
   const { firstDay, daysInMonth } = getDaysInMonth(currentMonth);
   const monthName = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
 
-  const availableDays = [1, 2, 3, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 26, 27, 28, 29, 30];
   const limitedDays = [8, 9, 15, 16, 22, 23, 29, 30];
 
+  const selectedDateLabel =
+    selectedDate !== null
+      ? currentMonth.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+      : "Select a date";
+
+  const selectedDateShort =
+    selectedDate !== null
+      ? currentMonth.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+      : "Select a date";
+
   const saveInterview = async () => {
-    if (!token) return false;
+    if (!token || selectedDate === null) return false;
     setSaving(true);
     try {
-      const dateStr = `2025-05-${selectedDate.toString().padStart(2, '0')}`;
+      const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
       const response = await fetch("/api/interview", {
         method: "POST",
         headers: {
@@ -154,13 +202,13 @@ export default function InterviewSchedulePage() {
                   <h4 className="font-semibold text-gray-900">{monthName}</h4>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                      onClick={() => changeMonth(-1)}
                       className="p-1 hover:bg-gray-100 rounded"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                      onClick={() => changeMonth(1)}
                       className="p-1 hover:bg-gray-100 rounded"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -176,26 +224,25 @@ export default function InterviewSchedulePage() {
                   ))}
                   {Array.from({ length: daysInMonth }).map((_, i) => {
                     const day = i + 1;
-                    const isAvailable = availableDays.includes(day);
-                    const isLimited = limitedDays.includes(day);
+                    const isAvailable = !isWeekend(day) && !isPastDay(day);
+                    const isLimited = isAvailable && limitedDays.includes(day);
                     const isSelected = day === selectedDate;
-                    const isPast = day < 19 && currentMonth.getMonth() === 4 && currentMonth.getFullYear() === 2025;
 
                     return (
                       <button
                         key={day}
-                        onClick={() => isAvailable && !isPast && setSelectedDate(day)}
-                        disabled={!isAvailable || isPast}
+                        onClick={() => isAvailable && setSelectedDate(day)}
+                        disabled={!isAvailable}
                         className={`relative w-full aspect-square rounded-lg flex items-center justify-center text-sm transition-colors ${
                           isSelected
                             ? "bg-primary text-white"
-                            : isAvailable && !isPast
+                            : isAvailable
                             ? "hover:bg-gray-100 text-gray-900"
                             : "text-gray-300 cursor-not-allowed"
                         }`}
                       >
                         {day}
-                        {isAvailable && !isPast && !isSelected && (
+                        {isAvailable && !isSelected && (
                           <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${isLimited ? "bg-yellow-500" : "bg-green-500"}`} />
                         )}
                       </button>
@@ -211,7 +258,7 @@ export default function InterviewSchedulePage() {
 
               {/* Time Slots */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-4">Monday, {selectedDate} May 2025 ☀️</h4>
+                <h4 className="font-semibold text-gray-900 mb-4">{selectedDateLabel} ☀️</h4>
                 <div className="space-y-6">
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-3">Morning</p>
@@ -268,7 +315,7 @@ export default function InterviewSchedulePage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900">You&apos;ve selected</p>
-                <p className="text-sm text-gray-600">Mon, 19 May 2025</p>
+                <p className="text-sm text-gray-600">{selectedDateShort}</p>
                 <p className="text-sm text-gray-600">{selectedTime} (IST)</p>
               </div>
             </div>
@@ -302,7 +349,7 @@ export default function InterviewSchedulePage() {
             </button>
             <div className="flex gap-3">
               <Link
-                href="/interview/live"
+                href="/interview/room"
                 className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
               >
                 <Video className="w-4 h-4" />
@@ -310,7 +357,7 @@ export default function InterviewSchedulePage() {
               </Link>
               <button
                 onClick={handleConfirm}
-                disabled={saving}
+                disabled={saving || selectedDate === null}
                 className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Confirm & Continue"}

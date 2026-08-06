@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useSyncExternalStore, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 interface User {
@@ -34,46 +34,64 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function subscribeToStorage(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  return () => window.removeEventListener("storage", onStoreChange);
+}
+
+function subscribeNever() {
+  return () => {};
+}
+
+const cache = new Map<string, { raw: string | null; value: unknown }>();
+
+function readStored<T>(key: string, parse: (raw: string) => T): T | null {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+  const cached = cache.get(key);
+  if (cached && cached.raw === raw) return cached.value as T | null;
+  let value: T | null = null;
+  if (raw !== null) {
+    try {
+      value = parse(raw);
+    } catch {
+      value = null;
+    }
+  }
+  cache.set(key, { raw, value });
+  return value;
+}
+
+function useStoredState<T>(key: string, parse: (raw: string) => T): T | null {
+  return useSyncExternalStore(
+    subscribeToStorage,
+    () => readStored<T>(key, parse),
+    () => null
+  );
+}
+
+function useHydrated() {
+  return useSyncExternalStore(subscribeNever, () => true, () => false);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [organization, setOrganization] = useState<Organization | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
-  useEffect(() => {
-    // Check for stored auth data on mount
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    const storedOrg = localStorage.getItem("organization");
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    if (storedOrg) {
-      try {
-        setOrganization(JSON.parse(storedOrg));
-      } catch {
-        setOrganization(null);
-      }
-    }
-    setIsLoading(false);
-  }, []);
+  const user = useStoredState<User>("user", (raw) => JSON.parse(raw));
+  const token = useStoredState<string>("token", (raw) => raw);
+  const organization = useStoredState<Organization>("organization", (raw) => JSON.parse(raw));
+  const isLoading = !useHydrated();
 
   const login = (newToken: string, newUser: User, newOrganization: Organization) => {
-    setToken(newToken);
-    setUser(newUser);
-    setOrganization(newOrganization);
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     localStorage.setItem("organization", JSON.stringify(newOrganization));
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
-    setOrganization(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("organization");

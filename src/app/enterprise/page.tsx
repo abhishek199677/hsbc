@@ -133,7 +133,7 @@ export default function EnterprisePage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Choose the plan that fits your organization's needs
+              Choose the plan that fits your organization&apos;s needs
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">

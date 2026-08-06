@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import { resolvePublicUrl } from "@/lib/storage";
 
 export async function GET(request: Request) {
   try {
@@ -50,7 +51,21 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ success: true, users });
+    // Resolve stored video path to a short-lived presigned URL for playback.
+    // Captions stay same-origin (served via /api/files) so the <track> loads without CORS.
+    const resolved = await Promise.all(
+      users.map(async (user) => ({
+        ...user,
+        interview: user.interview
+          ? {
+              ...user.interview,
+              videoUrl: await resolvePublicUrl(user.interview.videoUrl),
+            }
+          : null,
+      }))
+    );
+
+    return NextResponse.json({ success: true, users: resolved });
   } catch (error) {
     console.error("Get users error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
