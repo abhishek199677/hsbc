@@ -1,3 +1,23 @@
+<div align="center">
+
+<img src="/logo.jpeg" alt="Techcitta logo" width="120" />
+
+# Techcitta
+
+**AI-powered background screening, job matching & video interviews**
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![OpenAI](https://img.shields.io/badge/OpenAI-gpt--5--nano-412991?logo=openai&logoColor=white)](https://openai.com)
+
+Runs free on Vercel + Cloudflare R2 + Turso. Stripe billing, email verification, GDPR, timezone-aware reminders, and plan-based limits built in.
+
+</div>
+
+---
+
 # Techcitta - Full Stack Application
 
 A complete background screening and job matching platform with Admin Portal and AI Video Interview.
