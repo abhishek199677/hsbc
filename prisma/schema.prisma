@@ -119,6 +119,11 @@ model Interview {
   transcript      String?
   evaluation      String?
   evaluationScore Float?
+
+  // Proctoring (anti-cheating)
+  proctoringReport  String? // JSON ProctoringReport
+  proctoringFlags   Int     @default(0)
+  proctoringStatus  String? // pass, review, fail, off
   
   emailSent       Boolean   @default(false)
   whatsappSent    Boolean   @default(false)

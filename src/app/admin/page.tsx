@@ -34,8 +34,18 @@ interface User {
     videoUrl: string | null;
     captionUrl: string | null;
     evaluationScore: number | null;
+    proctoringStatus?: string | null;
+    proctoringFlags?: number;
+    proctoringReport?: string | null;
   };
 }
+
+const PROCTOR_BADGE: Record<string, { label: string; classes: string }> = {
+  pass: { label: "✓ Clean", classes: "bg-green-100 text-green-700" },
+  review: { label: "⚠ Review", classes: "bg-yellow-100 text-yellow-700" },
+  fail: { label: "⚠ Failed", classes: "bg-red-100 text-red-700" },
+  off: { label: "Monitor off", classes: "bg-gray-100 text-gray-600" },
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -301,6 +311,7 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proctoring</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
@@ -332,6 +343,24 @@ export default function AdminDashboard() {
                           }`}>
                             {user.interview?.status || "Unknown"}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {user.interview?.proctoringStatus ? (
+                            <div>
+                              <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                                PROCTOR_BADGE[user.interview.proctoringStatus]?.classes || "bg-gray-100 text-gray-600"
+                              }`}>
+                                {PROCTOR_BADGE[user.interview.proctoringStatus]?.label || user.interview.proctoringStatus}
+                              </span>
+                              {(user.interview.proctoringFlags ?? 0) > 0 && (
+                                <p className="text-[11px] text-gray-500 mt-1">
+                                  {user.interview.proctoringFlags} incident(s)
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">—</span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">

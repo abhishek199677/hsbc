@@ -191,7 +191,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { videoUrl, captionUrl, evaluation, evaluationScore, transcript, status } = body;
+    const { videoUrl, captionUrl, evaluation, evaluationScore, transcript, status, proctoringReport, proctoringFlags, proctoringStatus } = body;
 
     const existingInterview = await prisma.interview.findUnique({
       where: { userId: user.userId },
@@ -210,6 +210,20 @@ export async function PATCH(request: Request) {
         evaluationScore: evaluationScore ?? existingInterview.evaluationScore,
         transcript: transcript ?? existingInterview.transcript,
         status: status ?? "completed",
+        proctoringReport:
+          typeof proctoringReport === "string" || proctoringReport === null
+            ? proctoringReport
+            : proctoringReport !== undefined
+              ? JSON.stringify(proctoringReport)
+              : existingInterview.proctoringReport,
+        proctoringFlags:
+          typeof proctoringFlags === "number"
+            ? proctoringFlags
+            : existingInterview.proctoringFlags,
+        proctoringStatus:
+          typeof proctoringStatus === "string"
+            ? proctoringStatus
+            : existingInterview.proctoringStatus,
       },
     });
 

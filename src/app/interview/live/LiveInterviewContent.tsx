@@ -4,11 +4,33 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadFile, buildPlaybackUrl } from "@/lib/uploadFile";
+import {
+  createProctor,
+  type ProctorHandle,
+  type ProctorIncident,
+  type ProctoringReport,
+  type ProctorStatus,
+} from "@/lib/proctor";
 import { 
   Video, VideoOff, Mic, MicOff, Phone, MessageSquare, 
   Clock, CheckCircle, ArrowRight, Star, Loader, Send, Upload, Film,
-  Captions, Keyboard, Download, X, ScrollText, ListChecks, Volume2
+  Captions, Keyboard, Download, X, ScrollText, ListChecks, Volume2,
+  AlertTriangle, ShieldCheck, ShieldAlert
 } from "lucide-react";
+
+const PROCTOR_MESSAGES: Record<string, string> = {
+  look_away: "Malpractice alert: you looked away from the camera!",
+  face_hidden: "Malpractice alert: your face is not visible!",
+  multiple_faces: "Malpractice alert: multiple people detected in frame!",
+  eyes_closed: "Keep your eyes on the screen.",
+};
+
+const PROCTOR_INCIDENT_LABELS: Record<string, string> = {
+  look_away: "Looked away from camera",
+  face_hidden: "Face not visible",
+  multiple_faces: "Multiple people in frame",
+  eyes_closed: "Eyes closed",
+};
 
 interface Message {
   role: "user" | "assistant";
@@ -99,6 +121,10 @@ export default function LiveInterviewContent() {
   const [showCaptions, setShowCaptions] = useState(true);
   const [useKeyboard, setUseKeyboard] = useState(false);
   const [hasStream, setHasStream] = useState(false);
+  const [proctorStatus, setProctorStatus] = useState<ProctorStatus>({ state: "off" });
+  const [proctorLoading, setProctorLoading] = useState(false);
+  const [proctorWarnings, setProctorWarnings] = useState(0);
+  const [proctorReport, setProctorReport] = useState<ProctoringReport | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -113,6 +139,7 @@ export default function LiveInterviewContent() {
   const messagesRef = useRef<Message[]>([]);
   const recordingStartRef = useRef<number>(0);
   const cuesRef = useRef<{ role: "user" | "assistant"; startMs: number }[]>([]);
+  const proctorRef = useRef<ProctorHandle | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -138,6 +165,7 @@ export default function LiveInterviewContent() {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         try { mediaRecorderRef.current.stop(); } catch {}
       }
+      stopProctor();
       stopMedia();
     };
   }, []);
@@ -160,6 +188,7 @@ export default function LiveInterviewContent() {
       setHasStream(true);
       setNoCamera(noCamera);
       setVideoEnabled(!noCamera);
+      initProctor();
     } catch (error) {
       if (gen !== streamGenRef.current) return;
       console.error("Failed to get media:", error);
@@ -180,6 +209,85 @@ export default function LiveInterviewContent() {
     }
     setHasStream(false);
   }
+
+  const playWarningBeep = () => {
+    try {
+      const w = window as unknown as { webkitAudioContext?: typeof AudioContext };
+      const Ctx = window.AudioContext || w.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+      osc.onended = () => ctx.close();
+    } catch {}
+  };
+
+  const initProctor = async () => {
+    if (proctorRef.current || typeof window === "undefined") return;
+    const noCameraMode = sessionStorage.getItem("tcNoCamera") === "1";
+    if (noCameraMode || !videoRef.current) {
+      setProctorStatus({ state: "off" });
+      return;
+    }
+    setProctorLoading(true);
+    try {
+      const handle = await createProctor(
+        videoRef.current,
+        {
+          onStatus: (status) => setProctorStatus(status),
+          onIncident: (incident: ProctorIncident, report: ProctoringReport) => {
+            setProctorReport(report);
+            setProctorWarnings((w) => w + 1);
+            playWarningBeep();
+          },
+        },
+        {}
+      );
+      proctorRef.current = handle;
+      handle.start();
+      setProctorLoading(false);
+      setProctorStatus({ state: "ok" });
+    } catch (error) {
+      console.error("Failed to start proctoring:", error);
+      setProctorLoading(false);
+      setProctorStatus({ state: "off" });
+      setProctorReport({
+        enabled: false,
+        reason: "Proctoring engine could not be loaded on this device.",
+        durationMs: 0,
+        incidents: [],
+        lookAwayCount: 0,
+        faceHiddenCount: 0,
+        multipleFacesCount: 0,
+        eyesClosedCount: 0,
+        totalLookAwayMs: 0,
+        result: "off",
+      });
+    }
+  };
+
+  const stopProctor = (): ProctoringReport | null => {
+    if (proctorRef.current) {
+      const report = proctorRef.current.stop();
+      proctorRef.current = null;
+      return report;
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    if (interviewStarted && !interviewEnded) {
+      proctorRef.current?.start();
+    }
+  }, [interviewStarted, interviewEnded]);
 
   const startRecorder = () => {
     if (!streamRef.current || typeof MediaRecorder === "undefined") return;
@@ -441,6 +549,8 @@ export default function LiveInterviewContent() {
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
+    const proctorReport = stopProctor();
+    if (proctorReport) setProctorReport(proctorReport);
     setSaving(true);
     setSavingStatus("Stopping recording...");
 
@@ -483,6 +593,7 @@ export default function LiveInterviewContent() {
       const data = await callAI("evaluate", {
         profile: { name: user?.name || "Candidate", currentRole: "Software Engineer" },
         conversationHistory: messagesRef.current,
+        proctoring: proctorReport,
       });
       if (data.success) {
         rawEvaluation = data.evaluation;
@@ -522,6 +633,9 @@ export default function LiveInterviewContent() {
           evaluationScore: score,
           transcript,
           status: "completed",
+          proctoringReport: proctorReport,
+          proctoringFlags: proctorReport ? proctorReport.incidents.length : 0,
+          proctoringStatus: proctorReport ? proctorReport.result : "off",
         }),
       });
     } catch (error) {
@@ -633,6 +747,82 @@ export default function LiveInterviewContent() {
                   <p className="text-sm text-gray-500">Exchanges</p>
                 </div>
               </div>
+
+              {proctorReport && (
+                <div className={`mb-6 rounded-xl border p-4 ${
+                  proctorReport.result === "pass"
+                    ? "border-emerald-200 bg-emerald-50"
+                    : proctorReport.result === "review"
+                    ? "border-yellow-200 bg-yellow-50"
+                    : proctorReport.result === "fail"
+                    ? "border-red-200 bg-red-50"
+                    : "border-gray-200 bg-gray-50"
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-gray-700" />
+                      Anti-Cheating Monitor
+                    </h3>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                      proctorReport.result === "pass"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : proctorReport.result === "review"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : proctorReport.result === "fail"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-gray-200 text-gray-600"
+                    }`}>
+                      {proctorReport.result === "pass" ? "Clean"
+                        : proctorReport.result === "review" ? "Flagged for review"
+                        : proctorReport.result === "fail" ? "Failed"
+                        : "Not active"}
+                    </span>
+                  </div>
+                  {proctorReport.enabled ? (
+                    <>
+                      <p className="text-sm text-gray-600">
+                        {proctorReport.incidents.length === 0
+                          ? "No integrity violations detected. You kept facing the camera throughout."
+                          : `${proctorReport.incidents.length} malpractice incident(s) were recorded during your interview.`}
+                      </p>
+                      {proctorReport.incidents.length > 0 && (
+                        <ul className="mt-3 space-y-2">
+                          {proctorReport.incidents.map((inc, i) => (
+                            <li key={i} className="text-xs text-gray-700 flex items-start gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 text-red-500 flex-shrink-0" />
+                              <span>
+                                <strong>{PROCTOR_INCIDENT_LABELS[inc.type] || inc.type}</strong>
+                                {inc.detail ? ` — ${inc.detail}` : ""}
+                                {` (${Math.max(1, Math.round((inc.endMs - inc.startMs) / 1000))}s)`}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {proctorReport.totalLookAwayMs > 0 && (
+                        <p className="mt-2 text-xs text-gray-500">
+                          Total time looking away from the camera: {Math.round(proctorReport.totalLookAwayMs / 1000)}s
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      {proctorReport.reason || "Proctoring was not active for this interview."}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {evaluation && typeof evaluation.integrity === "string" && evaluation.integrity !== "clean" && (
+                <div className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">
+                    <strong>Integrity flag:</strong> {evaluation.integrity === "failed"
+                      ? "This interview was marked as failed due to suspected malpractice."
+                      : "The evaluator flagged suspected malpractice in this interview."}
+                  </p>
+                </div>
+              )}
 
               {videoUrl && (
                 <div className="mb-6">
@@ -850,6 +1040,31 @@ export default function LiveInterviewContent() {
               <Clock className="w-4 h-4" />
               <span className="font-mono">{formatTime(elapsedTime)}</span>
             </div>
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                proctorStatus.state === "violating"
+                  ? "bg-red-600 text-white animate-pulse"
+                  : proctorStatus.state === "ok"
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : proctorLoading
+                  ? "bg-amber-500/20 text-amber-300"
+                  : "bg-gray-700 text-gray-400"
+              }`}
+              title={proctorStatus.state === "violating" ? (proctorStatus.detail || "Malpractice detected") : "Anti-cheating monitor"}
+            >
+              {proctorStatus.state === "violating" ? (
+                <ShieldAlert className="w-3.5 h-3.5" />
+              ) : (
+                <ShieldCheck className="w-3.5 h-3.5" />
+              )}
+              {proctorStatus.state === "violating"
+                ? "Alert"
+                : proctorStatus.state === "ok"
+                ? "Monitoring"
+                : proctorLoading
+                ? "Starting monitor..."
+                : "Monitor off"}
+            </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-400">15:00</span>
               <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -881,6 +1096,18 @@ export default function LiveInterviewContent() {
             {interviewStarted && !interviewEnded && (
               <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs text-white flex items-center gap-1">
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse" /> REC
+              </div>
+            )}
+            {proctorStatus.state === "violating" && (
+              <div className="absolute top-2 left-2 right-2 z-10 px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg flex items-center gap-2 animate-pulse shadow-lg">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>{PROCTOR_MESSAGES[proctorStatus.type] || "Malpractice detected!"}</span>
+              </div>
+            )}
+            {proctorWarnings > 0 && proctorStatus.state !== "violating" && interviewStarted && !interviewEnded && (
+              <div className="absolute bottom-2 left-2 px-2 py-1 bg-red-500/90 rounded text-xs text-white flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                {proctorWarnings} warning{proctorWarnings === 1 ? "" : "s"}
               </div>
             )}
           </div>
@@ -967,6 +1194,21 @@ export default function LiveInterviewContent() {
                         ? "The AI interviewer will ask questions out loud and you answer by speaking. Your voice is recorded for the evaluator to review."
                         : "The AI interviewer will ask questions out loud and you answer by speaking. Your camera and voice are recorded for the evaluator to review."}
                     </p>
+                    {!noCamera && (
+                      <div className={`mb-4 text-xs rounded-lg p-3 flex items-start gap-2 text-left ${
+                        proctorStatus.state === "ok" || proctorStatus.state === "violating"
+                          ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300"
+                          : proctorLoading
+                          ? "bg-amber-500/10 border border-amber-500/30 text-amber-300"
+                          : "bg-gray-700/40 border border-gray-600/40 text-gray-400"
+                      }`}>
+                        <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>
+                          <strong>Anti-cheating monitoring is {proctorStatus.state === "off" && !proctorLoading ? "not available" : "active"}:</strong>{" "}
+                          keep looking at the camera. Turning your head, looking away, or hiding your face is flagged as malpractice and appears in your evaluation.
+                        </span>
+                      </div>
+                    )}
                     {startError && (
                       <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 mb-4">
                         {startError}

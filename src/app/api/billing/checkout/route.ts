@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
-import { getStripe, getPriceIds, isStripeConfigured } from "@/lib/stripe";
+import { getStripe, getPriceId, isStripeConfigured, isTaxEnabled } from "@/lib/stripe";
 import { getAppBaseUrl } from "@/lib/email";
 import { rateLimitByIp } from "@/lib/rateLimit";
+import { isSupportedCurrency } from "@/lib/pricing";
 
 const PLANS = ["pro", "enterprise"] as const;
 
@@ -32,8 +33,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
-    const priceIds = getPriceIds();
-    const priceId = plan === "pro" ? priceIds.pro : priceIds.enterprise;
+    const currency = typeof body?.currency === "string" && isSupportedCurrency(body.currency)
+      ? body.currency
+      : "USD";
+
+    const priceId = getPriceId(plan, currency);
     if (!priceId) {
       return NextResponse.json({ error: "Price not configured for this plan" }, { status: 500 });
     }
@@ -69,14 +73,19 @@ export async function POST(request: Request) {
       });
     }
 
+    const tax = isTaxEnabled()
+      ? { enabled: true }
+      : { enabled: false };
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
+      automatic_tax: tax,
       success_url: `${baseUrl}/profile?checkout=success`,
       cancel_url: `${baseUrl}/profile?checkout=cancel`,
       client_reference_id: org.id,
-      metadata: { organizationId: org.id, plan },
+      metadata: { organizationId: org.id, plan, currency },
     });
 
     return NextResponse.json({ url: session.url });

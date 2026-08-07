@@ -16,6 +16,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PLAN_PRICES_USD, formatPrice } from "@/lib/pricing";
+import { useCurrency } from "@/lib/useCurrency";
+import CurrencySelector from "@/components/CurrencySelector";
 
 const TIMEZONES = [
   "Asia/Kolkata",
@@ -39,7 +42,6 @@ const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    price: "₹999",
     period: "/month",
     features: [
       "100 interviews / month",
@@ -52,7 +54,6 @@ const PLANS = [
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "₹2,999",
     period: "/month",
     features: [
       "Unlimited interviews",
@@ -72,6 +73,7 @@ interface AccountInfo {
 export default function SettingsPage() {
   const router = useRouter();
   const { user, token, logout, isLoading: authLoading } = useAuth();
+  const { currency } = useCurrency();
   const [info, setInfo] = useState<AccountInfo | null>(null);
   const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [timezoneSaving, setTimezoneSaving] = useState(false);
@@ -166,7 +168,7 @@ export default function SettingsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token || ""}`,
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, currency }),
       });
       const data = await response.json();
       if (data.billingDisabled) {
@@ -329,6 +331,13 @@ export default function SettingsPage() {
             </span>
           </div>
 
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-xs text-gray-500">
+              Prices shown in your currency. Billed by Stripe in the plan&apos;s currency.
+            </p>
+            <CurrencySelector className="bg-white rounded-lg border border-gray-200 px-2 py-1" />
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             {PLANS.map((p) => {
               const isCurrent = plan === p.id;
@@ -349,7 +358,9 @@ export default function SettingsPage() {
                     )}
                   </div>
                   <div className="mb-3">
-                    <span className="text-2xl font-bold text-gray-900">{p.price}</span>
+                    <span className="text-2xl font-bold text-gray-900">
+                      {formatPrice(PLAN_PRICES_USD[p.id].monthly, currency)}
+                    </span>
                     <span className="text-sm text-gray-500">{p.period}</span>
                   </div>
                   <ul className="space-y-1 mb-4">

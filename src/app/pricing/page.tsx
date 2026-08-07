@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import { CheckCircle, Sparkles } from "lucide-react";
+import { PLAN_PRICES_USD, formatPrice } from "@/lib/pricing";
+import { useCurrency } from "@/lib/useCurrency";
+import CurrencySelector from "@/components/CurrencySelector";
 
 const PLANS = [
   {
     id: "starter",
     name: "Starter",
-    price: "₹0",
     period: "forever",
     description: "For trying out the AI interview platform.",
     features: [
@@ -21,7 +25,6 @@ const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    price: "₹999",
     period: "/month",
     description: "For growing teams that screen regularly.",
     features: [
@@ -38,7 +41,6 @@ const PLANS = [
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "₹2,999",
     period: "/month",
     description: "For organizations with high-volume hiring.",
     features: [
@@ -55,6 +57,8 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
+  const { currency } = useCurrency();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
       <div className="max-w-6xl mx-auto px-4 py-20">
@@ -65,6 +69,9 @@ export default function PricingPage() {
           <p className="text-slate-300 text-lg max-w-2xl mx-auto">
             Start free, upgrade when you need more interviews. No hidden fees, cancel anytime.
           </p>
+          <div className="mt-6 flex justify-center">
+            <CurrencySelector className="bg-white/5 rounded-lg px-2 py-1" />
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -86,7 +93,9 @@ export default function PricingPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h2>
               <p className="text-sm text-gray-500 mb-4">{plan.description}</p>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                <span className="text-4xl font-bold text-gray-900">
+                  {formatPrice(PLAN_PRICES_USD[plan.id].monthly, currency)}
+                </span>
                 <span className="text-gray-500"> {plan.period}</span>
               </div>
               <ul className="space-y-2.5 mb-8 flex-1">

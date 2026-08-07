@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { Building2, CheckCircle, ArrowRight, Users, Zap, Lock, BarChart3, Globe, Headphones } from "lucide-react";
+import { VERIFICATION_PRICES_USD, formatPrice } from "@/lib/pricing";
+import { useCurrency } from "@/lib/useCurrency";
+import CurrencySelector from "@/components/CurrencySelector";
 
 const features = [
   {
@@ -39,7 +42,7 @@ const features = [
 const plans = [
   {
     name: "Startup",
-    price: "₹9,999",
+    usd: VERIFICATION_PRICES_USD.startup.monthly,
     period: "/month",
     features: ["Up to 100 verifications", "Basic analytics", "Email support", "API access"],
     cta: "Start Free Trial",
@@ -47,7 +50,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "₹49,999",
+    usd: VERIFICATION_PRICES_USD.business.monthly,
     period: "/month",
     features: ["Up to 1,000 verifications", "Advanced analytics", "Priority support", "Custom integrations", "Dedicated account manager"],
     cta: "Get Started",
@@ -55,7 +58,8 @@ const plans = [
   },
   {
     name: "Enterprise",
-    price: "Custom",
+    usd: null,
+    custom: true,
     period: "",
     features: ["Unlimited verifications", "Enterprise analytics", "24/7 support", "Custom workflows", "SLA guarantee", "On-premise option"],
     cta: "Contact Sales",
@@ -64,6 +68,7 @@ const plans = [
 ];
 
 export default function EnterprisePage() {
+  const { currency } = useCurrency();
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
@@ -135,6 +140,9 @@ export default function EnterprisePage() {
             <p className="text-gray-600 max-w-2xl mx-auto">
               Choose the plan that fits your organization&apos;s needs
             </p>
+            <div className="mt-6 flex justify-center">
+              <CurrencySelector className="rounded-lg border border-gray-200 bg-white px-2 py-1" />
+            </div>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan) => (
@@ -151,7 +159,9 @@ export default function EnterprisePage() {
                 )}
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                  <span className="text-4xl font-bold text-gray-900">
+                    {plan.custom ? "Custom" : formatPrice(plan.usd!, currency)}
+                  </span>
                   <span className="text-gray-500">{plan.period}</span>
                 </div>
                 <ul className="space-y-3 mb-8">

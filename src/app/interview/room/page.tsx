@@ -85,6 +85,7 @@ const levels = [
 
 const tips = [
   { icon: Sun, text: "Sit in a quiet, well-lit space" },
+  { icon: ShieldCheck, text: "Anti-cheating monitor is ON — keep looking at the camera" },
   { icon: Monitor, text: "Look at the camera when you answer" },
   { icon: MessagesSquare, text: "Speak clearly — I listen and transcribe live" },
   { icon: Clock, text: "You have up to 3 minutes per question" },

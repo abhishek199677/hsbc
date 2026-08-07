@@ -52,6 +52,11 @@ A complete background screening and job matching platform with Admin Portal and 
 - Topics to learn & grow
 - Hire/Consider/Pass recommendation
 - Recorded video with generated .vtt captions
+- **Anti-cheating (AI proctoring)**: on-device face & gaze detection (MediaPipe).
+  Turning your head, looking away from the screen, hiding your face, or a second
+  person in frame triggers a live red-flag warning, is logged as an incident, and
+  is factored into the evaluation (`integrity: clean/flagged/failed`). Admins see
+  a per-interview proctoring badge with incident counts.
 
 ## Pages
 
@@ -183,8 +188,23 @@ bytes never go through your hosting function or count against its bandwidth.
 4. Register a webhook endpoint: `https://your-app.vercel.app/api/billing/webhook` with events
    `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
    and put the signing secret in `STRIPE_WEBHOOK_SECRET`.
-5. Plans: **Starter** (free, 3 interviews/month), **Pro** (₹999/mo, 100), **Enterprise** (₹2,999/mo, unlimited).
+5. Plans: **Starter** (free, 3 interviews/month), **Pro** (₹999/mo), **Enterprise** (₹2,999/mo).
    Limits are enforced when scheduling interviews; subscriptions are tracked per organization.
+
+### Selling worldwide (multi-currency + tax)
+
+- Prices are configured in USD (`src/lib/pricing.ts`) and displayed in the visitor's currency
+  (INR, EUR, GBP, AED, SGD, CAD, AUD) with a currency selector on `/pricing`, `/settings` and
+  `/enterprise`. The visitor's choice is sent to checkout.
+- To actually charge in that currency, create a matching recurring **Price** in Stripe and set the
+  ID as `STRIPE_PRICE_PRO_USD`, `STRIPE_PRICE_PRO_EUR`, `STRIPE_PRICE_PRO_INR`, etc. (and the
+  `ENTERPRISE` equivalents). Checkout falls back to the default price when no currency-specific
+  price exists.
+- **Sales tax / VAT**: enable Stripe Tax in the dashboard, then set `STRIPE_TAX_ENABLED="true"` in
+  your environment. Checkout then collects and remits tax automatically based on the customer's
+  billing address.
+- Currency conversion rates are indicative and only used for display — the Stripe Prices are
+  always the source of truth for what is charged.
 
 ## Email Verification & Password Reset
 
@@ -236,4 +256,5 @@ npm run build     # typecheck + production build
 - Prisma (SQLite / Turso)
 - Cloudflare R2 (video & file storage, presigned URLs)
 - OpenAI gpt-5-nano
+- MediaPipe FaceLandmarker (on-device anti-cheating / proctoring)
 - Nodemailer
