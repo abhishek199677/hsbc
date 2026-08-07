@@ -5,6 +5,7 @@ import {
   buildReport,
   classifyFrame,
   estimateHeadYawRatio,
+  estimateIrisOutwardOffsets,
   evaluateReport,
   getBlendScore,
   type ProctorIncident,
@@ -17,6 +18,32 @@ function makeLandmarks(noseX: number, rightEyeX: number, leftEyeX: number) {
   points[4] = mk(noseX);
   points[33] = mk(rightEyeX);
   points[263] = mk(leftEyeX);
+  return points;
+}
+
+function makeFaceLandmarks(opts: {
+  rightIrisX?: number;
+  leftIrisX?: number;
+  rightInnerX?: number;
+  rightOuterX?: number;
+  leftInnerX?: number;
+  leftOuterX?: number;
+} = {}) {
+  const {
+    rightIrisX = 0.5,
+    leftIrisX = 0.5,
+    rightInnerX = 0.45,
+    rightOuterX = 0.55,
+    leftInnerX = 0.55,
+    leftOuterX = 0.45,
+  } = opts;
+  const points = Array.from({ length: 478 }, () => mk(0.5));
+  points[468] = mk(rightIrisX);
+  points[473] = mk(leftIrisX);
+  points[133] = mk(rightInnerX);
+  points[33] = mk(rightOuterX);
+  points[362] = mk(leftInnerX);
+  points[263] = mk(leftOuterX);
   return points;
 }
 
@@ -39,6 +66,33 @@ describe("estimateHeadYawRatio", () => {
   it("returns null for empty/too-short landmark lists", () => {
     expect(estimateHeadYawRatio(null)).toBeNull();
     expect(estimateHeadYawRatio([])).toBeNull();
+  });
+});
+
+describe("estimateIrisOutwardOffsets", () => {
+  it("reports ~0.5 (centered) when both irises sit mid-eye", () => {
+    const { left, right } = estimateIrisOutwardOffsets(makeFaceLandmarks());
+    expect(right).toBeCloseTo(0.5, 5);
+    expect(left).toBeCloseTo(0.5, 5);
+  });
+
+  it("detects an outward-right glance via the right iris", () => {
+    const { right } = estimateIrisOutwardOffsets(
+      makeFaceLandmarks({ rightIrisX: 0.54, leftIrisX: 0.46 })
+    );
+    expect(right).toBeGreaterThan(0.8);
+  });
+
+  it("detects an outward-left glance via the left iris", () => {
+    const { left } = estimateIrisOutwardOffsets(
+      makeFaceLandmarks({ rightIrisX: 0.46, leftIrisX: 0.46 })
+    );
+    expect(left).toBeGreaterThan(0.8);
+  });
+
+  it("returns nulls for short landmark lists", () => {
+    expect(estimateIrisOutwardOffsets(null)).toEqual({ left: null, right: null });
+    expect(estimateIrisOutwardOffsets([])).toEqual({ left: null, right: null });
   });
 });
 
@@ -67,6 +121,10 @@ describe("classifyFrame", () => {
     yawRatio: 0.5,
     gazeOutLeft: 0,
     gazeOutRight: 0,
+    gazeDownLeft: 0,
+    gazeDownRight: 0,
+    irisOffLeft: 0,
+    irisOffRight: 0,
     blinkLeft: 0,
     blinkRight: 0,
     config,
@@ -94,9 +152,22 @@ describe("classifyFrame", () => {
     expect(right?.detail).toContain("right");
   });
 
-  it("detects sideways eye gaze", () => {
+  it("detects sideways eye gaze (blendshape)", () => {
     expect(classifyFrame({ ...base, gazeOutLeft: 0.8 })?.type).toBe("look_away");
     expect(classifyFrame({ ...base, gazeOutRight: 0.8 })?.type).toBe("look_away");
+  });
+
+  it("detects sideways eye gaze from iris position", () => {
+    expect(classifyFrame({ ...base, irisOffRight: 0.8 })?.type).toBe("look_away");
+    expect(classifyFrame({ ...base, irisOffLeft: 0.8 })?.type).toBe("look_away");
+    expect(classifyFrame({ ...base, irisOffRight: 0.2 })).toBeNull();
+  });
+
+  it("detects looking down (not at the camera)", () => {
+    const down = classifyFrame({ ...base, gazeDownRight: 0.8 });
+    expect(down?.type).toBe("look_away");
+    expect(down?.detail).toContain("down");
+    expect(classifyFrame({ ...base, gazeDownLeft: 0.2 })).toBeNull();
   });
 
   it("detects eyes closed", () => {

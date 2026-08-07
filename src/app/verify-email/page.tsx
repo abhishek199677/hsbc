@@ -4,9 +4,11 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
+  const { token: authToken } = useAuth();
   const token = searchParams.get("token");
   const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">(
     token ? "verifying" : "idle"
@@ -43,7 +45,10 @@ function VerifyEmailContent() {
     try {
       const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken || ""}`,
+        },
       });
       const data = await response.json();
       setMessage(data.message || (data.error || "Please try again later."));

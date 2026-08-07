@@ -21,6 +21,29 @@ interface SendEmailParams {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
+  const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+
+  // Dev fallback: without SMTP credentials there is no way to deliver mail, so
+  // print the email (and any action links) to the server console. This keeps
+  // the full signup/verify/reset flow testable locally before SMTP is set up.
+  if (!smtpConfigured) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("Email not sent: SMTP_* env vars are not configured (required in production).");
+      return { success: false, error: "SMTP is not configured" };
+    }
+    console.log("\n=================================================");
+    console.log("[DEV] Email not sent via SMTP (SMTP_* not configured)");
+    console.log("  To:", to);
+    console.log("  Subject:", subject);
+    const links = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+    if (links.length) {
+      console.log("  Links:");
+      for (const link of links) console.log("   -", link);
+    }
+    console.log("=================================================\n");
+    return { success: true, devFallback: true };
+  }
+
   try {
     const info = await transporter.sendMail({
       from: `"Techcitta" <${process.env.SMTP_USER || "noreply@techcitta.com"}>`,

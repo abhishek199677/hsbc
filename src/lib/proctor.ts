@@ -51,6 +51,10 @@ export interface ProctorConfig {
   yawMax?: number;
   /** eyeLookOut blendshape score above this means eyes looking sideways */
   gazeOutThreshold?: number;
+  /** iris excursion (0..1) toward the outer eye corner that counts as a sideways glance */
+  irisOutThreshold?: number;
+  /** eyeLookDown blendshape score above this means looking down/away */
+  gazeDownThreshold?: number;
   /** sustain (ms) before eyes-closed is committed */
   eyesClosedSustainMs?: number;
   /** sustain (ms) before face-hidden is committed */
@@ -65,6 +69,8 @@ export const DEFAULT_PROCTOR_CONFIG: Required<ProctorConfig> = {
   yawMin: 0.35,
   yawMax: 0.65,
   gazeOutThreshold: 0.45,
+  irisOutThreshold: 0.5,
+  gazeDownThreshold: 0.45,
   eyesClosedSustainMs: 3000,
   faceHiddenSustainMs: 2500,
   sampleMs: 100,
@@ -82,7 +88,11 @@ export interface Point {
 export const LANDMARK = {
   noseTip: 4,
   rightEyeOuter: 33,
+  rightEyeInner: 133,
+  leftEyeInner: 362,
   leftEyeOuter: 263,
+  rightIrisCenter: 468,
+  leftIrisCenter: 473,
 } as const;
 
 /**
@@ -99,6 +109,45 @@ export function estimateHeadYawRatio(landmarks: Point[] | null | undefined): num
   const span = leftEye.x - rightEye.x;
   if (!Number.isFinite(span) || Math.abs(span) < 1e-4) return null;
   return (nose.x - rightEye.x) / span;
+}
+
+export interface IrisOutwardOffsets {
+  /** 0..1 — 0 = iris at the inner (nose) corner, 1 = at the outer (temple) corner */
+  left: number | null;
+  right: number | null;
+}
+
+/**
+ * Horizontal iris position within each eye, normalized so that higher values
+ * mean the eye is turned outward (toward the temple, i.e. away from the
+ * other eye / off-screen). ~0.5 is centered; values well above ~0.5 are a
+ * deliberate sideways glance. More reliable than the eyeLookOut blendshapes.
+ * Returns nulls when the iris/eye landmarks are unavailable.
+ */
+export function estimateIrisOutwardOffsets(
+  landmarks: Point[] | null | undefined
+): IrisOutwardOffsets {
+  if (!landmarks || landmarks.length < LANDMARK.leftIrisCenter + 1) {
+    return { left: null, right: null };
+  }
+  const rightIris = landmarks[LANDMARK.rightIrisCenter];
+  const rightInner = landmarks[LANDMARK.rightEyeInner];
+  const rightOuter = landmarks[LANDMARK.rightEyeOuter];
+  const leftIris = landmarks[LANDMARK.leftIrisCenter];
+  const leftInner = landmarks[LANDMARK.leftEyeInner];
+  const leftOuter = landmarks[LANDMARK.leftEyeOuter];
+
+  const spanR = rightOuter.x - rightInner.x;
+  const spanL = leftInner.x - leftOuter.x;
+  const right =
+    Number.isFinite(spanR) && Math.abs(spanR) > 1e-4
+      ? (rightIris.x - rightInner.x) / spanR
+      : null;
+  const left =
+    Number.isFinite(spanL) && Math.abs(spanL) > 1e-4
+      ? (leftInner.x - leftIris.x) / spanL
+      : null;
+  return { left, right };
 }
 
 export interface BlendCategory {
@@ -121,6 +170,10 @@ export interface FrameSignals {
   yawRatio: number | null;
   gazeOutLeft: number;
   gazeOutRight: number;
+  gazeDownLeft: number;
+  gazeDownRight: number;
+  irisOffLeft: number;
+  irisOffRight: number;
   blinkLeft: number;
   blinkRight: number;
   config: Required<ProctorConfig>;
@@ -128,21 +181,40 @@ export interface FrameSignals {
 
 /** Classify one sampled frame into a violation type, or null when OK. */
 export function classifyFrame(signals: FrameSignals): { type: ViolationType; detail?: string } | null {
-  const { faceCount, yawRatio, gazeOutLeft, gazeOutRight, blinkLeft, blinkRight, config } = signals;
+  const {
+    faceCount,
+    yawRatio,
+    gazeOutLeft,
+    gazeOutRight,
+    gazeDownLeft,
+    gazeDownRight,
+    irisOffLeft,
+    irisOffRight,
+    blinkLeft,
+    blinkRight,
+    config,
+  } = signals;
 
   if (faceCount === 0) return { type: "face_hidden" };
   if (faceCount > 1) return { type: "multiple_faces" };
 
   const turnedLeft = yawRatio !== null && yawRatio < config.yawMin;
   const turnedRight = yawRatio !== null && yawRatio > config.yawMax;
-  const gazingOut = gazeOutLeft > config.gazeOutThreshold || gazeOutRight > config.gazeOutThreshold;
+  const gazingOut =
+    gazeOutLeft > config.gazeOutThreshold || gazeOutRight > config.gazeOutThreshold;
+  const irisOut =
+    irisOffLeft > config.irisOutThreshold || irisOffRight > config.irisOutThreshold;
+  const lookingDown =
+    gazeDownLeft > config.gazeDownThreshold || gazeDownRight > config.gazeDownThreshold;
 
-  if (turnedLeft || turnedRight || gazingOut) {
+  if (turnedLeft || turnedRight || gazingOut || irisOut || lookingDown) {
     const detail = turnedLeft
       ? "head turned left (away from camera)"
       : turnedRight
         ? "head turned right (away from camera)"
-        : "eyes looking away from the screen";
+        : lookingDown
+          ? "eyes looking down (not at the camera)"
+          : "eyes looking away from the screen";
     return { type: "look_away", detail };
   }
 
@@ -393,13 +465,21 @@ export async function createProctor(
       return;
     }
 
+    const face = result.faceLandmarks[0];
+    const blendshapes = result.faceBlendshapes[0]?.categories;
+    const iris = estimateIrisOutwardOffsets(face);
+
     const signals: FrameSignals = {
       faceCount: result.faceLandmarks.length,
-      yawRatio: estimateHeadYawRatio(result.faceLandmarks[0]),
-      gazeOutLeft: getBlendScore(result.faceBlendshapes[0]?.categories, "eyeLookOutLeft"),
-      gazeOutRight: getBlendScore(result.faceBlendshapes[0]?.categories, "eyeLookOutRight"),
-      blinkLeft: getBlendScore(result.faceBlendshapes[0]?.categories, "eyeBlinkLeft"),
-      blinkRight: getBlendScore(result.faceBlendshapes[0]?.categories, "eyeBlinkRight"),
+      yawRatio: estimateHeadYawRatio(face),
+      gazeOutLeft: getBlendScore(blendshapes, "eyeLookOutLeft"),
+      gazeOutRight: getBlendScore(blendshapes, "eyeLookOutRight"),
+      gazeDownLeft: getBlendScore(blendshapes, "eyeLookDownLeft"),
+      gazeDownRight: getBlendScore(blendshapes, "eyeLookDownRight"),
+      irisOffLeft: iris.left ?? 0,
+      irisOffRight: iris.right ?? 0,
+      blinkLeft: getBlendScore(blendshapes, "eyeBlinkLeft"),
+      blinkRight: getBlendScore(blendshapes, "eyeBlinkRight"),
       config: resolved,
     };
 
