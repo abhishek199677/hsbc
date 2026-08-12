@@ -73,8 +73,7 @@ function formatProctoring(proctoring: unknown): string {
 }
 
 export const sendWelcomeEmail = inngest.createFunction(
-  { id: "send-welcome-email" },
-  { event: "user/signup" },
+  { id: "send-welcome-email", name: "Send Welcome Email", triggers: [{ event: "user/signup" }] },
   async ({ event, step }) => {
     const { userId } = event.data;
 
@@ -104,8 +103,7 @@ export const sendWelcomeEmail = inngest.createFunction(
 );
 
 export const sendVerificationEmail = inngest.createFunction(
-  { id: "send-verification-email" },
-  { event: "user/verify-email" },
+  { id: "send-verification-email", name: "Send Verification Email", triggers: [{ event: "user/verify-email" }] },
   async ({ event, step }) => {
     const { userId, verifyUrl } = event.data;
 
@@ -133,8 +131,7 @@ export const sendVerificationEmail = inngest.createFunction(
 );
 
 export const sendInterviewReminder = inngest.createFunction(
-  { id: "send-interview-reminder" },
-  { event: "interview/reminder" },
+  { id: "send-interview-reminder", name: "Send Interview Reminder", triggers: [{ event: "interview/reminder" }] },
   async ({ event, step }) => {
     const { interviewId, type } = event.data;
 
@@ -183,7 +180,6 @@ export const sendInterviewReminder = inngest.createFunction(
       });
     });
 
-    const updateField = `reminder${type.replace("h", "h").replace("m", "m")}Sent`;
     const validFields: Record<string, string> = {
       "24h": "reminder24hSent",
       "1h": "reminder1hSent",
@@ -206,8 +202,7 @@ export const sendInterviewReminder = inngest.createFunction(
 );
 
 export const sendInterviewConfirmation = inngest.createFunction(
-  { id: "send-interview-confirmation" },
-  { event: "interview/scheduled" },
+  { id: "send-interview-confirmation", name: "Send Interview Confirmation", triggers: [{ event: "interview/scheduled" }] },
   async ({ event, step }) => {
     const { interviewId } = event.data;
 
@@ -250,8 +245,7 @@ export const sendInterviewConfirmation = inngest.createFunction(
 );
 
 export const evaluateInterview = inngest.createFunction(
-  { id: "evaluate-interview" },
-  { event: "interview/evaluate" },
+  { id: "evaluate-interview", name: "Evaluate Interview", triggers: [{ event: "interview/evaluate" }] },
   async ({ event, step }) => {
     const { interviewId } = event.data;
 
@@ -326,12 +320,12 @@ export const evaluateInterview = inngest.createFunction(
     const evaluationPrompt = await step.run("generate-evaluation", async () => {
       const profile = await prisma.profile.findUnique({
         where: { userId: interview.user.id },
-        select: { name: true, currentRole: true },
+        select: { currentRole: true },
       });
 
       return `Evaluate this interview and provide a score and feedback.
       
-      ${asData("candidate_profile", `Name: ${profile?.name || interview.user.name || "Candidate"}\nRole: ${profile?.currentRole || "Professional"}`)}
+      ${asData("candidate_profile", `Name: ${interview.user.name || "Candidate"}\nRole: ${profile?.currentRole || "Professional"}`)}
       
       ${asData("conversation_history", history.map((m) => `${m.role}: ${m.content}`).join("\n"))}
       
@@ -385,8 +379,7 @@ export const evaluateInterview = inngest.createFunction(
 );
 
 export const processReminderCheck = inngest.createFunction(
-  { id: "process-reminder-check" },
-  { cron: "*/1 * * * *" },
+  { id: "process-reminder-check", name: "Process Reminder Check", triggers: [{ cron: "*/1 * * * *" }] },
   async ({ step }) => {
     const now = new Date();
 

@@ -734,7 +734,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-        <AIChatbot user={{ id: user?.id, name: user?.name, email: user?.email, role: user?.role }} />
+        <AIChatbot user={{ id: user?.id ?? null, name: user?.name ?? null, email: user?.email ?? null, role: user?.role ?? null }} />
       </main>
     </div>
   );

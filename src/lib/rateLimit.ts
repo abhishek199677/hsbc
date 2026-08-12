@@ -19,7 +19,8 @@ const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
 // Cache Ratelimit instances per window duration so each unique window size
 // gets its own correctly-configured sliding-window limiter.
-const upstashLimiters = new Map<number, { limit: (key: string) => Promise<{ success: boolean; limit: number; remaining: number; reset: number }> }>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const upstashLimiters = new Map<number, any>();
 
 let upstashInitialised = false;
 
@@ -53,12 +54,10 @@ async function ensureUpstash(): Promise<boolean> {
 function getUpstashLimiter(windowMs: number) {
   if (upstashLimiters.has(windowMs)) return upstashLimiters.get(windowMs)!;
 
-  const Ratelimit = (globalThis as Record<string, unknown>).__upstashRatelimitFactory as new (
-    ...args: unknown[]
-  ) => { limit: (key: string) => Promise<{ success: boolean; limit: number; remaining: number; reset: number }> };
-  const redis = (globalThis as Record<string, unknown>).__upstashRedis as Parameters<
-    typeof Ratelimit
-  >[0]["redis"];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Ratelimit = (globalThis as Record<string, unknown>).__upstashRatelimitFactory as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const redis = (globalThis as Record<string, unknown>).__upstashRedis as any;
 
   const windowSec = Math.max(1, Math.ceil(windowMs / 1000));
 
