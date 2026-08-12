@@ -8,7 +8,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(self), geolocation=()",
+    value: "camera=(self), microphone=(self), geolocation=(), screen-share=(self)",
   },
 ];
 
@@ -29,11 +29,11 @@ function handleCors(request: NextRequest): NextResponse {
   response.headers.set("Access-Control-Allow-Origin", "*");
   response.headers.set(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
   );
   response.headers.set(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With",
+    "Content-Type, Authorization, X-Requested-With"
   );
   response.headers.set("Access-Control-Max-Age", "86400");
 
@@ -43,7 +43,7 @@ function handleCors(request: NextRequest): NextResponse {
 function logRequest(
   request: NextRequest,
   response: NextResponse,
-  startTime: number,
+  startTime: number
 ) {
   const duration = Date.now() - startTime;
   const method = request.method;
@@ -57,7 +57,7 @@ function logRequest(
       status,
       duration: `${duration}ms`,
       timestamp: new Date().toISOString(),
-    }),
+    })
   );
 }
 
@@ -83,6 +83,26 @@ export function middleware(request: NextRequest) {
       response.headers.set(header.key, header.value);
     }
   }
+
+  // Content Security Policy - allow LiveKit WebSocket, camera, microphone
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.sentry-cdn.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' https://*.cloudflare.com https://*.r2.cloudflarestorage.com data: blob:",
+    "font-src 'self'",
+    `connect-src 'self' https://*.cloudflare.com https://api.openai.com https://*.upstash.io https://*.sentry.io ${process.env.LIVEKIT_URL || "wss://livekit.techcitta.com"} wss://*.livekit.cloud https://*.livekit.cloud`,
+    `media-src 'self' blob: https://*.r2.cloudflarestorage.com`,
+    `frame-src 'none'`,
+    `worker-src 'self' blob:`,
+    `child-src 'self' blob:`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `frame-ancestors 'none'`,
+  ].join("; ");
+
+  response.headers.set("Content-Security-Policy", csp);
 
   if (isApiRoute) {
     logRequest(request, response, startTime);

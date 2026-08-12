@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { Upload, FileText, CheckCircle, ChevronLeft, ChevronRight, ArrowRight, Shield, Lock, Eye, Clock } from "lucide-react";
+import AIChatbot from "@/components/AIChatbot";
 
 const steps = [
   { number: 1, label: "Profile", sublabel: "Tell us who you are" },
@@ -693,7 +694,7 @@ export default function ProfilePage() {
             Your data is safe with us
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-indigo-100 rounded-flex items-center justify-center">
               <span className="text-sm font-medium text-indigo-600">{user?.name?.charAt(0) || "U"}</span>
             </div>
             <span className="text-sm font-medium">Hi, {user?.name || "User"} 👋</span>
@@ -733,6 +734,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+        <AIChatbot user={{ id: user?.id, name: user?.name, email: user?.email, role: user?.role }} />
       </main>
     </div>
   );

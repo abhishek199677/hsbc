@@ -1,14 +1,13 @@
 import { PrismaClient } from "../generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaLibSql({
-    url: process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL || "file:./dev.db",
-    authToken: process.env.TURSO_AUTH_TOKEN,
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL || "postgresql://localhost:5432/techcitta",
   });
   return new PrismaClient({ adapter });
 }

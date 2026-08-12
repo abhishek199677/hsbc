@@ -4,8 +4,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
+
+// pgvector extension for vector similarity search
+// Enable via: CREATE EXTENSION IF NOT EXISTS vector;
 
 model Organization {
   id                    String    @id @default(uuid())
@@ -28,6 +31,7 @@ model Organization {
   updatedAt             DateTime  @updatedAt
   users                 User[]
   teamMembers           TeamMember[]
+  jobs                  Job[]
 }
 
 model User {
@@ -132,7 +136,7 @@ model Interview {
   type            String    @default("Technical + Behavioral Assessment")
   duration        Int       @default(15)
   
-  status          String    @default("scheduled") // scheduled, completed, cancelled
+  status          String    @default("scheduled") // scheduled, in_progress, completed, cancelled
 
   // Video recording & evaluation
   videoUrl        String?
@@ -145,6 +149,14 @@ model Interview {
   proctoringReport  String? // JSON ProctoringReport
   proctoringFlags   Int     @default(0)
   proctoringStatus  String? // pass, review, fail, off
+  
+  // LiveKit integration
+  livekitRoomName  String?
+  livekitToken     String?
+  
+  // Deepgram transcription
+  deepgramJobId   String?
+  audioUrl        String?
   
   emailSent       Boolean   @default(false)
   whatsappSent    Boolean   @default(false)
@@ -168,4 +180,68 @@ model Feedback {
   page      String?
   status    String   @default("open")
   createdAt DateTime @default(now())
+}
+
+model Job {
+  id              String    @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  title           String
+  description     String
+  department      String?
+  location        String?
+  employmentType  String? // full-time, part-time, contract, internship
+  experienceLevel String? // junior, mid, senior, lead, executive
+  salaryMin       Int?
+  salaryMax       Int?
+  currency        String   @default("INR")
+  
+  // Required skills (comma-separated or JSON)
+  requiredSkills  String?
+  preferredSkills String?
+  
+  status          String    @default("active") // active, paused, closed, draft
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  matches         CandidateMatch[]
+}
+
+model CandidateMatch {
+  id              String    @id @default(uuid())
+  jobId           String
+  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId          String    // references User but no FK constraint to allow cross-tenant matching
+  
+  // Similarity scores
+  semanticScore   Float     // cosine similarity from embeddings
+  skillsScore     Float     // skills overlap score
+  experienceScore Float     // experience level match
+  overallScore    Float     // weighted combination
+  
+  // Match details
+  matchedSkills   String?   // JSON array of matched skill strings
+  missingSkills   String?   // JSON array of missing skill strings
+  explanation     String?   // AI-generated explanation of match quality
+  
+  status          String    @default("suggested") // suggested, reviewed, shortlisted, rejected
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([jobId, userId])
+}
+
+model TranscriptSegment {
+  id              String    @id @default(uuid())
+  interviewId     String
+  
+  speaker         String    // "candidate" | "ai_interviewer"
+  text            String
+  startMs         Int
+  endMs           Int
+  
+  createdAt       DateTime  @default(now())
 }

@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /interview/room
+Disallow: /confirmation
+Allow: /
+
+Sitemap: https://techcitta.com/sitemap.xml
