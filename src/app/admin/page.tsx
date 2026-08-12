@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Calendar, FileText, TrendingUp, ArrowRight, CheckCircle, Clock, Video } from "lucide-react";
+import { Users, Calendar, FileText, TrendingUp, ArrowRight, CheckCircle, Clock, Video, BarChart3 } from "lucide-react";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,7 +54,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "interviews">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "interviews" | "analytics">("overview");
 
   useEffect(() => {
     if (!authLoading && (!user || (user.role !== "admin" && user.role !== "employer"))) {
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
             { id: "overview", label: "Overview", icon: TrendingUp },
             { id: "users", label: "Users", icon: Users },
             { id: "interviews", label: "Interviews", icon: Calendar },
+            { id: "analytics", label: "Analytics", icon: BarChart3 },
           ] as const).map((tab) => (
             <button
               key={tab.id}
@@ -411,6 +413,9 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* Analytics Tab */}
+        {activeTab === "analytics" && <AnalyticsDashboard />}
       </main>
     </div>
   );

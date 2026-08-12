@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ipLimit = rateLimitByIp(request, "ai-interview", { limit: 120, windowMs: 60_000 });
+    const ipLimit = await rateLimitByIp(request, "ai-interview", { limit: 120, windowMs: 60_000 });
     if (!ipLimit.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    const userLimit = rateLimit(`ai:${user.userId}:${action}`, { limit: 120, windowMs: 60_000 });
+    const userLimit = await rateLimit(`ai:${user.userId}:${action}`, { limit: 120, windowMs: 60_000 });
     if (!userLimit.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }

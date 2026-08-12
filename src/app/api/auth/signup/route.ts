@@ -17,7 +17,7 @@ function slugify(input: string): string {
 
 export async function POST(request: Request) {
   try {
-    const rateLimit = rateLimitByIp(request, "signup", { limit: 5, windowMs: 60_000 });
+    const rateLimit = await rateLimitByIp(request, "signup", { limit: 5, windowMs: 60_000 });
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: "Too many signup attempts. Please try again later." },

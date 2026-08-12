@@ -1,0 +1,282 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { generateVerificationToken } from "@/lib/tokens";
+import { sendEmail, getAppBaseUrl } from "@/lib/email";
+
+export async function GET(request: Request) {
+  try {
+    const auth = getUserFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const requester = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { role: true, organizationId: true },
+    });
+
+    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const teamMembers = await prisma.teamMember.findMany({
+      where: { organizationId: requester.organizationId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ success: true, teamMembers });
+  } catch (error) {
+    console.error("Get team members error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const auth = getUserFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const requester = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { role: true, organizationId: true, name: true },
+    });
+
+    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { email, role } = body;
+
+    if (!email || typeof email !== "string") {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
+    const validRoles = ["admin", "interviewer", "member", "viewer"];
+    const assignedRole = validRoles.includes(role) ? role : "member";
+
+    // Check if user already exists in the org
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, organizationId: true },
+    });
+
+    if (existingUser && existingUser.organizationId === requester.organizationId) {
+      // Check if already a team member
+      const existingMember = await prisma.teamMember.findUnique({
+        where: { userId_organizationId: { userId: existingUser.id, organizationId: requester.organizationId } },
+      });
+
+      if (existingMember) {
+        return NextResponse.json({ error: "User is already a team member" }, { status: 409 });
+      }
+
+      // Add existing user as team member
+      const teamMember = await prisma.teamMember.create({
+        data: {
+          userId: existingUser.id,
+          organizationId: requester.organizationId,
+          role: assignedRole,
+          acceptedAt: new Date(),
+        },
+        include: { user: { select: { id: true, email: true, name: true } } },
+      });
+
+      return NextResponse.json({ success: true, teamMember });
+    }
+
+    // Generate invite token for new users
+    const inviteToken = generateVerificationToken();
+
+    // Create a pending team member entry (user doesn't exist yet)
+    // We create a placeholder user so the invite link works
+    const tempPassword = await import("@/lib/auth").then(m => m.hashPassword(inviteToken));
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: tempPassword,
+        name: email.split("@")[0],
+        role: "jobseeker",
+        organizationId: requester.organizationId,
+        emailVerifiedAt: null,
+      },
+    });
+
+    const teamMember = await prisma.teamMember.create({
+      data: {
+        userId: newUser.id,
+        organizationId: requester.organizationId,
+        role: assignedRole,
+        inviteToken,
+      },
+      include: { user: { select: { id: true, email: true, name: true } } },
+    });
+
+    // Send invite email
+    const baseUrl = getAppBaseUrl();
+    const inviteUrl = `${baseUrl}/admin/team/invite?token=${inviteToken}`;
+
+    await sendEmail({
+      to: email,
+      subject: `You've been invited to join ${requester.name || "Techcitta"}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+            .button { display: inline-block; background: #4f46e5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+            .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Team Invitation</h1>
+              <p>You've been invited to join ${requester.name || "Techcitta"}</p>
+            </div>
+            <div class="content">
+              <p>You've been invited as a <strong>${assignedRole}</strong>.</p>
+              <p>Click the button below to accept the invitation and set up your account.</p>
+              <div style="text-align: center;">
+                <a href="${inviteUrl}" class="button">Accept Invitation</a>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 Techcitta. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    return NextResponse.json({ success: true, teamMember, inviteUrl });
+  } catch (error) {
+    console.error("Invite team member error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const auth = getUserFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const requester = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { role: true, organizationId: true },
+    });
+
+    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { teamMemberId, role } = body;
+
+    if (!teamMemberId || !role) {
+      return NextResponse.json({ error: "teamMemberId and role are required" }, { status: 400 });
+    }
+
+    const validRoles = ["admin", "interviewer", "member", "viewer"];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
+
+    const teamMember = await prisma.teamMember.findUnique({
+      where: { id: teamMemberId },
+      select: { organizationId: true, role: true },
+    });
+
+    if (!teamMember || teamMember.organizationId !== requester.organizationId) {
+      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+    }
+
+    if (teamMember.role === "owner") {
+      return NextResponse.json({ error: "Cannot change owner role" }, { status: 400 });
+    }
+
+    const updated = await prisma.teamMember.update({
+      where: { id: teamMemberId },
+      data: { role },
+      include: { user: { select: { id: true, email: true, name: true } } },
+    });
+
+    return NextResponse.json({ success: true, teamMember: updated });
+  } catch (error) {
+    console.error("Update team member error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const auth = getUserFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const requester = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { role: true, organizationId: true },
+    });
+
+    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const teamMemberId = searchParams.get("id");
+
+    if (!teamMemberId) {
+      return NextResponse.json({ error: "Team member ID is required" }, { status: 400 });
+    }
+
+    const teamMember = await prisma.teamMember.findUnique({
+      where: { id: teamMemberId },
+      select: { organizationId: true, role: true, userId: true },
+    });
+
+    if (!teamMember || teamMember.organizationId !== requester.organizationId) {
+      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+    }
+
+    if (teamMember.role === "owner") {
+      return NextResponse.json({ error: "Cannot remove the owner" }, { status: 400 });
+    }
+
+    if (teamMember.userId === auth.userId) {
+      return NextResponse.json({ error: "Cannot remove yourself" }, { status: 400 });
+    }
+
+    await prisma.teamMember.delete({
+      where: { id: teamMemberId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Remove team member error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

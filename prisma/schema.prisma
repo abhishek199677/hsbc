@@ -22,9 +22,12 @@ model Organization {
   stripeSubscriptionId  String?   @unique
   stripePriceId         String?
   status                String    @default("active") // active, suspended
+  onboardingCompleted   Boolean   @default(false)
+  onboardingStep        Int       @default(0)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   users                 User[]
+  teamMembers           TeamMember[]
 }
 
 model User {
@@ -35,6 +38,8 @@ model User {
   phone                 String?
   role                  String             @default("jobseeker") // jobseeker, employer, admin
   emailVerifiedAt       DateTime?
+  twoFactorEnabled      Boolean            @default(false)
+  twoFactorSecret       String?
   organizationId        String
   organization          Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt             DateTime           @default(now())
@@ -42,6 +47,22 @@ model User {
   profile               Profile?
   interview             Interview?
   verificationTokens    VerificationToken[]
+  teamMemberships       TeamMember[]
+}
+
+model TeamMember {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String       @default("member") // owner, admin, interviewer, member, viewer
+  inviteToken    String?
+  invitedAt      DateTime     @default(now())
+  acceptedAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId])
 }
 
 model Profile {
@@ -136,4 +157,15 @@ model Interview {
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  type      String
+  message   String
+  email     String?
+  userId    String?
+  page      String?
+  status    String   @default("open")
+  createdAt DateTime @default(now())
 }

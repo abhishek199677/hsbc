@@ -1,17 +1,3 @@
-// In-memory sliding-window rate limiter.
-// Suitable for single-instance deployments. For multi-instance (serverless)
-// scale, swap the store for Redis/Upstash while keeping the same interface.
-
-interface Bucket {
-  timestamps: number[];
-}
-
-const buckets = new Map<string, Bucket>();
-
-function now(): number {
-  return Date.now();
-}
-
 export interface RateLimitOptions {
   limit: number;
   windowMs: number;
@@ -24,7 +10,98 @@ export interface RateLimitResult {
   retryAfterSeconds: number;
 }
 
-export function rateLimit(key: string, { limit, windowMs }: RateLimitOptions): RateLimitResult {
+// ---------------------------------------------------------------------------
+// Upstash Redis implementation (used when env vars are present)
+// ---------------------------------------------------------------------------
+
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+// Cache Ratelimit instances per window duration so each unique window size
+// gets its own correctly-configured sliding-window limiter.
+const upstashLimiters = new Map<number, { limit: (key: string) => Promise<{ success: boolean; limit: number; remaining: number; reset: number }> }>();
+
+let upstashInitialised = false;
+
+async function ensureUpstash(): Promise<boolean> {
+  if (upstashInitialised) return upstashLimiters.size > 0;
+  upstashInitialised = true;
+
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+    console.log("[rateLimit] Using in-memory rate limiter (no Upstash env vars)");
+    return false;
+  }
+
+  try {
+    const { Ratelimit } = await import("@upstash/ratelimit");
+    const { Redis } = await import("@upstash/redis");
+
+    const redis = new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN });
+
+    // Store the factory so we can lazily create per-window limiters
+    (globalThis as Record<string, unknown>).__upstashRatelimitFactory = Ratelimit;
+    (globalThis as Record<string, unknown>).__upstashRedis = redis;
+
+    console.log("[rateLimit] Using Upstash Redis rate limiter");
+    return true;
+  } catch (err) {
+    console.warn("[rateLimit] Failed to initialise Upstash, falling back to in-memory:", err);
+    return false;
+  }
+}
+
+function getUpstashLimiter(windowMs: number) {
+  if (upstashLimiters.has(windowMs)) return upstashLimiters.get(windowMs)!;
+
+  const Ratelimit = (globalThis as Record<string, unknown>).__upstashRatelimitFactory as new (
+    ...args: unknown[]
+  ) => { limit: (key: string) => Promise<{ success: boolean; limit: number; remaining: number; reset: number }> };
+  const redis = (globalThis as Record<string, unknown>).__upstashRedis as Parameters<
+    typeof Ratelimit
+  >[0]["redis"];
+
+  const windowSec = Math.max(1, Math.ceil(windowMs / 1000));
+
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(1, `${windowSec}s`),
+    analytics: false,
+    enableProtection: false,
+  });
+
+  upstashLimiters.set(windowMs, limiter);
+  return limiter;
+}
+
+async function upstashRateLimitByKey(
+  key: string,
+  { limit, windowMs }: RateLimitOptions
+): Promise<RateLimitResult> {
+  const limiter = getUpstashLimiter(windowMs);
+  const res = await limiter.limit(key);
+  return {
+    allowed: res.success,
+    limit,
+    remaining: res.remaining,
+    retryAfterSeconds: res.success ? 0 : Math.max(1, Math.ceil((res.reset - Date.now()) / 1000)),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// In-memory sliding-window implementation (fallback)
+// ---------------------------------------------------------------------------
+
+interface Bucket {
+  timestamps: number[];
+}
+
+const buckets = new Map<string, Bucket>();
+
+function now(): number {
+  return Date.now();
+}
+
+function inMemoryRateLimit(key: string, { limit, windowMs }: RateLimitOptions): RateLimitResult {
   const t = now();
   const id = `${key}:${Math.floor(t / windowMs) * windowMs}`;
   let bucket = buckets.get(id);
@@ -47,11 +124,26 @@ export function rateLimit(key: string, { limit, windowMs }: RateLimitOptions): R
   return { allowed: true, limit, remaining: limit - bucket.timestamps.length, retryAfterSeconds: 0 };
 }
 
-export function rateLimitByIp(
+// ---------------------------------------------------------------------------
+// Unified public helpers – transparent to callers
+// ---------------------------------------------------------------------------
+
+export async function rateLimit(
+  key: string,
+  options: RateLimitOptions
+): Promise<RateLimitResult> {
+  const useUpstash = await ensureUpstash();
+  if (useUpstash) {
+    return upstashRateLimitByKey(key, options);
+  }
+  return inMemoryRateLimit(key, options);
+}
+
+export async function rateLimitByIp(
   request: Request,
   identifier: string,
   options: RateLimitOptions
-): RateLimitResult {
+): Promise<RateLimitResult> {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("cf-connecting-ip") ||
@@ -60,9 +152,9 @@ export function rateLimitByIp(
   return rateLimit(`ip:${ip}:${identifier}`, options);
 }
 
-export function rateLimitByEmail(
+export async function rateLimitByEmail(
   email: string,
   options: RateLimitOptions
-): RateLimitResult {
+): Promise<RateLimitResult> {
   return rateLimit(`email:${email.toLowerCase()}`, options);
 }
