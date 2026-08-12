@@ -1,4 +1,4 @@
-import { RoomServiceClient, AccessToken } from "livekit-server-sdk";
+import { RoomServiceClient, AccessToken, Room } from "livekit-server-sdk";
 import { prisma } from "./prisma";
 
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
@@ -105,7 +105,7 @@ export async function generateRejoinToken(
  */
 export async function getRoomInfo(
   roomName: string
-): Promise<{ room: any | null; participantCount: number }> {
+): Promise<{ room: Room | null; participantCount: number }> {
   try {
     const svc = getRoomService();
     const rooms = await svc.listRooms([roomName]);

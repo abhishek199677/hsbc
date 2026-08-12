@@ -151,7 +151,12 @@ export async function findMatchingJobs(
     similarity: number;
   }[]
 > {
-  const results: any[] = await prisma.$queryRawUnsafe(
+  interface JobMatchResult {
+    job_id: string;
+    similarity: number;
+  }
+
+  const results: JobMatchResult[] = await prisma.$queryRawUnsafe(
     `SELECT j.id as job_id, 
             1 - (pe.embedding <=> (SELECT embedding FROM profile_embeddings WHERE user_id = $1::uuid)) as similarity
      FROM jobs j
@@ -164,7 +169,7 @@ export async function findMatchingJobs(
     limit
   );
 
-  return results.map((r: any) => ({ jobId: r.job_id, similarity: Number(r.similarity) }));
+  return results.map((r) => ({ jobId: r.job_id, similarity: Number(r.similarity) }));
 }
 
 /**
@@ -179,7 +184,12 @@ export async function findMatchingCandidates(
     similarity: number;
   }[]
 > {
-  const results: any[] = await prisma.$queryRawUnsafe(
+  interface CandidateMatchResult {
+    user_id: string;
+    similarity: number;
+  }
+
+  const results: CandidateMatchResult[] = await prisma.$queryRawUnsafe(
     `SELECT pe.user_id,
             1 - (je.embedding <=> pe.embedding) as similarity
      FROM profile_embeddings pe
@@ -191,7 +201,7 @@ export async function findMatchingCandidates(
     limit
   );
 
-  return results.map((r: any) => ({ userId: r.user_id, similarity: Number(r.similarity) }));
+  return results.map((r) => ({ userId: r.user_id, similarity: Number(r.similarity) }));
 }
 
 /**
@@ -211,7 +221,15 @@ export async function searchTranscripts(
 > {
   const vectorStr = `[${queryEmbedding.join(",")}]`;
 
-  const results: any[] = await prisma.$queryRawUnsafe(
+  interface TranscriptSearchResult {
+    segment_id: string;
+    interview_id: string;
+    speaker: string;
+    text: string;
+    similarity: number;
+  }
+
+  const results: TranscriptSearchResult[] = await prisma.$queryRawUnsafe(
     `SELECT ts.id as segment_id, ts.interview_id, ts.speaker, ts.text,
             1 - (te.embedding <=> $1::vector) as similarity
      FROM transcript_segments ts
@@ -222,7 +240,7 @@ export async function searchTranscripts(
     limit
   );
 
-  return results.map((r: any) => ({
+  return results.map((r) => ({
     segmentId: r.segment_id,
     interviewId: r.interview_id,
     speaker: r.speaker,

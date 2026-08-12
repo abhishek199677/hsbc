@@ -55,28 +55,32 @@ export async function transcribeAudio(
     paragraphs: true,
   });
 
-  const result = (response as any)?.result || response;
-  const transcript =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: any = (response as any)?.result || response;
+  const transcript: string =
     result?.results?.channels?.[0]?.alternatives?.[0]?.transcript || "";
-  const words =
+  const words: Array<{ word: string; start: number; end: number; confidence: number; speaker?: number }> =
     result?.results?.channels?.[0]?.alternatives?.[0]?.words?.map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (w: any) => ({
-        word: w.word,
-        start: w.start,
-        end: w.end,
-        confidence: w.confidence,
-        speaker: w.speaker,
+        word: w.word as string,
+        start: w.start as number,
+        end: w.end as number,
+        confidence: w.confidence as number,
+        speaker: w.speaker as number | undefined,
       })
     ) || [];
 
   // Build paragraphs from utterances
-  const paragraphs =
+  const paragraphs: Array<{ text: string; start: number; end: number; speaker: number }> =
     result?.results?.channels?.[0]?.alternatives?.[0]?.paragraphs
-      ?.paragraphs?.map((p: any) => ({
-      text: p.text,
-      start: p.start,
-      end: p.end,
-      speaker: p.speaker || 0,
+      ?.paragraphs?.map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (p: any) => ({
+      text: p.text as string,
+      start: p.start as number,
+      end: p.end as number,
+      speaker: (p.speaker as number) || 0,
     })) || [];
 
   return { transcript, words, paragraphs };

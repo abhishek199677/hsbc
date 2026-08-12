@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Users, MessageCircle, X, Loader } from "lucide-react";
+import { useState } from "react";
+import { Users, X, Loader } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -18,47 +18,24 @@ interface ChatbotProps {
   };
 }
 
-const systemPrompt = `You are Techcitta AI Assistant, a helpful guide for the Techcitta platform. 
-
-Your role is to help users with:
-1. Profile completion and building their job seeker/employer profile
-2. Interview preparation and scheduling AI video interviews
-3. Navigating the Techcitta platform features
-4. Understanding the AI-powered matching and job search functionality
-5. Answering questions about plans, features, and how the platform works
-
-Guidelines:
-- Be concise and helpful
-- Keep responses under 3-4 sentences when possible
-- Use a friendly, professional tone
-- If you don't know something specific, direct them to relevant pages or features
-- Always be encouraging and supportive
-- Never make up specific user data or claim access to private information
-- If users ask about account features, check what role they have (jobseeker/employer/admin)
-- Help with common friction points like missing profile fields, interview preparation, etc.
-
-IMPORTANT: You are an assistant for the Techcitta platform. Do not discuss topics outside of helping users with this website's features, interview process, profile building, or platform navigation.`;
+function getInitialMessages(user?: ChatbotProps["user"]): Message[] {
+  if (!user) return [];
+  let greeting = "Hello! 👋";
+  if (user.role === "jobseeker") {
+    greeting = "Hi there! I'm your Techcitta AI Assistant. I can help you complete your profile, prepare for your interview, or navigate our platform. What would you like help with?";
+  } else if (user.role === "employer") {
+    greeting = "Hello! I'm your Techcitta AI Assistant. I can help you find candidates, manage interviews, or navigate our employer features. What do you need?";
+  } else {
+    greeting = "Hello! I'm your Techcitta AI Assistant. How can I help you today?";
+  }
+  return [{ role: "assistant", content: greeting, timestamp: Date.now() }];
+}
 
 export function AIChatbot({ user }: ChatbotProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => getInitialMessages(user));
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
-
-  // Initialize with a greeting based on user role
-  useEffect(() => {
-    if (messages.length === 0 && user) {
-      let greeting = "Hello! 👋";
-      if (user.role === "jobseeker") {
-        greeting = "Hi there! I'm your Techcitta AI Assistant. I can help you complete your profile, prepare for your interview, or navigate our platform. What would you like help with?";
-      } else if (user.role === "employer") {
-        greeting = "Hello! I'm your Techcitta AI Assistant. I can help you find candidates, manage interviews, or navigate our employer features. What do you need?";
-      } else {
-        greeting = "Hello! I'm your Techcitta AI Assistant. How can I help you today?";
-      }
-      setMessages([{ role: "assistant", content: greeting, timestamp: Date.now() }]);
-    }
-  }, [messages.length, user]);
 
   const sendMessage = async (message: string) => {
     if (!message.trim() || isLoading) return;
