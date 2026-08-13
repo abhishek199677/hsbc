@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, CheckCircle, XCircle, RefreshCw } from "lucide-react";
@@ -8,16 +8,18 @@ import { useAuth } from "@/contexts/AuthContext";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
-  const { token: authToken } = useAuth();
+  const { user, token: authToken } = useAuth();
   const token = searchParams.get("token");
   const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">(
     token ? "verifying" : "idle"
   );
   const [message, setMessage] = useState("");
   const [resending, setResending] = useState(false);
+  const verifyAttempted = useRef(false);
 
   useEffect(() => {
-    if (!token || status !== "verifying") return;
+    if (!token || status !== "verifying" || verifyAttempted.current) return;
+    verifyAttempted.current = true;
     (async () => {
       try {
         const response = await fetch("/api/auth/verify-email", {
@@ -31,7 +33,13 @@ function VerifyEmailContent() {
           setMessage("Your email has been verified. You can now sign in.");
         } else {
           setStatus("error");
-          setMessage(data.error || "Verification failed. Please try again.");
+          if (data.error === "invalid-token") {
+            setMessage("This verification link has already been used or is invalid. Please request a new one.");
+          } else if (data.error === "expired-token") {
+            setMessage("This verification link has expired. Please request a new one.");
+          } else {
+            setMessage(data.error || "Verification failed. Please try again.");
+          }
         }
       } catch {
         setStatus("error");
@@ -39,6 +47,13 @@ function VerifyEmailContent() {
       }
     })();
   }, [token, status]);
+
+  useEffect(() => {
+    if (!token && user?.emailVerified) {
+      setStatus("success");
+      setMessage("Your email is already verified. You can sign in.");
+    }
+  }, [token, user]);
 
   const handleResend = async () => {
     setResending(true);
@@ -49,6 +64,7 @@ function VerifyEmailContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken || ""}`,
         },
+        body: JSON.stringify({ email: user?.email || "" }),
       });
       const data = await response.json();
       setMessage(data.message || (data.error || "Please try again later."));
@@ -103,9 +119,15 @@ function VerifyEmailContent() {
           )}
 
           <div className="mt-6">
-            <Link href="/login" className="text-indigo-600 font-medium hover:text-indigo-700">
-              Go to Sign In
-            </Link>
+            {status === "success" ? (
+              <Link href="/login" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                Go to Sign In
+              </Link>
+            ) : (
+              <Link href="/login" className="text-indigo-600 font-medium hover:text-indigo-700">
+                Go to Sign In
+              </Link>
+            )}
           </div>
         </div>
       </div>

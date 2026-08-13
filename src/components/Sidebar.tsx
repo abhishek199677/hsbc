@@ -10,7 +10,7 @@ interface SidebarProps {
 
 export default function Sidebar({ currentStep, progress }: SidebarProps) {
   const { organization } = useAuth();
-  const brandName = organization?.name || "Techcitta";
+  const brandName = organization?.name || "HireRight";
   const features = [
     "AI-powered matching with the right roles",
     "Interview with confidence",
@@ -79,7 +79,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
           <Headphones className="w-4 h-4" />
           <div>
             <p className="font-medium text-white">Need help?</p>
-            <p>care@techcitta.com</p>
+            <p>care@hireright.com</p>
           </div>
         </div>
       </div>

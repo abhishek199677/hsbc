@@ -1,4 +1,4 @@
-const CACHE_NAME = "techcitta-v1";
+const CACHE_NAME = "hireright-v1";
 const STATIC_ASSETS = ["/", "/favicon.ico", "/logo.jpeg"];
 const OFFLINE_PAGE = "/offline";
 

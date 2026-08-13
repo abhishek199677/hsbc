@@ -41,7 +41,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center mb-4">
-              <img src="/logo.jpeg" alt="Techcitta" className="h-10 w-auto" />
+              <img src="/logo.jpeg" alt="HireRight" className="h-10 w-auto" />
             </Link>
             <p className="text-gray-400 mb-6 max-w-sm">
               AI-powered background screening platform trusted by top employers worldwide. 
@@ -50,7 +50,7 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-gray-400">
                 <Mail className="w-4 h-4" />
-                <span className="text-sm">care@techcitta.com</span>
+                <span className="text-sm">care@hireright.com</span>
               </div>
               <div className="flex items-center gap-3 text-gray-400">
                 <Phone className="w-4 h-4" />
@@ -84,7 +84,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
-              © 2026 Techcitta. All rights reserved. Talent to Talent.
+              © 2026 HireRight. All rights reserved. Talent to Talent.
             </p>
             <div className="flex items-center gap-4">
               <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">

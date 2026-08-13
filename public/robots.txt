@@ -6,4 +6,4 @@ Disallow: /interview/room
 Disallow: /confirmation
 Allow: /
 
-Sitemap: https://techcitta.com/sitemap.xml
+Sitemap: https://hireright.com/sitemap.xml

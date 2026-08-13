@@ -127,7 +127,11 @@ export default function SettingsPage() {
     try {
       const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token || ""}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify({ email: user?.email || "" }),
       });
       const data = await response.json();
       setVerificationMsg(data.message || data.error || "Please try again later.");
@@ -222,7 +226,7 @@ export default function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "techcitta-account-data.json";
+      a.download = "hireright-account-data.json";
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {

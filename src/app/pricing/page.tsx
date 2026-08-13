@@ -122,8 +122,8 @@ export default function PricingPage() {
 
         <p className="text-center text-slate-400 text-sm mt-10">
           Questions? Reach out at{" "}
-          <a href="mailto:support@techcitta.com" className="text-slate-200 underline">
-            support@techcitta.com
+          <a href="mailto:support@hireright.com" className="text-slate-200 underline">
+            support@hireright.com
           </a>
         </p>
       </div>

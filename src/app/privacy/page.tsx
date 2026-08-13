@@ -136,8 +136,8 @@ export default function PrivacyPage() {
                 If you have questions about this Privacy Policy, please contact us:
               </p>
               <p className="text-gray-600 mt-2">
-                <strong>Email:</strong> privacy@techcitta.com<br />
-                <strong>Address:</strong> Techcitta, Bangalore, India
+                <strong>Email:</strong> privacy@hireright.com<br />
+                <strong>Address:</strong> HireRight, Bangalore, India
               </p>
             </section>
           </div>

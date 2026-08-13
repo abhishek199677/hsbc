@@ -148,14 +148,14 @@ export default function ApiDocsPage() {
           <div className="mb-12">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-4xl md:text-5xl font-bold text-white">
-                Techcitta API Documentation
+                HireRight API Documentation
               </h1>
               <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold px-3 py-1 rounded-full">
                 v1.0
               </span>
             </div>
             <p className="text-slate-300 text-lg mt-4 max-w-2xl">
-              RESTful API for the Techcitta AI interview platform. All endpoints
+              RESTful API for the HireRight AI interview platform. All endpoints
               return JSON and require JWT authentication unless noted.
             </p>
           </div>
@@ -536,7 +536,7 @@ Content-Type: application/json
                   <CodeBlock title="Response 200">
 {`{
   "success": true,
-  "message": "Hello Rahul! Welcome to your Techcitta interview...",
+  "message": "Hello Rahul! Welcome to your HireRight interview...",
   "messageCount": 1
 }`}
                   </CodeBlock>
@@ -943,8 +943,8 @@ STRIPE_PRICE_ENTERPRISE_USD=price_...`}
           <div className="mt-16 text-center text-slate-400 text-sm border-t border-white/10 pt-8">
             <p>
               Questions? Reach out at{" "}
-              <a href="mailto:support@techcitta.com" className="text-slate-200 underline">
-                support@techcitta.com
+              <a href="mailto:support@hireright.com" className="text-slate-200 underline">
+                support@hireright.com
               </a>
             </p>
           </div>

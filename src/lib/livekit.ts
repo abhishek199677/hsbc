@@ -3,7 +3,7 @@ import { prisma } from "./prisma";
 
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
-const LIVEKIT_URL = process.env.LIVEKIT_URL || "wss://livekit.techcitta.com";
+const LIVEKIT_URL = process.env.LIVEKIT_URL || "wss://livekit.hireright.com";
 
 let roomService: RoomServiceClient | null = null;
 

@@ -1,23 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Users, Calendar, FileText, TrendingUp, ArrowRight, CheckCircle, Clock, Video, BarChart3 } from "lucide-react";
-import AnalyticsDashboard from "@/components/AnalyticsDashboard";
-import Link from "next/link";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildPlaybackUrl } from "@/lib/uploadFile";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import OverviewDashboard from "@/components/admin/OverviewDashboard";
+import CandidatePipeline from "@/components/admin/CandidatePipeline";
+import ProctoringDashboard from "@/components/admin/ProctoringDashboard";
+import TeamManagement from "@/components/admin/TeamManagement";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import DataTable from "@/components/admin/DataTable";
+import { Download } from "lucide-react";
 
-interface Stats {
-  totalUsers: number;
-  totalInterviews: number;
-  completedInterviews: number;
-  scheduledInterviews: number;
-  totalProfiles: number;
-  completedProfiles: number;
+interface Feedback {
+  id: string;
+  type: string;
+  message: string;
+  email: string | null;
+  userId: string | null;
+  page: string | null;
+  status: string;
+  createdAt: string;
 }
 
-interface User {
+interface UserData {
   id: string;
   email: string;
   name: string | null;
@@ -27,34 +33,56 @@ interface User {
     isComplete: boolean;
     currentRole: string | null;
     totalExperience: string | null;
+    currentLocation: string | null;
+    skills: string | null;
   };
   interview?: {
     date: string;
     time: string;
     status: string;
+    mode: string | null;
     videoUrl: string | null;
     captionUrl: string | null;
     evaluationScore: number | null;
+    evaluation: string | null;
     proctoringStatus?: string | null;
     proctoringFlags?: number;
     proctoringReport?: string | null;
   };
 }
 
-const PROCTOR_BADGE: Record<string, { label: string; classes: string }> = {
-  pass: { label: "✓ Clean", classes: "bg-green-100 text-green-700" },
-  review: { label: "⚠ Review", classes: "bg-yellow-100 text-yellow-700" },
-  fail: { label: "⚠ Failed", classes: "bg-red-100 text-red-700" },
-  off: { label: "Monitor off", classes: "bg-gray-100 text-gray-600" },
-};
+function downloadCSV(data: Record<string, unknown>[], filename: string) {
+  if (data.length === 0) return;
+  const headers = Object.keys(data[0]);
+  const csv = [
+    headers.join(","),
+    ...data.map((row) =>
+      headers
+        .map((h) => {
+          const val = String(row[h] ?? "");
+          return val.includes(",") || val.includes('"') || val.includes("\n")
+            ? `"${val.replace(/"/g, '""')}"`
+            : val;
+        })
+        .join(",")
+    ),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { token, user, organization, isLoading: authLoading } = useAuth();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "interviews" | "analytics">("overview");
 
   useEffect(() => {
     if (!authLoading && (!user || (user.role !== "admin" && user.role !== "employer"))) {
@@ -68,19 +96,19 @@ export default function AdminDashboard() {
 
     (async () => {
       try {
-        const [statsRes, usersRes] = await Promise.all([
-          fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } }),
+        const [usersRes, feedbackRes] = await Promise.all([
           fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/admin/feedback", { headers: { Authorization: `Bearer ${token}` } }),
         ]);
-        if (statsRes.status === 401 || statsRes.status === 403 || usersRes.status === 401 || usersRes.status === 403) {
+        if (usersRes.status === 401 || usersRes.status === 403) {
           router.push("/login");
           return;
         }
-        const statsData = await statsRes.json();
         const usersData = await usersRes.json();
+        const feedbackData = await feedbackRes.json();
         if (cancelled) return;
-        if (statsData.success) setStats(statsData.stats);
         if (usersData.success) setUsers(usersData.users);
+        if (feedbackData.success) setFeedback(feedbackData.feedback);
       } catch (error) {
         console.error("Failed to load admin data:", error);
       } finally {
@@ -88,335 +116,394 @@ export default function AdminDashboard() {
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [token, router]);
+
+  const exportUsers = useCallback(() => {
+    const rows = users.map((u) => ({
+      Name: u.name || "",
+      Email: u.email,
+      Phone: u.phone || "",
+      Role: u.profile?.currentRole || "",
+      Experience: u.profile?.totalExperience || "",
+      Location: u.profile?.currentLocation || "",
+      "Profile Complete": u.profile?.isComplete ? "Yes" : "No",
+      "Interview Status": u.interview?.status || "None",
+      "Interview Score": u.interview?.evaluationScore ?? "",
+      "Joined": new Date(u.createdAt).toLocaleDateString(),
+    }));
+    downloadCSV(rows, "users-export.csv");
+  }, [users]);
+
+  const exportInterviews = useCallback(() => {
+    const rows = users.filter((u) => u.interview).map((u) => ({
+      Name: u.name || "",
+      Email: u.email,
+      Date: u.interview?.date || "",
+      Time: u.interview?.time || "",
+      Mode: u.interview?.mode || "AI Video",
+      Status: u.interview?.status || "",
+      Score: u.interview?.evaluationScore ?? "",
+      "Proctoring": u.interview?.proctoringStatus || "",
+      "Proctoring Flags": u.interview?.proctoringFlags ?? 0,
+    }));
+    downloadCSV(rows, "interviews-export.csv");
+  }, [users]);
+
+  const exportFeedback = useCallback(() => {
+    const rows = feedback.map((f) => ({
+      Type: f.type,
+      Message: f.message,
+      Email: f.email || "Anonymous",
+      Page: f.page || "",
+      Status: f.status,
+      Date: new Date(f.createdAt).toLocaleDateString(),
+    }));
+    downloadCSV(rows, "feedback-export.csv");
+  }, [feedback]);
 
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
       </div>
     );
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return <OverviewDashboard token={token} />;
+      case "candidates":
+        return <CandidatePipeline token={token} />;
+      case "interviews":
+        return <InterviewsTab users={users} loading={loading} onExport={exportInterviews} />;
+      case "analytics":
+        return <AnalyticsDashboard />;
+      case "feedback":
+        return <FeedbackTab feedback={feedback} loading={loading} onExport={exportFeedback} />;
+      case "team":
+        return <TeamManagement token={token} />;
+      case "proctoring":
+        return <ProctoringDashboard token={token} />;
+      case "settings":
+        return <SettingsTab organization={organization} />;
+      default:
+        return <OverviewDashboard token={token} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center">
-                <img src={organization?.logoUrl || "/logo.jpeg"} alt={organization?.name || "Techcitta"} className="h-10 w-auto" />
-              </Link>
-              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                {organization?.name || "Admin"} Admin
-              </span>
-            </div>
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-              Back to Site
-            </Link>
-          </div>
-        </div>
-      </header>
+    <AdminSidebar
+      user={user ? { name: user.name, email: user.email, role: user.role || "jobseeker" } : null}
+      organization={organization ? { name: organization.name, logoUrl: organization.logoUrl, plan: organization.plan || "starter" } : null}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+    >
+      {renderContent()}
+    </AdminSidebar>
+  );
+}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="flex gap-4 mb-8">
-          {([
-            { id: "overview", label: "Overview", icon: TrendingUp },
-            { id: "users", label: "Users", icon: Users },
-            { id: "interviews", label: "Interviews", icon: Calendar },
-            { id: "analytics", label: "Analytics", icon: BarChart3 },
-          ] as const).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "bg-indigo-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
+function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loading: boolean; onExport: () => void }) {
+  const { token } = useAuth();
+  const interviews = users.filter((u) => u.interview);
+
+  const columns = [
+    {
+      key: "name",
+      label: "Candidate",
+      sortable: true,
+      render: (u: Record<string, unknown>) => {
+        const user = u as unknown as UserData;
+        return (
+        <div>
+          <p className="font-medium text-gray-900">{user.name || "N/A"}</p>
+          <p className="text-sm text-gray-500">{user.email}</p>
+        </div>
+        );
+      },
+    },
+    {
+      key: "date",
+      label: "Date",
+      sortable: true,
+      render: (u: Record<string, unknown>) => {
+        const user = u as unknown as UserData;
+        return <span className="text-sm text-gray-900">{user.interview?.date}</span>;
+      },
+    },
+    {
+      key: "time",
+      label: "Time",
+      render: (u: Record<string, unknown>) => {
+        const user = u as unknown as UserData;
+        return <span className="text-sm text-gray-900">{user.interview?.time}</span>;
+      },
+    },
+    {
+      key: "status",
+      label: "Status",
+      filterable: true,
+      filterOptions: ["completed", "scheduled", "cancelled"],
+      render: (u: Record<string, unknown>) => {
+        const user = u as unknown as UserData;
+        return (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          user.interview?.status === "completed"
+            ? "bg-green-100 text-green-700"
+            : user.interview?.status === "scheduled"
+            ? "bg-blue-100 text-blue-700"
+            : "bg-gray-100 text-gray-700"
+        }`}>
+          {user.interview?.status || "Unknown"}
+        </span>
+        );
+      },
+    },
+    {
+      key: "score",
+      label: "Score",
+      sortable: true,
+      render: (u: Record<string, unknown>) => {
+        const user = u as unknown as UserData;
+        const score = user.interview?.evaluationScore;
+        if (score == null) return <span className="text-gray-400 text-sm">—</span>;
+        return (
+          <span className={`text-sm font-medium ${score >= 7 ? "text-green-600" : score >= 5 ? "text-yellow-600" : "text-red-600"}`}>
+            {score}/10
+          </span>
+        );
+      },
+    },
+    {
+      key: "proctoring",
+      label: "Proctoring",
+      filterable: true,
+      filterOptions: ["pass", "review", "fail", "off"],
+      render: (u: Record<string, unknown>) => {
+        const user = u as unknown as UserData;
+        const status = user.interview?.proctoringStatus;
+        if (!status) return <span className="text-gray-400 text-sm">—</span>;
+        const badges: Record<string, string> = {
+          pass: "bg-green-100 text-green-700",
+          review: "bg-yellow-100 text-yellow-700",
+          fail: "bg-red-100 text-red-700",
+          off: "bg-gray-100 text-gray-600",
+        };
+        return (
+          <div>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${badges[status] || "bg-gray-100 text-gray-600"}`}>
+              {status === "pass" ? "✓ Clean" : status === "review" ? "⚠ Review" : status === "fail" ? "⚠ Failed" : "Monitor off"}
+            </span>
+            {(user.interview?.proctoringFlags ?? 0) > 0 && (
+              <p className="text-[11px] text-gray-500 mt-1">{user.interview?.proctoringFlags} incident(s)</p>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (u: Record<string, unknown>) => {
+        const user = u as unknown as UserData;
+        return (
+        <div className="flex items-center gap-3">
+          {user.interview?.status === "completed" && user.interview?.videoUrl ? (
+            <a
+              href={`/interview/live?userId=${user.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
             >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
+              Watch
+            </a>
+          ) : (
+            <a
+              href={`/interview/live?userId=${user.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+            >
+              Start
+            </a>
+          )}
         </div>
+        );
+      },
+    },
+  ];
 
-        {/* Overview Tab */}
-        {activeTab === "overview" && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-            
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Interview Management</h1>
+        <p className="text-sm text-gray-500 mt-1">View and manage all candidate interviews</p>
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+        </div>
+      ) : (
+        <DataTable
+          data={interviews as unknown as Record<string, unknown>[]}
+          columns={columns}
+          searchable
+          searchKeys={["name", "email"]}
+          searchPlaceholder="Search interviews..."
+          onExport={onExport}
+          exportLabel="Export CSV"
+          emptyMessage="No interviews scheduled yet."
+          pageSize={25}
+        />
+      )}
+    </div>
+  );
+}
+
+function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; loading: boolean; onExport: () => void }) {
+  const columns = [
+    {
+      key: "type",
+      label: "Type",
+      sortable: true,
+      filterable: true,
+      filterOptions: ["general", "bug", "feature"],
+      render: (f: Record<string, unknown>) => {
+        const item = f as unknown as Feedback;
+        return (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          item.type === "bug" ? "bg-red-100 text-red-700" : item.type === "feature" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"
+        }`}>
+          {item.type === "bug" ? "Bug" : item.type === "feature" ? "Feature Request" : "General"}
+        </span>
+        );
+      },
+    },
+    {
+      key: "message",
+      label: "Message",
+      render: (f: Record<string, unknown>) => {
+        const item = f as unknown as Feedback;
+        return <p className="text-sm text-gray-900 max-w-md truncate">{item.message}</p>;
+      },
+    },
+    {
+      key: "email",
+      label: "From",
+      sortable: true,
+      render: (f: Record<string, unknown>) => {
+        const item = f as unknown as Feedback;
+        return <span className="text-sm text-gray-500">{item.email || "Anonymous"}</span>;
+      },
+    },
+    {
+      key: "page",
+      label: "Page",
+      render: (f: Record<string, unknown>) => {
+        const item = f as unknown as Feedback;
+        return <span className="text-sm text-gray-500">{item.page || "N/A"}</span>;
+      },
+    },
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      filterable: true,
+      filterOptions: ["open", "in_progress", "resolved"],
+      render: (f: Record<string, unknown>) => {
+        const item = f as unknown as Feedback;
+        return (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          item.status === "open" ? "bg-yellow-100 text-yellow-700" : item.status === "in_progress" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+        }`}>
+          {item.status === "open" ? "Open" : item.status === "in_progress" ? "In Progress" : "Resolved"}
+        </span>
+        );
+      },
+    },
+    {
+      key: "createdAt",
+      label: "Date",
+      sortable: true,
+      render: (f: Record<string, unknown>) => {
+        const item = f as unknown as Feedback;
+        return <span className="text-sm text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</span>;
+      },
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">User Feedback</h1>
+        <p className="text-sm text-gray-500 mt-1">View and manage user feedback submissions</p>
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+        </div>
+      ) : (
+        <DataTable
+          data={feedback as unknown as Record<string, unknown>[]}
+          columns={columns}
+          searchable
+          searchKeys={["message", "email"]}
+          searchPlaceholder="Search feedback..."
+          onExport={onExport}
+          exportLabel="Export CSV"
+          emptyMessage="No feedback submitted yet."
+          pageSize={25}
+        />
+      )}
+    </div>
+  );
+}
+
+function SettingsTab({ organization }: { organization: { name: string | null; plan: string } | null }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage your organization details and preferences</p>
+      </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+              <input
+                type="text"
+                value={organization?.name || ""}
+                disabled
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                  organization?.plan === "enterprise" ? "bg-purple-100 text-purple-700" :
+                  organization?.plan === "pro" ? "bg-blue-100 text-blue-700" :
+                  "bg-gray-100 text-gray-700"
+                }`}>
+                  {organization?.plan === "enterprise" ? "Enterprise" : organization?.plan === "pro" ? "Pro" : "Starter"}
+                </span>
               </div>
-            ) : stats ? (
-              <>
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white rounded-xl shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">Total Users</p>
-                        <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
-                      </div>
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="w-6 h-6 text-blue-600" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">Interviews Scheduled</p>
-                        <p className="text-3xl font-bold text-gray-900">{stats.totalInterviews}</p>
-                      </div>
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-green-600" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">Completed Profiles</p>
-                        <p className="text-3xl font-bold text-gray-900">{stats.completedProfiles}</p>
-                      </div>
-                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-purple-600" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Interview Stats */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Interview Statistics</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-                      <CheckCircle className="w-8 h-8 text-green-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{stats.completedInterviews}</p>
-                        <p className="text-sm text-gray-500">Completed</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg">
-                      <Clock className="w-8 h-8 text-yellow-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{stats.scheduledInterviews}</p>
-                        <p className="text-sm text-gray-500">Scheduled</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-gray-500">Failed to load stats</p>
-            )}
+            </div>
           </div>
-        )}
-
-        {/* Users Tab */}
-        {activeTab === "users" && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-            
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Experience</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profile Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Interview</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-medium text-gray-900">{user.name || "N/A"}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {user.profile?.currentRole || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {user.profile?.totalExperience || "N/A"}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            user.profile?.isComplete
-                              ? "bg-green-100 text-green-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}>
-                            {user.profile?.isComplete ? "Complete" : "In Progress"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          {user.interview ? (
-                            <div className="text-sm">
-                              <p className="text-gray-900">{user.interview.date}</p>
-                              <p className="text-gray-500">{user.interview.time}</p>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">Not scheduled</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {users.length === 0 && (
-                  <div className="py-12 text-center text-gray-500">
-                    No users registered yet.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Interviews Tab */}
-        {activeTab === "interviews" && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Interview Management</h2>
-            
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Candidate</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proctoring</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {users.filter(u => u.interview).map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-medium text-gray-900">{user.name || "N/A"}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {user.interview?.date}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {user.interview?.time}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          AI Video
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            user.interview?.status === "completed"
-                              ? "bg-green-100 text-green-700"
-                              : user.interview?.status === "scheduled"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}>
-                            {user.interview?.status || "Unknown"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          {user.interview?.proctoringStatus ? (
-                            <div>
-                              <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                                PROCTOR_BADGE[user.interview.proctoringStatus]?.classes || "bg-gray-100 text-gray-600"
-                              }`}>
-                                {PROCTOR_BADGE[user.interview.proctoringStatus]?.label || user.interview.proctoringStatus}
-                              </span>
-                              {(user.interview.proctoringFlags ?? 0) > 0 && (
-                                <p className="text-[11px] text-gray-500 mt-1">
-                                  {user.interview.proctoringFlags} incident(s)
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 text-sm">—</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            {user.interview?.status === "completed" && user.interview?.videoUrl ? (
-                              <details className="group">
-                                <summary className="text-primary hover:text-primary-dark text-sm font-medium flex items-center gap-1 cursor-pointer list-none">
-                                  <Video className="w-4 h-4" />
-                                  View Recording
-                                </summary>
-                                <div className="mt-2 w-80">
-                                  <video
-                                    src={buildPlaybackUrl(user.interview.videoUrl, token)}
-                                    controls
-                                    className="w-full rounded-lg bg-gray-900"
-                                  >
-                                    {user.interview?.captionUrl && (
-                                      <track kind="captions" src={buildPlaybackUrl(user.interview.captionUrl, token)} srcLang="en" label="Simple English" default />
-                                    )}
-                                  </video>
-                                </div>
-                              </details>
-                            ) : (
-                              <Link
-                                href={`/interview/live?userId=${user.id}`}
-                                className="text-primary hover:text-primary-dark text-sm font-medium flex items-center gap-1"
-                              >
-                                Start Interview
-                                <ArrowRight className="w-4 h-4" />
-                              </Link>
-                            )}
-                            {user.interview?.status === "completed" && (
-                              <span className={`text-sm font-medium ${user.interview?.evaluationScore && user.interview.evaluationScore >= 7 ? "text-green-600" : user.interview?.evaluationScore && user.interview.evaluationScore >= 5 ? "text-yellow-600" : "text-gray-600"}`}>
-                                Score: {user.interview?.evaluationScore ?? "—"}/10
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {users.filter(u => u.interview).length === 0 && (
-                  <div className="py-12 text-center text-gray-500">
-                    No interviews scheduled yet.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Analytics Tab */}
-        {activeTab === "analytics" && <AnalyticsDashboard />}
-      </main>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Branding</h3>
+          <p className="text-sm text-gray-500">Organization branding and customization options coming soon.</p>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Integrations</h3>
+          <p className="text-sm text-gray-500">Third-party integrations management coming soon.</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const DEV_SECRET = "techcitta-dev-only-secret";
+const DEV_SECRET = "hireright-dev-only-secret";
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;

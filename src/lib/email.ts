@@ -46,7 +46,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
 
   try {
     const info = await transporter.sendMail({
-      from: `"Techcitta" <${process.env.SMTP_USER || "noreply@techcitta.com"}>`,
+      from: `"HireRight" <${process.env.SMTP_USER || "noreply@hireright.com"}>`,
       to,
       subject,
       html,
@@ -113,9 +113,9 @@ export function generateInterviewConfirmationEmail(data: {
             <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/interview" class="button">View Interview Details</a>
           </div>
         </div>
-        <div class="footer">
-          <p>© 2026 Techcitta. All rights reserved.</p>
-          <p>Right People. Right Decisions.</p>
+<div class="footer">
+          <p>© 2026 HireRight. All rights reserved.</p>
+           <p>Right People. Right Decisions.</p>
         </div>
       </div>
     </body>
@@ -177,9 +177,9 @@ export function generateReminderEmail(data: {
             <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/interview/live" class="button">Join Interview</a>
           </div>
         </div>
-        <div class="footer">
-          <p>© 2026 Techcitta. All rights reserved.</p>
-          <p>Right People. Right Decisions.</p>
+<div class="footer">
+          <p>© 2026 HireRight. All rights reserved.</p>
+           <p>Right People. Right Decisions.</p>
         </div>
       </div>
     </body>
@@ -187,7 +187,7 @@ export function generateReminderEmail(data: {
   `;
 }
 
-export function generateWelcomeEmail(name: string, orgName: string = "Techcitta") {
+export function generateWelcomeEmail(name: string, orgName: string = "HireRight") {
   return `
     <!DOCTYPE html>
     <html>
@@ -246,14 +246,14 @@ export function generateVerificationEmail(name: string, verifyUrl: string) {
         </div>
         <div class="content">
           <p>Hi ${name},</p>
-          <p>Thanks for signing up for Techcitta. Please confirm your email address to secure your account and unlock all features.</p>
+          <p>Thanks for signing up for HireRight. Please confirm your email address to secure your account and unlock all features.</p>
           <p>This link expires in 1 hour.</p>
           <div style="text-align: center;">
             <a href="${verifyUrl}" class="button">Verify Email</a>
           </div>
         </div>
-        <div class="footer">
-          <p>© 2026 Techcitta. All rights reserved.</p>
+<div class="footer">
+          <p>© 2026 HireRight. All rights reserved.</p>
         </div>
       </div>
     </body>
