@@ -91,7 +91,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' https://*.cloudflare.com https://*.r2.cloudflarestorage.com data: blob:",
     "font-src 'self'",
-    `connect-src 'self' https://*.cloudflare.com https://api.openai.com https://*.upstash.io https://*.sentry.io ${process.env.LIVEKIT_URL || "wss://livekit.hireright.com"} wss://*.livekit.cloud https://*.livekit.cloud`,
+    `connect-src 'self' https://*.cloudflare.com https://api.openai.com https://*.upstash.io https://*.sentry.io ${process.env.LIVEKIT_URL || "wss://livekit.hireright.com"} wss://*.livekit.cloud https://*.livekit.cloud ${process.env.NODE_ENV !== "production" ? "http://localhost:* ws://localhost:*" : ""}`,
     `media-src 'self' blob: https://*.r2.cloudflarestorage.com`,
     `frame-src 'none'`,
     `worker-src 'self' blob:`,
@@ -113,6 +113,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

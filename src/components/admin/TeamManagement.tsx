@@ -235,47 +235,45 @@ export default function TeamManagement({ token }: TeamManagementProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Toast */}
-        {toast && (
-          <div
-            className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 ${
-              toast.type === "success"
-                ? "bg-green-50 text-green-800 border border-green-200"
-                : "bg-red-50 text-red-800 border border-red-200"
-            }`}
-          >
-            {toast.type === "success" ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <X className="w-4 h-4" />
-            )}
-            {toast.message}
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Team Management
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage your team members, roles, and permissions.
-            </p>
-          </div>
-          <button
-            onClick={() => setInviteModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            Invite Member
-          </button>
+    <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 ${
+            toast.type === "success"
+              ? "bg-green-50 text-green-800 border border-green-200"
+              : "bg-red-50 text-red-800 border border-red-200"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <Check className="w-4 h-4" />
+          ) : (
+            <X className="w-4 h-4" />
+          )}
+          {toast.message}
         </div>
+      )}
 
-        {/* Team Members Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Team Management
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your team members, roles, and permissions.
+          </p>
+        </div>
+        <button
+          onClick={() => setInviteModalOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+        >
+          <UserPlus className="w-4 h-4" />
+          Invite Member
+        </button>
+      </div>
+
+      {/* Team Members Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader className="w-6 h-6 text-indigo-600 animate-spin" />
@@ -421,7 +419,6 @@ export default function TeamManagement({ token }: TeamManagementProps) {
             </div>
           )}
         </div>
-      </div>
 
       {/* Invite Modal */}
       {inviteModalOpen && (

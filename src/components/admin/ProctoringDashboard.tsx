@@ -163,7 +163,7 @@ function getIncidentLabel(type: string): string {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-gray-200 rounded-xl" />
         <div className="flex-1">
@@ -177,7 +177,7 @@ function SkeletonCard() {
 
 function SkeletonChart() {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
       <div className="h-6 bg-gray-200 rounded w-40 mb-6" />
       <div className="h-64 bg-gray-200 rounded" />
     </div>
@@ -186,7 +186,7 @@ function SkeletonChart() {
 
 function SkeletonTable() {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
       <div className="h-6 bg-gray-200 rounded w-48 mb-6" />
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
@@ -378,29 +378,27 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <div className="h-10 bg-gray-200 rounded w-80 animate-pulse" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SkeletonChart />
-            <SkeletonChart />
-          </div>
-          <SkeletonTable />
-          <SkeletonTable />
+      <div className="space-y-6">
+        <div className="h-10 bg-gray-200 rounded w-80 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[...Array(4)].map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <SkeletonChart />
+          <SkeletonChart />
+        </div>
+        <SkeletonTable />
+        <SkeletonTable />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="bg-white rounded-xl shadow-sm p-8 max-w-md w-full text-center">
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center text-gray-500">
           <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Dashboard</h2>
           <p className="text-gray-600">{error}</p>
@@ -410,19 +408,18 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Shield className="w-8 h-8 text-blue-600" />
-            Proctoring Integrity Dashboard
-          </h1>
-          <p className="text-gray-500 mt-1">Monitor interview integrity and proctoring violations</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <Shield className="w-8 h-8 text-blue-600" />
+          Proctoring Integrity Dashboard
+        </h1>
+        <p className="text-gray-500 mt-1">Monitor interview integrity and proctoring violations</p>
+      </div>
 
-        {/* Row 1: Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6 transition-all hover:shadow-md">
+      {/* Row 1: Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -434,7 +431,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 transition-all hover:shadow-md">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
@@ -449,7 +446,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 transition-all hover:shadow-md">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-yellow-600" />
@@ -464,7 +461,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 transition-all hover:shadow-md">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
@@ -478,12 +475,12 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
               </div>
             </div>
           </div>
-        </div>
+      </div>
 
-        {/* Row 2: Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      {/* Row 2: Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Integrity Distribution Pie Chart */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Integrity Distribution</h2>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -527,7 +524,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
           </div>
 
           {/* Violation Types Bar Chart */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Violation Types</h2>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -558,10 +555,10 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
+      </div>
 
-        {/* Row 3: Flagged Sessions Table */}
-        <div className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
+      {/* Row 3: Flagged Sessions Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
@@ -635,8 +632,8 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
           )}
         </div>
 
-        {/* Row 4: Recent Incidents Timeline */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+      {/* Row 4: Recent Incidents Timeline */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
             <Activity className="w-5 h-5 text-purple-500" />
             Recent Incidents Timeline
@@ -700,7 +697,6 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
             </div>
           )}
         </div>
-      </div>
 
       {/* Modal */}
       {modalOpen && selectedInterview && (
