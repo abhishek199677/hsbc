@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import CandidateProfileModal, { type CandidateUser } from "@/components/admin/CandidateProfileModal";
 import {
   Users,
   UserCheck,
@@ -36,36 +37,7 @@ interface CandidatePipelineProps {
   token: string | null;
 }
 
-interface Profile {
-  isComplete: boolean;
-  currentRole: string | null;
-  totalExperience: string | null;
-  currentLocation: string | null;
-  skills: string | null;
-}
-
-interface Interview {
-  date: string | null;
-  time: string | null;
-  status: string | null;
-  mode: string | null;
-  videoUrl: string | null;
-  captionUrl: string | null;
-  evaluationScore: number | null;
-  proctoringStatus: string | null;
-  proctoringFlags: string[] | null;
-  proctoringReport: string | null;
-}
-
-interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  phone: string | null;
-  createdAt: string;
-  profile: Profile | null;
-  interview: Interview | null;
-}
+type User = CandidateUser;
 
 interface FunnelStage {
   label: string;
@@ -255,6 +227,7 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [expandedCandidate, setExpandedCandidate] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -690,6 +663,7 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <button
+                          onClick={() => setSelectedUser(c.user)}
                           className="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                           title="View Profile"
                         >
@@ -760,6 +734,14 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
             </BarChart>
           </ResponsiveContainer>
         </div>
+      )}
+
+      {selectedUser && (
+        <CandidateProfileModal
+          key={selectedUser.id}
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+        />
       )}
     </div>
   );

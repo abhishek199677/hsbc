@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import toast from "react-hot-toast";
+import PostJobModal from "@/components/employer/PostJobModal";
+import JobMatchesModal, { type Job } from "@/components/employer/JobMatchesModal";
 import { 
   Briefcase, Users, FileCheck, TrendingUp, Search, 
   Plus, ArrowRight, Clock, CheckCircle, AlertCircle,
-  Building2, Mail, Phone, MapPin, Download, X
+  Building2, Mail, Phone, MapPin, Download, X,
+  Eye, Pause, Play, Trash2
 } from "lucide-react";
 
 interface Candidate {
@@ -138,12 +142,34 @@ export default function EmployerDashboard() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState(true);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [matchesJob, setMatchesJob] = useState<Job | null>(null);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     verified: 0,
     shortlisted: 0,
   });
+
+  const loadJobs = useCallback(async (authToken: string) => {
+    try {
+      const res = await fetch("/api/employer/jobs", {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
+      const data = await res.json();
+      if (data.success) setJobs(data.jobs);
+    } catch (error) {
+      console.error("Failed to load jobs:", error);
+    } finally {
+      setLoadingJobs(false);
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -186,8 +212,12 @@ export default function EmployerDashboard() {
       }
     })();
 
+    (async () => {
+      await loadJobs(token);
+    })();
+
     return () => { cancelled = true; };
-  }, [token, user, router]);
+  }, [token, user, router, loadJobs]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -216,6 +246,51 @@ export default function EmployerDashboard() {
         return <AlertCircle className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const jobStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      active: "bg-green-100 text-green-700",
+      paused: "bg-yellow-100 text-yellow-700",
+      closed: "bg-gray-100 text-gray-600",
+      draft: "bg-blue-100 text-blue-700",
+    };
+    return styles[status] || "bg-gray-100 text-gray-600";
+  };
+
+  const handleJobStatus = async (job: Job, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/employer/jobs/${job.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update job");
+      setJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, status: newStatus } : j)));
+      toast.success(newStatus === "active" ? "Job reactivated" : `Job ${newStatus}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update job");
+    }
+  };
+
+  const handleDeleteJob = async (job: Job) => {
+    if (!window.confirm(`Delete the job "${job.title}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/employer/jobs/${job.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete job");
+      setJobs((prev) => prev.filter((j) => j.id !== job.id));
+      toast.success("Job deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete job");
     }
   };
 
@@ -248,7 +323,10 @@ export default function EmployerDashboard() {
               >
                 Home
               </Link>
-              <button className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-dark flex items-center gap-2">
+              <button
+                onClick={() => setShowPostModal(true)}
+                className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-dark flex items-center gap-2"
+              >
                 <Plus className="w-4 h-4" />
                 Post Job
               </button>
@@ -334,6 +412,92 @@ export default function EmployerDashboard() {
               <option>Hyderabad</option>
             </select>
           </div>
+        </div>
+
+        {/* Posted Jobs */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+          <div className="p-6 border-b flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Posted Jobs</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Manage openings and view AI-matched candidates for each role
+              </p>
+            </div>
+            <button
+              onClick={() => setShowPostModal(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Job
+            </button>
+          </div>
+          {loadingJobs ? (
+            <div className="p-10 flex justify-center">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="p-10 text-center">
+              <p className="text-gray-500">No jobs posted yet.</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Click &quot;Post Job&quot; to create your first opening and get AI-matched candidates.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {jobs.map((job) => (
+                <div key={job.id} className="p-6 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-gray-900">{job.title}</h3>
+                      <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${jobStatusBadge(job.status)}`}>
+                        {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {[job.department, job.location, job.experienceLevel, job.employmentType].filter(Boolean).join(" · ") || "No location specified"}
+                    </p>
+                    <p className="text-sm text-gray-500 line-clamp-2 mt-1">{job.description}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => setMatchesJob(job)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+                      title="View AI-matched candidates"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Matches
+                    </button>
+                    {job.status === "active" ? (
+                      <button
+                        onClick={() => handleJobStatus(job, "paused")}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        title="Pause job"
+                      >
+                        <Pause className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      job.status !== "closed" && (
+                        <button
+                          onClick={() => handleJobStatus(job, "active")}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                          title="Activate job"
+                        >
+                          <Play className="w-4 h-4" />
+                        </button>
+                      )
+                    )}
+                    <button
+                      onClick={() => handleDeleteJob(job)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                      title="Delete job"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Candidates List */}
@@ -619,6 +783,21 @@ export default function EmployerDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      <PostJobModal
+        open={showPostModal}
+        token={token}
+        onClose={() => setShowPostModal(false)}
+        onCreated={() => token && loadJobs(token)}
+      />
+      {matchesJob && (
+        <JobMatchesModal
+          key={matchesJob.id}
+          job={matchesJob}
+          token={token}
+          onClose={() => setMatchesJob(null)}
+        />
       )}
     </div>
   );
