@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       const typeLabel = type === "bug" ? "Bug Report" : type === "feature" ? "Feature Request" : "General Feedback";
       await sendEmail({
         to: adminEmail,
-        subject: `[Techcitta] New ${typeLabel} from ${email || "Anonymous"}`,
+        subject: `[HireRight] New ${typeLabel} from ${email || "Anonymous"}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
                 </div>
               </div>
               <div class="footer">
-                <p>This feedback was submitted via the Techcitta feedback widget.</p>
+                <p>This feedback was submitted via the HireRight feedback widget.</p>
               </div>
             </div>
           </body>

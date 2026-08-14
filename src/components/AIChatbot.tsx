@@ -22,11 +22,11 @@ function getInitialMessages(user?: ChatbotProps["user"]): Message[] {
   if (!user) return [];
   let greeting = "Hello! 👋";
   if (user.role === "jobseeker") {
-    greeting = "Hi there! I'm your Techcitta AI Assistant. I can help you complete your profile, prepare for your interview, or navigate our platform. What would you like help with?";
+    greeting = "Hi there! I'm your HireRight AI Assistant. I can help you complete your profile, prepare for your interview, or navigate our platform. What would you like help with?";
   } else if (user.role === "employer") {
-    greeting = "Hello! I'm your Techcitta AI Assistant. I can help you find candidates, manage interviews, or navigate our employer features. What do you need?";
+    greeting = "Hello! I'm your HireRight AI Assistant. I can help you find candidates, manage interviews, or navigate our employer features. What do you need?";
   } else {
-    greeting = "Hello! I'm your Techcitta AI Assistant. How can I help you today?";
+    greeting = "Hello! I'm your HireRight AI Assistant. How can I help you today?";
   }
   return [{ role: "assistant", content: greeting, timestamp: Date.now() }];
 }

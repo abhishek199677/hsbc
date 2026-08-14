@@ -40,8 +40,10 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center mb-4">
-              <img src="/logo.jpeg" alt="HireRight" className="h-10 w-auto" />
+            <Link href="/" className="flex items-center mb-4 w-fit">
+              <div className="bg-white rounded-lg p-1.5 shadow-lg">
+                <img src="/logo.png" alt="HireRight" className="h-8 w-auto rounded" />
+              </div>
             </Link>
             <p className="text-gray-400 mb-6 max-w-sm">
               AI-powered background screening platform trusted by top employers worldwide. 

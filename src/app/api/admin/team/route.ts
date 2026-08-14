@@ -133,7 +133,7 @@ export async function POST(request: Request) {
 
     await sendEmail({
       to: email,
-      subject: `You've been invited to join ${requester.name || "Techcitta"}`,
+      subject: `You've been invited to join ${requester.name || "HireRight"}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
           <div class="container">
             <div class="header">
               <h1>Team Invitation</h1>
-              <p>You've been invited to join ${requester.name || "Techcitta"}</p>
+              <p>You've been invited to join ${requester.name || "HireRight"}</p>
             </div>
             <div class="content">
               <p>You've been invited as a <strong>${assignedRole}</strong>.</p>
@@ -161,7 +161,7 @@ export async function POST(request: Request) {
               </div>
             </div>
             <div class="footer">
-              <p>© 2026 Techcitta. All rights reserved.</p>
+              <p>© 2026 HireRight. All rights reserved.</p>
             </div>
           </div>
         </body>

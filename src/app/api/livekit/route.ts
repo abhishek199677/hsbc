@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         success: true,
         roomName,
         token,
-        url: `${process.env.LIVEKIT_URL || "wss://livekit.techcitta.com"}?token=${token}`,
+        url: `${process.env.LIVEKIT_URL || "wss://livekit.hireright.com"}?token=${token}`,
       });
     }
 

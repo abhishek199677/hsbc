@@ -193,7 +193,7 @@ export default function EnterprisePage() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Scale Your Hiring?</h2>
           <p className="text-white/80 mb-8">
-            Join 1000+ enterprises already using Techcitta for efficient, reliable background screening.
+            Join 1000+ enterprises already using HireRight for efficient, reliable background screening.
           </p>
           <Link
             href="/signup"

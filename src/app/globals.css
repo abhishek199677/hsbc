@@ -148,3 +148,139 @@ body {
     opacity: 0;
   }
 }
+
+/* ============================================
+   Glare & hover effects
+   ============================================ */
+
+/* Diagonal shine sweep on hover (buttons & gradient elements) */
+.glare {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.glare::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  transform: skewX(-22deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  pointer-events: none;
+  transition: left 0.65s ease-in-out;
+  z-index: 1;
+}
+.glare:hover::after {
+  left: 130%;
+}
+
+/* Stronger white sheen for dark/gradient surfaces */
+.glare-light::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.7),
+    transparent
+  );
+}
+
+/* Indigo sheen for light/white surfaces */
+.glare-indigo::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(99, 102, 241, 0.18),
+    transparent
+  );
+}
+
+/* Card: lift + glow + mouse-following glare (uses --mx / --my) */
+.card-glare {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.card-glare::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    500px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(129, 140, 248, 0.18),
+    transparent 40%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.card-glare::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -60%;
+  width: 40%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease-in-out;
+  pointer-events: none;
+  z-index: 2;
+}
+.card-glare:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(79, 70, 229, 0.18);
+}
+.card-glare:hover::after {
+  left: 150%;
+}
+.card-glare:hover::before {
+  opacity: 1;
+}
+
+/* Simple glow on hover */
+.hover-glow {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.hover-glow:hover {
+  box-shadow: 0 0 32px rgba(129, 140, 248, 0.45);
+}
+
+/* Animated gradient border glow for emphasis cards */
+.border-glow {
+  position: relative;
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.border-glow:hover {
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35),
+    0 12px 40px rgba(79, 70, 229, 0.22);
+}
+
+/* Gentle pulsing aura for hero decorative elements */
+@keyframes pulse-aura {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+.aura {
+  animation: pulse-aura 6s ease-in-out infinite;
+}

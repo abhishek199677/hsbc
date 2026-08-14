@@ -22,8 +22,10 @@ export default function CompanyLogos() {
           {companies.map((company) => (
             <div
               key={company.name}
-              className="text-2xl md:text-3xl font-bold opacity-40 hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-              style={{ color: company.color }}
+              className="text-2xl md:text-3xl font-bold opacity-40 hover:opacity-100 transition-opacity duration-300 cursor-pointer hover:scale-110 hover:-translate-y-1 transition-transform"
+              style={{ color: company.color, filter: "drop-shadow(0 0 0 transparent)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.filter = `drop-shadow(0 4px 16px ${company.color}55)`)}
+              onMouseLeave={(e) => (e.currentTarget.style.filter = "drop-shadow(0 0 0 transparent)")}
             >
               {company.name}
             </div>

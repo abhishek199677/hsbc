@@ -217,7 +217,7 @@ export function generateWelcomeEmail(name: string, orgName: string = "HireRight"
           </div>
         </div>
         <div class="footer">
-          <p>© 2026 Techcitta. All rights reserved.</p>
+          <p>© 2026 HireRight. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -289,7 +289,7 @@ export function generatePasswordResetEmail(name: string, resetUrl: string) {
           </div>
         </div>
         <div class="footer">
-          <p>© 2026 Techcitta. All rights reserved.</p>
+          <p>© 2026 HireRight. All rights reserved.</p>
         </div>
       </div>
     </body>

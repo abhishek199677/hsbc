@@ -22,7 +22,7 @@ export default function Sidebar({ currentStep, progress }: SidebarProps) {
   return (
     <aside className="w-full lg:w-80 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white p-8 flex flex-col">
       <div className="mb-8">
-        <img src={organization?.logoUrl || "/logo.jpeg"} alt={brandName} className="h-12 w-auto" />
+        <img src={organization?.logoUrl || "/logo.png"} alt={brandName} className="h-12 w-auto" />
       </div>
 
       <div className="mb-8">

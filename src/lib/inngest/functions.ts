@@ -88,7 +88,7 @@ export const sendWelcomeEmail = inngest.createFunction(
       return { success: false, error: "No email found" };
     }
 
-    const orgName = user.organization?.name || "Techcitta";
+    const orgName = user.organization?.name || "HireRight";
 
     await step.run("send-email", async () => {
       await sendEmail({
@@ -121,7 +121,7 @@ export const sendVerificationEmail = inngest.createFunction(
     await step.run("send-email", async () => {
       await sendEmail({
         to: user.email,
-        subject: "Confirm your email – Techcitta",
+        subject: "Confirm your email – HireRight",
         html: generateVerificationEmail(user.name || "there", verifyUrl),
       });
     });

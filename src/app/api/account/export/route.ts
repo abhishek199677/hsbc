@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="techcitta-account-data-${user.userId}.json"`,
+        "Content-Disposition": `attachment; filename="hireright-account-data-${user.userId}.json"`,
       },
     });
   } catch (error) {

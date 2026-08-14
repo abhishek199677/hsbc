@@ -208,7 +208,7 @@ export default function InterviewRoomPage() {
 
     const start = performance.now();
     try {
-      await fetch(`/logo.jpeg?t=${Date.now()}`, { cache: "no-store" });
+      await fetch(`/logo.png?t=${Date.now()}`, { cache: "no-store" });
       setLatency(Math.round(performance.now() - start));
       setNetworkStatus("ready");
     } catch {
@@ -361,7 +361,9 @@ export default function InterviewRoomPage() {
             onClick={() => router.push("/interview")}
             className="flex items-center gap-3 group"
           >
-            <img src="/logo.jpeg" alt="Techcitta" className="h-8 w-auto rounded" />
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-1.5">
+              <img src="/logo.png" alt="HireRight" className="h-6 w-auto rounded drop-shadow-md" />
+            </div>
             <span className="px-2 py-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs rounded-full font-medium">
               AI Interview Room
             </span>
@@ -396,7 +398,7 @@ export default function InterviewRoomPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-bold">{displayName}</h1>
                   <span className="px-2 py-0.5 rounded-full bg-white/15 text-[11px] font-medium text-white/90">
-                    AI Interviewer · Techcitta
+                    AI Interviewer · HireRight
                   </span>
                 </div>
                 <p className="text-white/80 text-sm mt-1">

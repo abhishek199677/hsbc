@@ -292,12 +292,12 @@ export default function ConfirmationPage() {
                 <p className="mt-2">📅 Date: {formatDate(interviewDate)}</p>
                 <p>🕐 Time: {interviewTime} ({tzLabel})</p>
                 <p className="mt-2">We look forward to meeting you!</p>
-                <p className="mt-2 text-gray-500">– Team Techcitta</p>
+                <p className="mt-2 text-gray-500">– Team HireRight</p>
               </div>
               <button 
                 onClick={() => {
                   const subject = encodeURIComponent(`Your AI Interview is Confirmed – ${formatShortDate(interviewDate)}`);
-                  const body = encodeURIComponent(`Hi ${displayName},\n\nGreat news! Your 15-minute AI interview is confirmed.\n\n📅 Date: ${formatDate(interviewDate)}\n🕐 Time: ${interviewTime} (${tzLabel})\n\nWe look forward to meeting you!\n\n– Team Techcitta`);
+                  const body = encodeURIComponent(`Hi ${displayName},\n\nGreat news! Your 15-minute AI interview is confirmed.\n\n📅 Date: ${formatDate(interviewDate)}\n🕐 Time: ${interviewTime} (${tzLabel})\n\nWe look forward to meeting you!\n\n– Team HireRight`);
                   window.open(`mailto:${displayEmail}?subject=${subject}&body=${body}`, "_blank");
                 }}
                 className="w-full mt-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"

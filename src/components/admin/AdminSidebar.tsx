@@ -41,6 +41,9 @@ function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
+const SIDEBAR_WIDTH = 256;
+const SIDEBAR_COLLAPSED_WIDTH = 68;
+
 export default function AdminSidebar({
   user,
   organization,
@@ -50,17 +53,21 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setMobileOpen(false);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
+
+  useEffect(() => {
+    if (isDesktop) {
+      setMobileOpen(false);
+    }
+  }, [isDesktop]);
 
   useEffect(() => {
     if (mobileOpen) {
@@ -109,7 +116,7 @@ export default function AdminSidebar({
     ? organization.plan.charAt(0).toUpperCase() + organization.plan.slice(1)
     : "Free";
 
-  const sidebarInner = (
+  const sidebarContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
       {/* Header */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-white/10">
@@ -133,7 +140,8 @@ export default function AdminSidebar({
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          style={{ display: isDesktop ? "flex" : "none" }}
           aria-label="Toggle sidebar"
         >
           <ChevronLeft
@@ -145,7 +153,8 @@ export default function AdminSidebar({
         </button>
         <button
           onClick={() => setMobileOpen(false)}
-          className="lg:hidden flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          style={{ display: isDesktop ? "none" : "flex" }}
           aria-label="Close menu"
         >
           <X className="w-5 h-5" />
@@ -209,16 +218,16 @@ export default function AdminSidebar({
                 {user?.name || "Admin User"}
               </p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {user?.role && (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/20 text-indigo-300 capitalize">
                     {user.role}
                   </span>
                 )}
-                {organization?.name && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/10 text-gray-300">
-                    <Building2 className="w-2.5 h-2.5" />
-                    {organization.name}
+                {organization?.name && organization.name.toLowerCase() !== (user?.email || "").toLowerCase() && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/10 text-gray-300 min-w-0 max-w-full">
+                    <Building2 className="w-2.5 h-2.5 flex-shrink-0" />
+                    <span className="truncate">{organization.name}</span>
                   </span>
                 )}
               </div>
@@ -243,72 +252,135 @@ export default function AdminSidebar({
     </div>
   );
 
+  const sidebarWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
+
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Desktop sidebar */}
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#f9fafb" }}>
+      {/* Desktop sidebar - fixed position */}
       <div
-        className={cn(
-          "hidden lg:flex lg:flex-shrink-0 transition-all duration-300 ease-in-out",
-          collapsed ? "w-[68px]" : "w-64"
-        )}
+        style={{
+          display: isDesktop ? "block" : "none",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: sidebarWidth,
+          zIndex: 30,
+          transition: "width 300ms ease-in-out",
+          overflow: "hidden",
+        }}
       >
-        {sidebarInner}
+        {sidebarContent}
       </div>
 
       {/* Mobile backdrop */}
-      <div
-        className={cn(
-          "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-200 lg:hidden",
-          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        )}
-        onClick={() => setMobileOpen(false)}
-        aria-hidden="true"
-      />
+      {mobileOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 40,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
       {/* Mobile sidebar */}
       <div
         ref={sidebarRef}
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out lg:hidden",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: 256,
+          zIndex: 50,
+          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 200ms ease-in-out",
+        }}
       >
-        {sidebarInner}
+        {sidebarContent}
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Main content area - offset by sidebar width on desktop */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          minWidth: 0,
+          overflow: "hidden",
+          marginLeft: isDesktop ? sidebarWidth : 0,
+          transition: "margin-left 300ms ease-in-out",
+        }}
+      >
         {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center justify-between px-4 h-14 bg-white border-b border-gray-200 flex-shrink-0">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="p-2 -ml-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-            aria-label="Open menu"
+        {!isDesktop && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 16px",
+              height: 56,
+              background: "white",
+              borderBottom: "1px solid #e5e7eb",
+              flexShrink: 0,
+            }}
           >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            {organization?.logoUrl ? (
-              <img
-                src={organization.logoUrl}
-                alt={organization.name || "Logo"}
-                className="h-7 w-auto"
-              />
-            ) : (
-              <div className="h-7 w-7 rounded-md bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
-                {organization?.name?.[0] || "H"}
-              </div>
-            )}
-            <span className="text-sm font-semibold text-gray-900">
-              {organization?.name || "Admin"}
-            </span>
+            <button
+              onClick={() => setMobileOpen(true)}
+              style={{
+                padding: 8,
+                marginLeft: -8,
+                borderRadius: 6,
+                color: "#4b5563",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+              aria-label="Open menu"
+            >
+              <Menu style={{ width: 20, height: 20 }} />
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {organization?.logoUrl ? (
+                <img
+                  src={organization.logoUrl}
+                  alt={organization.name || "Logo"}
+                  style={{ height: 28, width: "auto" }}
+                />
+              ) : (
+                <div
+                  style={{
+                    height: 28,
+                    width: 28,
+                    borderRadius: 6,
+                    background: "#4f46e5",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "white",
+                  }}
+                >
+                  {organization?.name?.[0] || "H"}
+                </div>
+              )}
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
+                {organization?.name || "Admin"}
+              </span>
+            </div>
+            <div style={{ width: 36 }} />
           </div>
-          <div className="w-9" />
-        </div>
+        )}
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6 lg:p-8 max-w-[1600px] mx-auto">
+        <main style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ padding: isDesktop ? 32 : 24 }}>
             {children}
           </div>
         </main>

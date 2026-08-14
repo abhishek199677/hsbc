@@ -1,6 +1,7 @@
 "use client";
 
 import { Shield, Zap, Lock, UserCheck, Star, CheckCircle } from "lucide-react";
+import { useGlare } from "@/lib/useGlare";
 
 const features = [
   {
@@ -53,6 +54,7 @@ const stats = [
 ];
 
 export default function Features() {
+  const { onMouseMove } = useGlare<HTMLDivElement>();
   return (
     <section className="py-20 bg-gradient-to-br from-gray-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,7 +63,7 @@ export default function Features() {
             Why Choose Us
           </span>
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Why Job Seekers Choose <span className="text-indigo-600">Techcitta</span>
+            Why Job Seekers Choose <span className="text-indigo-600">HireRight</span>
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             We provide the tools and trust you need to advance your career
@@ -69,9 +71,9 @@ export default function Features() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16" onMouseMove={onMouseMove}>
           {stats.map((stat) => (
-            <div key={stat.label} className="bg-white rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-shadow">
+            <div key={stat.label} className="card-glare bg-white rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-shadow">
               <p className="text-3xl lg:text-4xl font-bold text-indigo-600">{stat.number}</p>
               <p className="text-sm text-gray-600 mt-2">{stat.label}</p>
             </div>
@@ -79,11 +81,11 @@ export default function Features() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6" onMouseMove={onMouseMove}>
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 group"
+              className="card-glare bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 group"
             >
               <div className={`w-14 h-14 ${feature.bgColor} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                 <feature.icon className={`w-7 h-7 ${feature.iconColor}`} />
@@ -95,7 +97,7 @@ export default function Features() {
         </div>
 
         {/* Trust Badges */}
-        <div className="mt-16 bg-white rounded-2xl p-8 shadow-lg">
+        <div className="mt-16 card-glare bg-white rounded-2xl p-8 shadow-lg">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { icon: Shield, label: "ISO 27001 Certified" },
@@ -103,7 +105,7 @@ export default function Features() {
               { icon: CheckCircle, label: "SOC 2 Type II" },
               { icon: Star, label: "99.9% Uptime" },
             ].map((badge) => (
-              <div key={badge.label} className="flex items-center gap-3">
+              <div key={badge.label} className="flex items-center gap-3 hover:scale-105 transition-transform">
                 <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
                   <badge.icon className="w-5 h-5 text-indigo-600" />
                 </div>

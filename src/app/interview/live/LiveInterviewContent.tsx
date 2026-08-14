@@ -697,7 +697,7 @@ export default function LiveInterviewContent() {
     const text = messagesRef.current
       .map((m) => `${m.role === "user" ? "Candidate" : "AI Interviewer"}: ${m.content}`)
       .join("\n");
-    const blob = new Blob([`TECHCITTA AI INTERVIEW TRANSCRIPT\n${new Date().toLocaleString()}\n\n${text}`], {
+    const blob = new Blob([`HIRERIGHT AI INTERVIEW TRANSCRIPT\n${new Date().toLocaleString()}\n\n${text}`], {
       type: "text/plain",
     });
     const url = URL.createObjectURL(blob);
@@ -1032,7 +1032,9 @@ export default function LiveInterviewContent() {
       <header className="bg-gray-800 border-b border-gray-700 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.jpeg" alt="Techcitta" className="h-8 w-auto" />
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-1.5">
+              <img src="/logo.png" alt="HireRight" className="h-6 w-auto rounded drop-shadow-md" />
+            </div>
             <span className="px-2 py-0.5 bg-indigo-600 text-white text-xs rounded">AI Interview</span>
           </div>
           <div className="flex items-center gap-4">
@@ -1119,7 +1121,7 @@ export default function LiveInterviewContent() {
                   <span className="text-5xl">🤖</span>
                 </div>
                 <p className="text-white font-medium">AI Interviewer</p>
-                <p className="text-white/70 text-sm">Techcitta</p>
+                <p className="text-white/70 text-sm">HireRight</p>
                 {questionNumber > 0 && (
                   <p className="text-white/80 text-xs mt-2 font-medium">Q{questionNumber}/5</p>
                 )}

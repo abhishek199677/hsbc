@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { 
   Briefcase, Users, FileCheck, TrendingUp, Search, 
   Plus, ArrowRight, Clock, CheckCircle, AlertCircle,
-  Building2, Mail, Phone, MapPin, Download
+  Building2, Mail, Phone, MapPin, Download, X
 } from "lucide-react";
 
 interface Candidate {
@@ -21,69 +21,128 @@ interface Candidate {
   skills: string;
   experience: string;
   location: string;
+  education: string;
+  evaluationScore: number | null;
+  evaluation: string | null;
+  videoUrl: string | null;
 }
 
-// Mock data for demo
-const mockCandidates: Candidate[] = [
-  {
-    id: "1",
-    name: "Priya Sharma",
-    email: "priya@example.com",
-    phone: "+91 98765 43210",
-    role: "Software Engineer",
-    status: "verified",
-    appliedDate: "2026-01-15",
-    skills: "React, Node.js, TypeScript",
-    experience: "5 years",
-    location: "Bangalore",
-  },
-  {
-    id: "2",
-    name: "Rahul Verma",
-    email: "rahul@example.com",
-    phone: "+91 87654 32109",
-    role: "Product Manager",
-    status: "pending",
-    appliedDate: "2026-01-14",
-    skills: "Agile, Scrum, JIRA",
-    experience: "7 years",
-    location: "Mumbai",
-  },
-  {
-    id: "3",
-    name: "Anjali Patel",
-    email: "anjali@example.com",
-    phone: "+91 76543 21098",
-    role: "UX Designer",
-    status: "shortlisted",
-    appliedDate: "2026-01-13",
-    skills: "Figma, Adobe XD, CSS",
-    experience: "4 years",
-    location: "Delhi",
-  },
-  {
-    id: "4",
-    name: "Vikram Singh",
-    email: "vikram@example.com",
-    phone: "+91 65432 10987",
-    role: "Data Analyst",
-    status: "verified",
-    appliedDate: "2026-01-12",
-    skills: "Python, SQL, Tableau",
-    experience: "3 years",
-    location: "Hyderabad",
-  },
-];
+interface ApiCandidate {
+  id: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  createdAt: string;
+  profile: {
+    currentRole: string | null;
+    totalExperience: string | null;
+    currentLocation: string | null;
+    skills: string | null;
+    education: string | null;
+    preferredLocation: string | null;
+    workMode: string | null;
+  } | null;
+  interview: {
+    date: string | null;
+    time: string | null;
+    status: string | null;
+    evaluationScore: number | null;
+    evaluation: string | null;
+    videoUrl: string | null;
+    proctoringStatus: string | null;
+    proctoringFlags: number | null;
+  } | null;
+}
+
+function deriveStatus(candidate: ApiCandidate): string {
+  const interview = candidate.interview;
+  if (!interview || interview.status !== "completed" || interview.evaluationScore === null) {
+    return "pending";
+  }
+  if (interview.evaluationScore >= 8) return "verified";
+  if (interview.evaluationScore >= 5) return "shortlisted";
+  return "pending";
+}
+
+function parseSkills(skills: string | null): string[] {
+  if (!skills) return [];
+  try {
+    const parsed = JSON.parse(skills);
+    if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+  } catch {
+    // fall through to comma-split
+  }
+  return skills.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function mapCandidate(candidate: ApiCandidate): Candidate {
+  return {
+    id: candidate.id,
+    name: candidate.name || "Unnamed Candidate",
+    email: candidate.email,
+    phone: candidate.phone || "-",
+    role: candidate.profile?.currentRole || "Candidate",
+    status: deriveStatus(candidate),
+    appliedDate: candidate.createdAt.slice(0, 10),
+    skills: parseSkills(candidate.profile?.skills ?? null).join(", "),
+    experience: candidate.profile?.totalExperience || "",
+    location: candidate.profile?.currentLocation || "-",
+    education: candidate.profile?.education || "",
+    evaluationScore: candidate.interview?.evaluationScore ?? null,
+    evaluation: candidate.interview?.evaluation || null,
+    videoUrl: candidate.interview?.videoUrl || null,
+  };
+}
+
+function exportCandidatesCSV(candidates: Candidate[]) {
+  if (candidates.length === 0) return;
+  const headers = ["Name", "Role", "Email", "Phone", "Location", "Experience", "Skills", "Status", "Applied Date"];
+  const rows = candidates.map((c) => [
+    c.name,
+    c.role,
+    c.email,
+    c.phone,
+    c.location,
+    c.experience,
+    c.skills,
+    c.status,
+    c.appliedDate,
+  ]);
+  const csv = [headers, ...rows]
+    .map((row) =>
+      row.map((val) => {
+        const s = String(val);
+        return s.includes(",") || s.includes('"') || s.includes("\n")
+          ? `"${s.replace(/"/g, '""')}"`
+          : s;
+      }).join(",")
+    )
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "candidates.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatScore(score: number | null): string {
+  if (score === null || score === undefined) return "N/A";
+  return `${score.toFixed(1)} / 10`;
+}
 
 export default function EmployerDashboard() {
-  const { user, isLoading } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
-  const [candidates] = useState<Candidate[]>(mockCandidates);
-  const [stats] = useState({
-    total: mockCandidates.length,
-    pending: mockCandidates.filter((c) => c.status === "pending").length,
-    verified: mockCandidates.filter((c) => c.status === "verified").length,
-    shortlisted: mockCandidates.filter((c) => c.status === "shortlisted").length,
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loadingCandidates, setLoadingCandidates] = useState(true);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    verified: 0,
+    shortlisted: 0,
   });
 
   useEffect(() => {
@@ -94,6 +153,41 @@ export default function EmployerDashboard() {
       router.push("/profile");
     }
   }, [user, isLoading, router]);
+
+  useEffect(() => {
+    if (!token || !user) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/employer/candidates", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.status === 401 || res.status === 403) {
+          router.push("/login");
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.success) {
+          const mapped = (data.candidates as ApiCandidate[]).map(mapCandidate);
+          setCandidates(mapped);
+          setStats({
+            total: mapped.length,
+            pending: mapped.filter((c) => c.status === "pending").length,
+            verified: mapped.filter((c) => c.status === "verified").length,
+            shortlisted: mapped.filter((c) => c.status === "shortlisted").length,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load candidates:", error);
+      } finally {
+        if (!cancelled) setLoadingCandidates(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [token, user, router]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -244,12 +338,36 @@ export default function EmployerDashboard() {
 
         {/* Candidates List */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b">
+          <div className="p-6 border-b flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Candidates</h2>
+            <button
+              onClick={() => exportCandidatesCSV(candidates)}
+              disabled={candidates.length === 0}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
           </div>
-          <div className="divide-y">
-            {candidates.map((candidate) => (
-              <div key={candidate.id} className="p-6 hover:bg-gray-50 transition-colors">
+          {loadingCandidates ? (
+            <div className="p-10 flex justify-center">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : candidates.length === 0 ? (
+            <div className="p-10 text-center">
+              <p className="text-gray-500">No candidates yet.</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Candidates who sign up and complete their profile will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {candidates.map((candidate) => (
+              <button
+                key={candidate.id}
+                onClick={() => setSelectedCandidate(candidate)}
+                className="w-full text-left p-6 hover:bg-gray-50 transition-colors group"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -298,22 +416,18 @@ export default function EmployerDashboard() {
                       {getStatusIcon(candidate.status)}
                       {candidate.status.charAt(0).toUpperCase() + candidate.status.slice(1)}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                        <Download className="w-5 h-5" />
-                      </button>
-                      <Link
-                        href={`/admin?candidate=${candidate.id}`}
-                        className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                      >
-                        <ArrowRight className="w-5 h-5" />
-                      </Link>
-                    </div>
+                    {candidate.evaluationScore !== null && (
+                      <span className="text-sm font-semibold text-gray-700">
+                        {formatScore(candidate.evaluationScore)}
+                      </span>
+                    )}
+                    <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-primary transition-colors" />
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -364,6 +478,148 @@ export default function EmployerDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Candidate Detail Modal */}
+      {selectedCandidate && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 overflow-y-auto p-4"
+          onClick={() => setSelectedCandidate(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                  <span className="text-xl font-semibold text-primary">
+                    {selectedCandidate.name.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{selectedCandidate.name}</h3>
+                  <p className="text-sm text-gray-500">{selectedCandidate.role}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(
+                    selectedCandidate.status
+                  )}`}
+                >
+                  {getStatusIcon(selectedCandidate.status)}
+                  {selectedCandidate.status.charAt(0).toUpperCase() + selectedCandidate.status.slice(1)}
+                </span>
+                <button
+                  onClick={() => setSelectedCandidate(null)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Contact details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {selectedCandidate.email}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {selectedCandidate.phone}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {selectedCandidate.location}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {selectedCandidate.experience || "Experience not specified"}
+                </div>
+              </div>
+
+              {selectedCandidate.education && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Education</h4>
+                  <p className="text-sm text-gray-600">{selectedCandidate.education}</p>
+                </div>
+              )}
+
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Skills</h4>
+                {selectedCandidate.skills ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCandidate.skills.split(", ").map((skill, idx) => (
+                      <span key={idx} className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No skills listed yet.</p>
+                )}
+              </div>
+
+              {/* Interview score */}
+              <div className="bg-gray-50 rounded-xl p-5">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Interview Score</h4>
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold ${
+                      selectedCandidate.evaluationScore !== null && selectedCandidate.evaluationScore >= 8
+                        ? "bg-green-100 text-green-700"
+                        : selectedCandidate.evaluationScore !== null && selectedCandidate.evaluationScore >= 5
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {formatScore(selectedCandidate.evaluationScore)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                      <span>{selectedCandidate.status === "verified" ? "Top performer — recommended for hire" : selectedCandidate.status === "shortlisted" ? "Strong candidate — worth shortlisting" : "Interview pending or not yet evaluated"}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          selectedCandidate.evaluationScore !== null && selectedCandidate.evaluationScore >= 8
+                            ? "bg-green-500"
+                            : selectedCandidate.evaluationScore !== null && selectedCandidate.evaluationScore >= 5
+                            ? "bg-blue-500"
+                            : "bg-yellow-500"
+                        }`}
+                        style={{
+                          width: `${selectedCandidate.evaluationScore !== null ? selectedCandidate.evaluationScore * 10 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Evaluation */}
+              {selectedCandidate.evaluation && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">AI Evaluation</h4>
+                  <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 rounded-xl p-4 max-h-64 overflow-y-auto">
+                    {selectedCandidate.evaluation}
+                  </div>
+                </div>
+              )}
+
+              {/* Interview video */}
+              {selectedCandidate.videoUrl && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Interview Recording</h4>
+                  <video src={selectedCandidate.videoUrl} controls className="w-full rounded-xl bg-black" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

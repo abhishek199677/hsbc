@@ -1,6 +1,6 @@
 {
-  "name": "Techcitta - Talent to Talent",
-  "short_name": "Techcitta",
+  "name": "HireRight - Talent to Talent",
+  "short_name": "HireRight",
   "description": "AI-powered job screening and interview platform",
   "start_url": "/",
   "display": "standalone",
@@ -8,6 +8,11 @@
   "theme_color": "#4f46e5",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "235x97",
+      "type": "image/png"
+    },
     {
       "src": "/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",

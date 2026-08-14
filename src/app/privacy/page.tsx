@@ -20,7 +20,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-600 leading-relaxed">
-                Welcome to Techcitta (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal 
+                Welcome to HireRight (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal 
                 information and your right to privacy. This Privacy Policy explains how we collect, use, 
                 disclose, and safeguard your information when you use our platform.
               </p>

@@ -43,14 +43,14 @@ User profile:
 
     // Build system prompt with user context
     const systemPrompt = `
-You are Techcitta AI Assistant, a helpful guide for the Techcitta platform.
+You are HireRight AI Assistant, a helpful guide for the HireRight platform.
 
 ${userContext}
 
 Your role is to help users with:
 1. Profile completion and building their job seeker/employer profile
 2. Interview preparation and scheduling AI video interviews
-3. Navigating the Techcitta platform features
+3. Navigating the HireRight platform features
 4. Understanding the AI-powered matching and job search functionality
 5. Answering questions about plans, features, and how the platform works
 
@@ -64,7 +64,7 @@ Guidelines:
 
 Current conversation context will be provided in the user message.
 
-IMPORTANT: You are an assistant for the Techcitta platform. Do not discuss topics outside of helping users with this website's features, interview process, profile building, or platform navigation.
+IMPORTANT: You are an assistant for the HireRight platform. Do not discuss topics outside of helping users with this website's features, interview process, profile building, or platform navigation.
 `;
 
     const completion = await openai.chat.completions.create({

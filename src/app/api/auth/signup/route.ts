@@ -117,7 +117,7 @@ export async function POST(request: Request) {
     // Send verification email (best-effort; login still works with a banner)
     await sendEmail({
       to: user.email,
-      subject: "Verify your Techcitta email address",
+      subject: "Verify your HireRight email address",
       html: generateVerificationEmail(
         user.name || "there",
         `${getAppBaseUrl()}/verify-email?token=${verifyToken}`

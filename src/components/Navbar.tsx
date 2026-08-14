@@ -20,11 +20,11 @@ export default function Navbar() {
     <nav className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center gap-12">
-            <Link href="/" className="flex items-center">
-              <img src={organization?.logoUrl || "/logo.jpeg"} alt={organization?.name || "Techcitta"} className="h-10 w-auto" />
+          <div className="flex items-center gap-8 lg:gap-12">
+            <Link href="/" className="flex items-center group">
+              <img src={organization?.logoUrl || "/logo.png"} alt={organization?.name || "HireRight"} className="h-10 w-auto rounded-md drop-shadow-md transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(129,140,248,0.7)] group-hover:scale-105" />
             </Link>
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden xl:flex items-center gap-6">
               <Link href="/profile" className="text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
                 For Job Seekers
               </Link>
@@ -78,13 +78,13 @@ export default function Navbar() {
                   </Link>
                 )}
                 {user.role === "admin" && (
-                  <Link href="/admin" className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">
+                  <Link href="/admin" className="hidden xl:block text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">
                     Admin Dashboard
                   </Link>
                 )}
-                <span className="text-sm text-gray-500">{user.name || user.email}</span>
+                <span className="hidden 2xl:block text-sm text-gray-500">{user.name || user.email}</span>
                 {organization?.name && (
-                  <span className="hidden lg:block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                  <span className="hidden xl:block max-w-[160px] truncate px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
                     {organization.name}
                   </span>
                 )}
@@ -111,7 +111,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="bg-primary text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm"
+                  className="glare bg-primary text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm"
                 >
                   Get Started
                 </Link>
@@ -119,7 +119,7 @@ export default function Navbar() {
             )}
           </div>
           <button
-            className="md:hidden p-2"
+            className="xl:hidden p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -127,7 +127,7 @@ export default function Navbar() {
         </div>
       </div>
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t">
+        <div className="xl:hidden bg-white border-t">
           <div className="px-4 py-4 space-y-3">
             <Link href="/profile" className="block text-sm font-medium text-gray-700">For Job Seekers</Link>
             <Link href="/employer" className="block text-sm font-medium text-gray-700">For Employers</Link>

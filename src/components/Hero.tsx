@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Play, Shield, Zap, Lock, CheckCircle, Users, X } from "lucide-react";
+import { ArrowRight, Play, Shield, Zap, Lock, X } from "lucide-react";
+import { useGlare } from "@/lib/useGlare";
 
 export default function Hero() {
   const [showVideo, setShowVideo] = useState(false);
+  const { onMouseMove } = useGlare<HTMLDivElement>();
 
   return (
     <section className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 overflow-hidden">
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl aura" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl aura" />
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -39,14 +41,14 @@ export default function Hero() {
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-pink-600 text-white px-8 py-4 rounded-full font-medium hover:from-red-700 hover:to-pink-700 transition-all shadow-lg shadow-red-500/30"
+                className="glare glare-light inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-pink-600 text-white px-8 py-4 rounded-full font-medium hover:from-red-700 hover:to-pink-700 transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/50"
               >
                 Get Started Free
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <button
                 onClick={() => setShowVideo(true)}
-                className="inline-flex items-center gap-2 border border-white/30 text-white px-8 py-4 rounded-full font-medium hover:bg-white/10 transition-all backdrop-blur-sm"
+                className="glare inline-flex items-center gap-2 border border-white/30 text-white px-8 py-4 rounded-full font-medium hover:bg-white/10 transition-all backdrop-blur-sm"
               >
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                   <Play className="w-4 h-4 ml-0.5" />
@@ -76,8 +78,8 @@ export default function Hero() {
               </div>
             </div>
           </div>
-          <div className="relative hidden lg:block">
-            <div className="relative w-full h-[500px] rounded-2xl overflow-hidden">
+          <div className="relative hidden lg:block" onMouseMove={onMouseMove}>
+            <div className="relative w-full h-[500px] rounded-2xl overflow-hidden card-glare">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20" />
               <img
                 src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&h=500&fit=crop"
@@ -86,7 +88,7 @@ export default function Hero() {
               />
             </div>
             {/* Floating cards */}
-            <div className="absolute -top-6 -right-6 bg-white rounded-2xl p-5 shadow-2xl flex items-center gap-4 animate-bounce" style={{ animationDuration: "3s" }}>
+            <div className="absolute -top-6 -right-6 bg-white rounded-2xl p-5 shadow-2xl flex items-center gap-4 animate-bounce hover:shadow-indigo-200/80 transition-shadow" style={{ animationDuration: "3s" }}>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <Zap className="w-6 h-6 text-green-600" />
               </div>

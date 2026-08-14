@@ -20,9 +20,9 @@ export default function DpaPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Purpose and Scope</h2>
               <p className="text-gray-600 leading-relaxed">
-                This Data Processing Agreement (&quot;DPA&quot;) forms part of the agreement between Techcitta 
+                This Data Processing Agreement (&quot;DPA&quot;) forms part of the agreement between HireRight 
                 (&quot;Processor&quot;) and the Customer (&quot;Controller&quot;) for the provision of AI-powered background 
-                screening and job matching services. This DPA applies where Techcitta processes personal data 
+                screening and job matching services. This DPA applies where HireRight processes personal data 
                 on behalf of the Controller in the course of providing services.
               </p>
               <p className="text-gray-600 leading-relaxed mt-2">
@@ -36,8 +36,8 @@ export default function DpaPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Definitions</h2>
               <ul className="list-disc list-inside text-gray-600 space-y-2">
                 <li><strong>Personal Data:</strong> Any information relating to an identified or identifiable natural person processed by the Processor on behalf of the Controller under this DPA.</li>
-                <li><strong>Controller:</strong> The natural or legal person, public authority, agency, or other body which, alone or jointly with others, determines the purposes and means of the processing of personal data. In this context, the Controller is the Customer using Techcitta&apos;s services.</li>
-                <li><strong>Processor:</strong> The natural or legal person, public authority, agency, or other body which processes personal data on behalf of the Controller. In this context, Techcitta acts as the Processor.</li>
+                <li><strong>Controller:</strong> The natural or legal person, public authority, agency, or other body which, alone or jointly with others, determines the purposes and means of the processing of personal data. In this context, the Controller is the Customer using HireRight&apos;s services.</li>
+                <li><strong>Processor:</strong> The natural or legal person, public authority, agency, or other body which processes personal data on behalf of the Controller. In this context, HireRight acts as the Processor.</li>
                 <li><strong>Sub-processor:</strong> Any third party engaged by the Processor (or by any Sub-processor of the Processor) to process personal data on behalf of the Controller.</li>
                 <li><strong>Data Subject:</strong> An identified or identifiable natural person whose personal data is processed under this DPA.</li>
                 <li><strong>Processing:</strong> Any operation or set of operations performed on personal data, including collection, recording, organization, structuring, storage, adaptation, retrieval, consultation, use, disclosure, dissemination, alignment, combination, restriction, erasure, or destruction.</li>
@@ -74,9 +74,9 @@ export default function DpaPage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">5. Processor Obligations (Techcitta)</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">5. Processor Obligations (HireRight)</h2>
               <p className="text-gray-600 leading-relaxed">
-                The Processor (Techcitta) shall:
+                The Processor (HireRight) shall:
               </p>
               <ul className="list-disc list-inside text-gray-600 mt-2 space-y-1">
                 <li>Process personal data only on documented instructions from the Controller and in accordance with this DPA.</li>
@@ -216,9 +216,9 @@ export default function DpaPage() {
                 For questions about this Data Processing Agreement, please contact us at:
               </p>
               <p className="text-gray-600 mt-2">
-                <strong>Data Protection Officer:</strong> dpo@techcitta.com<br />
-                <strong>Email:</strong> legal@techcitta.com<br />
-                <strong>Address:</strong> Techcitta, Bangalore, India
+                <strong>Data Protection Officer:</strong> dpo@hireright.com<br />
+                <strong>Email:</strong> legal@hireright.com<br />
+                <strong>Address:</strong> HireRight, Bangalore, India
               </p>
             </section>
           </div>
