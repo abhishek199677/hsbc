@@ -1,8 +1,8 @@
-# Techcitta - Client Documentation
+# HireRight - Client Documentation
 
-## What is Techcitta?
+## What is HireRight?
 
-**Techcitta** is a modern background screening and job matching platform that connects talented professionals with the right opportunities. It uses AI-powered technology to verify candidate information and match them with employers who are looking for their specific skill set.
+**HireRight** is a modern AI-powered background screening, job matching, and video interview platform. It connects talented professionals with the right opportunities and gives employers verified, trustworthy candidates — powered by AI. Tagline: **"Right People. Right Decisions."** / **"Talent to Talent."**
 
 ---
 
@@ -10,13 +10,11 @@
 
 ### For Job Seekers
 
-Techcitta makes the job search process faster, more secure, and more transparent. Here's the step-by-step journey:
+HireRight makes the job search process faster, more secure, and more transparent. Here's the step-by-step journey:
 
 ---
 
 ### Step 1: Create Your Profile
-
-![Profile Step](https://img.shields.io/badge/Step-1-blue)
 
 You start by building your professional profile:
 
@@ -32,8 +30,6 @@ You start by building your professional profile:
 
 ### Step 2: Upload Resume
 
-![Resume Step](https://img.shields.io/badge/Step-2-blue)
-
 - Upload your latest resume
 - Our AI analyzes your skills, experience, and qualifications
 - You receive instant confirmation once uploaded successfully
@@ -42,9 +38,7 @@ You start by building your professional profile:
 
 ---
 
-### Step 3: Skills & Experience
-
-![Skills Step](https://img.shields.io/badge/Step-3-blue)
+### Step 3: About You
 
 - List your primary technical skills
 - Specify your total years of professional experience
@@ -53,9 +47,7 @@ You start by building your professional profile:
 
 ---
 
-### Step 4: Your Preferences
-
-![Preferences Step](https://img.shields.io/badge/Step-4-blue)
+### Step 4: Availability
 
 Tell us what you're looking for:
 
@@ -68,8 +60,6 @@ Tell us what you're looking for:
 
 ### Step 5: AI Interview Scheduling
 
-![Interview Step](https://img.shields.io/badge/Step-5-blue)
-
 Schedule your 15-minute AI-powered video interview:
 
 - **Select a Date**: Choose from available dates on the calendar
@@ -80,15 +70,13 @@ Schedule your 15-minute AI-powered video interview:
 | Feature | Description |
 |---------|-------------|
 | Duration | 15 minutes |
-| Mode | AI Video Interview |
+| Mode | AI Video Interview (live video + voice) |
 | Assessment | Technical + Behavioral |
-| Security | Encrypted and private |
+| Security | Encrypted and private, AI proctored |
 
 ---
 
 ### Step 6: Confirmation & Reminders
-
-![Confirmation Step](https://img.shields.io/badge/Step-6-blue)
 
 Once your interview is scheduled:
 
@@ -99,6 +87,44 @@ Once your interview is scheduled:
   - 24 hours before the interview
   - 1 hour before the interview
   - 15 minutes before the interview
+
+---
+
+## AI Video Interview
+
+The core of the HireRight experience — a fully AI-run interview room:
+
+- **Device Check Room**: Pre-interview camera, microphone, speaker and connection checks
+- **Live Video Interview**: Real-time AI interviewer (LiveKit WebRTC) with voice-to-text answer capture
+- **Live Captions**: Real-time speech recognition with on-screen transcript
+- **Anti-Cheating (AI Proctoring)**: On-device face & gaze detection (MediaPipe). Turning your head, looking away from the screen, hiding your face, or a second person in frame triggers a live red-flag warning, is logged as an incident, and is factored into the evaluation (`integrity: clean/flagged/failed`).
+- **Instant Evaluation**: Exact score (one decimal), strengths, areas for improvement, per-question breakdown, topics to learn & grow, and a Hire/Consider/Pass recommendation
+- **Transcript & Recording**: Recorded video with generated captions; searchable transcript
+
+---
+
+## AI Job Matching
+
+HireRight uses semantic AI matching to pair the right talent with the right roles:
+
+- **For Job Seekers**: Your profile and resume are indexed into a searchable vector database
+- **For Employers**: Post jobs and instantly get AI-ranked candidate matches with match scores
+- **Match Breakdown**: Each match shows an overall score plus skill, experience and semantic similarity breakdowns, matched vs. missing skills, and an AI explanation
+
+---
+
+## For Employers
+
+HireRight isn't just for candidates — it's a complete employer hiring platform:
+
+| Feature | Benefit |
+|---------|---------|
+| Trusted Candidates | Accurate background checks build employer trust |
+| AI Candidate Matching | Post a job, get ranked candidates with match scores |
+| Faster Hiring | Quick turnaround on verification reports and interviews |
+| Admin Dashboard | Stats, interviews, recordings, scores, proctoring reports, and CSV export |
+| Team Management | Invite team members with owner/admin/interviewer/member/viewer roles |
+| Candidate Feedback | In-platform notes on candidates (suggested/reviewed/shortlisted/rejected) |
 
 ---
 
@@ -113,6 +139,9 @@ Once your interview is scheduled:
 | Secure & Private | Your data is protected with industry-leading security |
 | Fast Process | Quick digital screening keeps you ahead in the hiring race |
 | Global Standards | Screening aligned with global compliance and quality |
+| 2-Factor Authentication | Optional TOTP app-based 2FA for extra account security |
+| AI Assistant | In-app chat assistant for profile help and interview prep |
+| GDPR Control | Export or permanently delete your data anytime |
 
 ### For Employers
 
@@ -122,12 +151,61 @@ Once your interview is scheduled:
 | Faster Hiring | Quick turnaround on verification reports |
 | Verified Reports | Seamless sharing of verification results |
 | Compliance | Aligned with global hiring standards |
+| AI Matching | Semantic, skill-based candidate ranking |
+| Analytics | Interview analytics and proctoring insights |
+
+---
+
+## Solutions Pages
+
+### Enterprise Solutions
+HRIS/ATS/ERP integration, bulk background verification, custom branding, SOC 2 Type II readiness, and dedicated support. Plans: Startup ($120/mo), Business ($600/mo) and Custom.
+
+### Government Solutions
+Security clearance and document verification, data sovereignty, and multi-language support (22+ Indian / 50+ global languages). Trusted by 50+ government departments.
+
+---
+
+## Pages
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Landing | `/` | Homepage with features, how-it-works and testimonials |
+| Login / Signup | `/login`, `/signup` | Auth with role-based redirect |
+| Verify Email | `/verify-email` | Email verification (link from email) |
+| Forgot / Reset Password | `/forgot-password`, `/reset-password` | Password recovery |
+| Pricing | `/pricing` | Starter / Pro / Enterprise plans |
+| Settings | `/settings` | 2FA, billing, timezone, currency, GDPR export/delete |
+| Profile | `/profile` | 6-step profile wizard + AI Assistant |
+| Interview | `/interview` | Schedule AI interview |
+| Interview Room | `/interview/room` | Pre-interview device check |
+| Live Interview | `/interview/live` | AI video interview |
+| Confirmation | `/confirmation` | Booking confirmation & reminders |
+| Employer | `/employer` | Employer dashboard: post jobs, view matches, candidates |
+| Admin | `/admin` | Admin portal: overview, candidates, interviews, analytics, feedback, team, proctoring |
+| Enterprise | `/enterprise` | Enterprise solutions |
+| Government | `/government` | Government solutions |
+| API Docs | `/api-docs` | Full REST API reference |
+| Legal | `/terms`, `/privacy`, `/dpa` | Terms of Service, Privacy Policy, Data Processing Agreement |
+
+---
+
+## Pricing
+
+| Plan | Price | Includes |
+|------|-------|----------|
+| Starter | Free forever | 3 interviews/mo, 1 candidate profile, email confirmation, basic AI evaluation |
+| Pro | $12/mo | 100 interviews/mo, full video & analytics, email + WhatsApp reminders, priority AI evaluations, 6-month video retention |
+| Enterprise | $36/mo | Unlimited interviews, everything in Pro, custom branding & roles, 1-year video retention, priority support |
+
+- Prices are shown in the visitor's currency (USD, INR, EUR, GBP, AED, SGD, CAD, AUD) with a currency selector on the pricing page.
+- Billing is handled securely by Stripe; sales tax/VAT can be collected automatically.
 
 ---
 
 ## Trusted By
 
-Techcitta is trusted by leading companies worldwide:
+HireRight is trusted by leading companies worldwide:
 
 - TATA
 - Wipro
@@ -135,6 +213,8 @@ Techcitta is trusted by leading companies worldwide:
 - Accenture
 - Amazon
 - Deloitte
+- Reliance
+- HDFC
 
 ---
 
@@ -142,127 +222,8 @@ Techcitta is trusted by leading companies worldwide:
 
 | Category | Rating |
 |----------|--------|
-| Job Seekers | 4.8/5 |
-| Employers | 4.7/5 |
-
----
-
-## Technical Overview
-
-### Technology Stack
-
-- **Frontend**: Next.js 16 with React 19
-- **Styling**: Tailwind CSS
-- **Language**: TypeScript
-- **Icons**: Lucide React
-
-### Project Structure
-
-```
-techcitta/
-├── src/
-│   ├── app/
-│   │   ├── page.tsx              # Landing page
-│   │   ├── layout.tsx            # Root layout
-│   │   ├── globals.css           # Global styles
-│   │   ├── profile/page.tsx      # Profile wizard
-│   │   ├── interview/page.tsx    # Interview scheduling
-│   │   └── confirmation/page.tsx # Confirmation page
-│   └── components/
-│       ├── Navbar.tsx
-│       ├── Hero.tsx
-│       ├── CompanyLogos.tsx
-│       ├── Features.tsx
-│       ├── HowItWorks.tsx
-│       ├── CTA.tsx
-│       ├── Footer.tsx
-│       ├── Sidebar.tsx
-│       └── StepIndicator.tsx
-```
-
----
-
-## Pages Overview
-
-### 1. Landing Page (`/`)
-
-The main entry point for users. Features:
-- Hero section with call-to-action
-- Company logos showcase
-- Features and benefits section
-- How it works guide
-- Ratings and testimonials
-- Footer with links
-
-### 2. Profile Wizard (`/profile`)
-
-Multi-step form for building user profiles:
-- Step 1: Upload resume and basic info
-- Step 2: Resume confirmation
-- Step 3: Skills and experience
-- Step 4: Job preferences
-- Step 5: AI interview preparation
-- Step 6: Completion confirmation
-
-### 3. Interview Scheduling (`/interview`)
-
-Interactive calendar interface for scheduling interviews:
-- Monthly calendar view
-- Available time slots
-- Real-time slot availability
-- Instant confirmation
-
-### 4. Confirmation Page (`/confirmation`)
-
-Post-booking confirmation with:
-- Interview details
-- Email confirmation preview
-- WhatsApp confirmation preview
-- Reminder timeline
-- Calendar integration
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18 or higher
-- npm or yarn package manager
-
-### Installation
-
-```bash
-# Clone the repository
-git clone [repository-url]
-
-# Navigate to project directory
-cd techcitta
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-### Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-
----
-
-## Support
-
-For any questions or assistance:
-
-- **Email**: care@techcitta.com
-- **Website**: www.techcitta.com
+| Job Seekers | 4.9/5 |
+| Employers | 4.8/5 |
 
 ---
 
@@ -270,7 +231,9 @@ For any questions or assistance:
 
 - All data is encrypted in transit and at rest
 - We never share your information without explicit consent
-- GDPR compliant data handling
+- GDPR compliant data handling (export / delete / DPA)
+- Optional 2-factor authentication (TOTP)
+- AI decisions are transparent — evaluations include per-question breakdowns and proctoring reports
 - Regular security audits
 
 ---
@@ -290,7 +253,42 @@ A: Yes, you can update your profile at any time through your account settings.
 A: You can reschedule your interview anytime before the scheduled slot.
 
 **Q: Is the AI interview recorded?**
-A: The interview is conducted live with our AI system. Recording policies will be clearly communicated before the interview begins.
+A: The interview is recorded with your consent. Recordings, transcripts and proctoring reports are available to you and to the employers you match with.
+
+**Q: How does AI matching work?**
+A: Your profile and resume are converted into a searchable semantic index. Employers' job posts are compared against it to surface the best-fit candidates, with a transparent score breakdown.
+
+**Q: How does anti-cheating work?**
+A: MediaPipe on-device face and gaze detection runs locally in the browser during your interview. It only flags behavior (looking away, covering your face, a second person) — no video leaves your device during detection.
+
+---
+
+## Support
+
+For any questions or assistance:
+
+- **Email**: care@hireright.com
+- **Phone**: +91 1800-123-4567
+- **Location**: Bangalore, India
+
+---
+
+## Technical Overview
+
+### Technology Stack
+
+- **Frontend**: Next.js 16 with React 19
+- **Styling**: Tailwind CSS
+- **Language**: TypeScript
+- **Database**: Prisma (PostgreSQL + pgvector for AI search)
+- **AI**: OpenAI GPT-5-nano (questions, evaluation, assistant), text embeddings
+- **Speech**: Deepgram Nova-2 transcription + browser speech recognition
+- **Video**: LiveKit WebRTC for live interviews
+- **Proctoring**: MediaPipe FaceLandmarker (on-device anti-cheating)
+- **Storage**: Cloudflare R2 (resume, video, captions)
+- **Billing**: Stripe (multi-currency subscriptions)
+- **Auth**: JWT + bcrypt, TOTP 2FA
+- **Infra**: Upstash rate limiting, Inngest background jobs, Sentry error tracking
 
 ---
 
@@ -299,7 +297,8 @@ A: The interview is conducted live with our AI system. Recording policies will b
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | August 2026 | Initial release with full feature set |
+| 1.1.0 | August 2026 | Rebranded to HireRight; added employer portal, AI job matching, live video interviews, transcription, 2FA, AI assistant, enterprise & government solutions, admin analytics |
 
 ---
 
-*Last Updated: August 4, 2026*
+*Last Updated: August 15, 2026*
