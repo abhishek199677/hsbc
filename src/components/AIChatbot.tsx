@@ -55,7 +55,7 @@ export function AIChatbot({ user }: ChatbotProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message, userId: user?.id }),
+        body: JSON.stringify({ message }),
       });
 
       const data = await response.json();

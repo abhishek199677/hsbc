@@ -1,26 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { requireOrganizationRole } from "@/lib/authorization";
 import { generateTwoFactorSecret, generateQRCode } from "@/lib/two-factor";
 
 export async function POST(request: Request) {
   try {
-    const authUser = getUserFromRequest(request);
+    const authUser = await requireOrganizationRole(request, ["owner", "admin"]);
     if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: authUser.userId },
+      where: { id: authUser.id },
       select: { id: true, email: true, role: true, twoFactorEnabled: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    if (user.role !== "admin") {
-      return NextResponse.json({ error: "2FA is only available for admin accounts" }, { status: 403 });
     }
 
     if (user.twoFactorEnabled) {

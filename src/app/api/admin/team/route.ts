@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
-import { generateVerificationToken } from "@/lib/tokens";
+import { requireOrganizationRole } from "@/lib/authorization";
+import { revokeUserSessions } from "@/lib/auth";
+import { generateVerificationToken, hashToken, tokenExpiryDate } from "@/lib/tokens";
 import { sendEmail, getAppBaseUrl } from "@/lib/email";
 
 export async function GET(request: Request) {
   try {
-    const auth = getUserFromRequest(request);
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const requester = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: { role: true, organizationId: true },
-    });
-
-    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+    const requester = await requireOrganizationRole(request, ["owner", "admin"]);
+    if (!requester) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -45,17 +37,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = getUserFromRequest(request);
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const requester = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: { role: true, organizationId: true, name: true },
-    });
-
-    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+    const requester = await requireOrganizationRole(request, ["owner", "admin"]);
+    if (!requester) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -68,10 +51,15 @@ export async function POST(request: Request) {
 
     const validRoles = ["admin", "interviewer", "member", "viewer"];
     const assignedRole = validRoles.includes(role) ? role : "member";
+    if (assignedRole === "admin" && requester.organizationRole !== "owner") {
+      return NextResponse.json({ error: "Only the organization owner can invite admins" }, { status: 403 });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
 
     // Check if user already exists in the org
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       select: { id: true, organizationId: true },
     });
 
@@ -98,6 +86,9 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ success: true, teamMember });
     }
+    if (existingUser) {
+      return NextResponse.json({ error: "This account belongs to another organization" }, { status: 409 });
+    }
 
     // Generate invite token for new users
     const inviteToken = generateVerificationToken();
@@ -108,9 +99,9 @@ export async function POST(request: Request) {
 
     const newUser = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         password: tempPassword,
-        name: email.split("@")[0],
+        name: normalizedEmail.split("@")[0],
         role: "jobseeker",
         organizationId: requester.organizationId,
         emailVerifiedAt: null,
@@ -122,7 +113,8 @@ export async function POST(request: Request) {
         userId: newUser.id,
         organizationId: requester.organizationId,
         role: assignedRole,
-        inviteToken,
+        inviteToken: hashToken(inviteToken),
+        inviteExpiresAt: tokenExpiryDate(),
       },
       include: { user: { select: { id: true, email: true, name: true } } },
     });
@@ -178,17 +170,8 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const auth = getUserFromRequest(request);
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const requester = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: { role: true, organizationId: true },
-    });
-
-    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+    const requester = await requireOrganizationRole(request, ["owner", "admin"]);
+    if (!requester) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -203,6 +186,9 @@ export async function PATCH(request: Request) {
     if (!validRoles.includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
+    if (role === "admin" && requester.organizationRole !== "owner") {
+      return NextResponse.json({ error: "Only the organization owner can assign admins" }, { status: 403 });
+    }
 
     const teamMember = await prisma.teamMember.findUnique({
       where: { id: teamMemberId },
@@ -216,12 +202,18 @@ export async function PATCH(request: Request) {
     if (teamMember.role === "owner") {
       return NextResponse.json({ error: "Cannot change owner role" }, { status: 400 });
     }
+    if (teamMember.role === "admin" && requester.organizationRole !== "owner") {
+      return NextResponse.json({ error: "Only the organization owner can change admins" }, { status: 403 });
+    }
 
     const updated = await prisma.teamMember.update({
       where: { id: teamMemberId },
       data: { role },
       include: { user: { select: { id: true, email: true, name: true } } },
     });
+
+    // Revoke all sessions for the user whose role changed
+    await revokeUserSessions(updated.userId);
 
     return NextResponse.json({ success: true, teamMember: updated });
   } catch (error) {
@@ -232,17 +224,8 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const auth = getUserFromRequest(request);
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const requester = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: { role: true, organizationId: true },
-    });
-
-    if (!requester || (requester.role !== "admin" && requester.role !== "employer")) {
+    const requester = await requireOrganizationRole(request, ["owner", "admin"]);
+    if (!requester) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -265,14 +248,20 @@ export async function DELETE(request: Request) {
     if (teamMember.role === "owner") {
       return NextResponse.json({ error: "Cannot remove the owner" }, { status: 400 });
     }
+    if (teamMember.role === "admin" && requester.organizationRole !== "owner") {
+      return NextResponse.json({ error: "Only the organization owner can remove admins" }, { status: 403 });
+    }
 
-    if (teamMember.userId === auth.userId) {
+    if (teamMember.userId === requester.id) {
       return NextResponse.json({ error: "Cannot remove yourself" }, { status: 400 });
     }
 
     await prisma.teamMember.delete({
       where: { id: teamMemberId },
     });
+
+    // Revoke all sessions for the removed user
+    await revokeUserSessions(teamMember.userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

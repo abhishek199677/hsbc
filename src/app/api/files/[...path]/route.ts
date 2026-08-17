@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { normalize } from "path";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 import { getFile } from "@/lib/storage";
+import { getActiveUser } from "@/lib/authorization";
 
 const CONTENT_TYPES: Record<string, string> = {
   ".webm": "video/webm",
@@ -24,9 +24,7 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Require a valid session token (Authorization header or ?token= query param)
-    const token = getTokenFromRequest(request) || new URL(request.url).searchParams.get("token");
-    const authUser = token ? verifyToken(token) : null;
+    const authUser = await getActiveUser(request);
     if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -47,7 +45,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(data), {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "private, max-age=31536000, immutable",
+        "Cache-Control": "private, no-store",
       },
     });
   } catch {

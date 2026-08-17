@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { requireOrganizationRole } from "@/lib/authorization";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { getAppBaseUrl } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await requireOrganizationRole(request, ["owner", "admin"]);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (!isStripeConfigured()) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const userData = await prisma.user.findUnique({
-      where: { id: user.userId },
+      where: { id: user.id },
       include: { organization: true },
     });
     const customerId = userData?.organization?.stripeCustomerId;

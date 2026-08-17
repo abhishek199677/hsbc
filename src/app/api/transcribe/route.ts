@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { getUserFromRequest } from "@/lib/auth";
+import { getActiveUser } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
 import {
   transcribeAudio,
-  transcribeAndStore,
   wordsToVtt,
   isDeepgramEnabled,
 } from "@/lib/deepgram";
@@ -12,11 +11,11 @@ import { getFile } from "@/lib/storage";
 
 /**
  * POST /api/transcribe - Transcribe interview audio
- * Body: { interviewId: string, audioUrl?: string }
+ * Body: { interviewId: string }
  */
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getActiveUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { interviewId, audioUrl } = body;
+    const { interviewId } = body;
 
     if (!interviewId) {
       return NextResponse.json(
@@ -38,20 +37,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify the interview belongs to this user
-    const interview = await prisma.interview.findUnique({
-      where: { userId: user.userId },
+    // Verify the interview belongs to this user — use persisted audioUrl only
+    const interview = await prisma.interview.findFirst({
+      where: { id: interviewId, userId: user.id },
       select: { id: true, audioUrl: true, transcript: true },
     });
 
-    if (!interview || interview.id !== interviewId) {
+    if (!interview) {
       return NextResponse.json(
         { error: "Interview not found" },
         { status: 404 }
       );
     }
 
-    // Check if already transcribed
     if (interview.transcript) {
       return NextResponse.json({
         success: true,
@@ -60,8 +58,8 @@ export async function POST(request: Request) {
       });
     }
 
-    // Get the audio file from storage
-    const audioSource = audioUrl || interview.audioUrl;
+    // Only use the persisted audioUrl — never trust caller-supplied URLs
+    const audioSource = interview.audioUrl;
     if (!audioSource) {
       return NextResponse.json(
         { error: "No audio file available for transcription" },
@@ -69,12 +67,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Extract storage key from URL
-    let audioBuffer: Buffer | null = null;
-    if (audioSource.startsWith("/api/files/")) {
-      const key = audioSource.replace("/api/files/", "");
-      audioBuffer = await getFile(key) as Buffer | null;
+    // Enforce tenant prefix on storage key
+    const orgPrefix = `/api/files/org-${user.organizationId}/interviews/`;
+    if (!audioSource.startsWith(orgPrefix)) {
+      return NextResponse.json(
+        { error: "Audio file not found" },
+        { status: 404 }
+      );
     }
+
+    const key = audioSource.replace("/api/files/", "");
+    const audioBuffer = await getFile(key) as Buffer | null;
 
     if (!audioBuffer) {
       return NextResponse.json(
@@ -83,13 +86,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Transcribe with Deepgram
     const { transcript, words, paragraphs } = await transcribeAudio(audioBuffer);
 
-    // Generate VTT captions
     const vtt = wordsToVtt(words);
 
-    // Store transcript segments and embeddings
     const segmentData = paragraphs.map((p) => ({
       interviewId,
       speaker: p.speaker === 0 ? "candidate" : "ai_interviewer",
@@ -101,7 +101,6 @@ export async function POST(request: Request) {
     if (segmentData.length > 0) {
       await prisma.transcriptSegment.createMany({ data: segmentData });
 
-      // Generate and store embeddings for each segment
       for (const segment of segmentData) {
         try {
           const embedding = await generateEmbedding(segment.text);
@@ -122,7 +121,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Update interview with transcript
     await prisma.interview.update({
       where: { id: interviewId },
       data: { transcript },

@@ -111,7 +111,8 @@ export default function TeamManagement({ token }: TeamManagementProps) {
   };
 
   useEffect(() => {
-    fetchMembers();
+    const timer = window.setTimeout(fetchMembers, 0);
+    return () => window.clearTimeout(timer);
   }, [token]);
 
   useEffect(() => {

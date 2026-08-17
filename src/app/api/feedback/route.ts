@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { getActiveUser } from "@/lib/authorization";
+import { rateLimitByIp } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = await rateLimitByIp(request, "feedback", { limit: 10, windowMs: 60_000 });
+    if (!rateLimit.allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const authenticatedUser = await getActiveUser(request);
     const body = await request.json();
-    const { type, message, email, userId, page } = body;
+    const { type, message, email, page } = body;
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -15,8 +20,9 @@ export async function POST(request: Request) {
       data: {
         type: type || "general",
         message: message.trim(),
-        email: email || null,
-        userId: userId || null,
+        email: authenticatedUser?.email || email || null,
+        userId: authenticatedUser?.id || null,
+        organizationId: authenticatedUser?.organizationId || null,
         page: page || null,
       },
     });
@@ -65,7 +71,7 @@ export async function POST(request: Request) {
                 </div>
                 <div class="field">
                   <div class="label">User ID</div>
-                  <div class="value">${userId || "N/A"}</div>
+               <div class="value">${authenticatedUser?.id || "N/A"}</div>
                 </div>
                 <div class="message-box">
                   <div class="label">Message</div>

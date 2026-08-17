@@ -11,6 +11,8 @@ export default function LoginPage() {
   const { login, organization } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [twoFactorToken, setTwoFactorToken] = useState("");
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,23 +26,18 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, twoFactorToken }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.twoFactorRequired) setTwoFactorRequired(true);
         throw new Error(data.error || "Login failed");
       }
 
       // Store session (token, user, organization branding)
       login(data.token, data.user, data.organization);
-
-      // Require email verification before entering the app
-      if (!data.user.emailVerified) {
-        router.push("/verify-email");
-        return;
-      }
 
       // Redirect based on role
       if (data.user.role === "employer") {
@@ -94,6 +91,22 @@ export default function LoginPage() {
                 />
               </div>
             </div>
+
+            {twoFactorRequired && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Authentication Code</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={twoFactorToken}
+                  onChange={(e) => setTwoFactorToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="123456"
+                  required
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

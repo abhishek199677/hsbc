@@ -1,98 +1,89 @@
 import OpenAI from "openai";
 import { prisma } from "./prisma";
+import { trackedEmbedding } from "./openai-usage";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const EMBEDDING_DIMENSIONS = 1536;
 
-/**
- * Generate an embedding vector for a text string using OpenAI.
- */
 export async function generateEmbedding(text: string): Promise<number[]> {
   const cleaned = text.replace(/\n/g, " ").trim();
   if (!cleaned) return new Array(EMBEDDING_DIMENSIONS).fill(0);
 
-  const response = await openai.embeddings.create({
-    model: EMBEDDING_MODEL,
-    input: cleaned,
-    dimensions: EMBEDDING_DIMENSIONS,
-  });
+  const response = await trackedEmbedding(
+    () => openai.embeddings.create({
+      model: EMBEDDING_MODEL,
+      input: cleaned,
+      dimensions: EMBEDDING_DIMENSIONS,
+    }),
+    {
+      model: EMBEDDING_MODEL,
+      endpoint: "embeddings/single",
+    }
+  );
 
   return response.data[0].embedding;
 }
 
-/**
- * Generate embeddings for multiple texts in batch.
- */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   const cleaned = texts.map((t) => t.replace(/\n/g, " ").trim());
-  const response = await openai.embeddings.create({
-    model: EMBEDDING_MODEL,
-    input: cleaned,
-    dimensions: EMBEDDING_DIMENSIONS,
-  });
+  const response = await trackedEmbedding(
+    () => openai.embeddings.create({
+      model: EMBEDDING_MODEL,
+      input: cleaned,
+      dimensions: EMBEDDING_DIMENSIONS,
+    }),
+    {
+      model: EMBEDDING_MODEL,
+      endpoint: "embeddings/batch",
+    }
+  );
 
   return response.data
     .sort((a, b) => a.index - b.index)
     .map((d) => d.embedding);
 }
 
-/**
- * Store a profile embedding in pgvector.
- * Uses raw SQL since Prisma doesn't natively support the vector type.
- */
 export async function storeProfileEmbedding(userId: string, embedding: number[]): Promise<void> {
   const vectorStr = `[${embedding.join(",")}]`;
-
   await prisma.$executeRawUnsafe(
     `INSERT INTO profile_embeddings (user_id, embedding, updated_at)
-     VALUES ($1::uuid, $2::vector, NOW())
-     ON CONFLICT (user_id) 
+     VALUES ($1, $2::vector, NOW())
+     ON CONFLICT (user_id)
      DO UPDATE SET embedding = $2::vector, updated_at = NOW()`,
     userId,
     vectorStr
   );
 }
 
-/**
- * Store a job embedding in pgvector.
- */
 export async function storeJobEmbedding(jobId: string, embedding: number[]): Promise<void> {
   const vectorStr = `[${embedding.join(",")}]`;
-
   await prisma.$executeRawUnsafe(
     `INSERT INTO job_embeddings (job_id, embedding, updated_at)
-     VALUES ($1::uuid, $2::vector, NOW())
-     ON CONFLICT (job_id) 
+     VALUES ($1, $2::vector, NOW())
+     ON CONFLICT (job_id)
      DO UPDATE SET embedding = $2::vector, updated_at = NOW()`,
     jobId,
     vectorStr
   );
 }
 
-/**
- * Store a transcript segment embedding.
- */
 export async function storeTranscriptEmbedding(
   segmentId: string,
   embedding: number[]
 ): Promise<void> {
   const vectorStr = `[${embedding.join(",")}]`;
-
   await prisma.$executeRawUnsafe(
     `INSERT INTO transcript_embeddings (segment_id, embedding, updated_at)
-     VALUES ($1::uuid, $2::vector, NOW())
-     ON CONFLICT (segment_id) 
+     VALUES ($1, $2::vector, NOW())
+     ON CONFLICT (segment_id)
      DO UPDATE SET embedding = $2::vector, updated_at = NOW()`,
     segmentId,
     vectorStr
   );
 }
 
-/**
- * Build a text representation of a user profile for embedding.
- */
 export function profileToText(profile: {
   currentRole?: string | null;
   totalExperience?: string | null;
@@ -115,9 +106,6 @@ export function profileToText(profile: {
   return parts.join(". ");
 }
 
-/**
- * Build a text representation of a job for embedding.
- */
 export function jobToText(job: {
   title: string;
   description: string;
@@ -140,32 +128,30 @@ export function jobToText(job: {
 }
 
 /**
- * Find the top N most similar jobs for a user using cosine similarity.
+ * Find the top N most similar active jobs for a user using cosine similarity.
+ * Tenant-scoped: only returns jobs belonging to the user's organization.
  */
 export async function findMatchingJobs(
   userId: string,
+  organizationId: string,
   limit: number = 10
-): Promise<
-  {
-    jobId: string;
-    similarity: number;
-  }[]
-> {
+): Promise<{ jobId: string; similarity: number }[]> {
   interface JobMatchResult {
     job_id: string;
     similarity: number;
   }
 
   const results: JobMatchResult[] = await prisma.$queryRawUnsafe(
-    `SELECT j.id as job_id, 
-            1 - (pe.embedding <=> (SELECT embedding FROM profile_embeddings WHERE user_id = $1::uuid)) as similarity
-     FROM jobs j
+    `SELECT j.id as job_id,
+            1 - (pe.embedding <=> (SELECT embedding FROM profile_embeddings WHERE user_id = $1)) as similarity
+     FROM "Job" j
      JOIN job_embeddings je ON je.job_id = j.id
-     JOIN profile_embeddings pe ON pe.user_id = $1::uuid
-     WHERE j.status = 'active'
+     JOIN profile_embeddings pe ON pe.user_id = $1
+     WHERE j.status = 'active' AND j."organizationId" = $2
      ORDER BY pe.embedding <=> je.embedding
-     LIMIT $2`,
+     LIMIT $3`,
     userId,
+    organizationId,
     limit
   );
 
@@ -174,16 +160,13 @@ export async function findMatchingJobs(
 
 /**
  * Find the top N most similar candidates for a job.
+ * Tenant-scoped: only returns users belonging to the job's organization.
  */
 export async function findMatchingCandidates(
   jobId: string,
+  organizationId: string,
   limit: number = 10
-): Promise<
-  {
-    userId: string;
-    similarity: number;
-  }[]
-> {
+): Promise<{ userId: string; similarity: number }[]> {
   interface CandidateMatchResult {
     user_id: string;
     similarity: number;
@@ -193,11 +176,14 @@ export async function findMatchingCandidates(
     `SELECT pe.user_id,
             1 - (je.embedding <=> pe.embedding) as similarity
      FROM profile_embeddings pe
-     JOIN job_embeddings je ON je.job_id = $1::uuid
-     JOIN profiles p ON p.user_id = pe.user_id
+     JOIN job_embeddings je ON je.job_id = $1
+     JOIN "Profile" p ON p."userId" = pe.user_id
+     JOIN "User" u ON u."id" = pe.user_id
+     WHERE u."organizationId" = $2
      ORDER BY pe.embedding <=> je.embedding
-     LIMIT $2`,
+     LIMIT $3`,
     jobId,
+    organizationId,
     limit
   );
 
@@ -206,19 +192,19 @@ export async function findMatchingCandidates(
 
 /**
  * Semantic search across transcripts.
+ * Tenant-scoped: only returns transcripts belonging to the organization's interviews.
  */
 export async function searchTranscripts(
   queryEmbedding: number[],
+  organizationId: string,
   limit: number = 10
-): Promise<
-  {
-    segmentId: string;
-    interviewId: string;
-    speaker: string;
-    text: string;
-    similarity: number;
-  }[]
-> {
+): Promise<{
+  segmentId: string;
+  interviewId: string;
+  speaker: string;
+  text: string;
+  similarity: number;
+}[]> {
   const vectorStr = `[${queryEmbedding.join(",")}]`;
 
   interface TranscriptSearchResult {
@@ -230,13 +216,17 @@ export async function searchTranscripts(
   }
 
   const results: TranscriptSearchResult[] = await prisma.$queryRawUnsafe(
-    `SELECT ts.id as segment_id, ts.interview_id, ts.speaker, ts.text,
+    `SELECT ts.id as segment_id, ts."interviewId" as interview_id, ts.speaker, ts.text,
             1 - (te.embedding <=> $1::vector) as similarity
-     FROM transcript_segments ts
+     FROM "TranscriptSegment" ts
      JOIN transcript_embeddings te ON te.segment_id = ts.id
+     JOIN "Interview" i ON i."id" = ts."interviewId"
+     JOIN "User" u ON u."id" = i."userId"
+     WHERE u."organizationId" = $2
      ORDER BY te.embedding <=> $1::vector
-     LIMIT $2`,
+     LIMIT $3`,
     vectorStr,
+    organizationId,
     limit
   );
 
@@ -247,55 +237,4 @@ export async function searchTranscripts(
     text: r.text,
     similarity: Number(r.similarity),
   }));
-}
-
-/**
- * Initialize pgvector extension and create embedding tables.
- * Run this once when setting up the database.
- */
-export async function initializeVectorTables(): Promise<void> {
-  await prisma.$executeRawUnsafe("CREATE EXTENSION IF NOT EXISTS vector");
-
-  await prisma.$executeRawUnsafe(
-    `CREATE TABLE IF NOT EXISTS profile_embeddings (
-      user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      embedding vector(${EMBEDDING_DIMENSIONS}),
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    )`
-  );
-
-  await prisma.$executeRawUnsafe(
-    `CREATE TABLE IF NOT EXISTS job_embeddings (
-      job_id UUID PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
-      embedding vector(${EMBEDDING_DIMENSIONS}),
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    )`
-  );
-
-  await prisma.$executeRawUnsafe(
-    `CREATE TABLE IF NOT EXISTS transcript_embeddings (
-      segment_id UUID PRIMARY KEY REFERENCES transcript_segments(id) ON DELETE CASCADE,
-      embedding vector(${EMBEDDING_DIMENSIONS}),
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    )`
-  );
-
-  // Create HNSW indexes for fast approximate nearest neighbor search
-  await prisma.$executeRawUnsafe(
-    `CREATE INDEX IF NOT EXISTS idx_profile_embedding 
-    ON profile_embeddings USING hnsw (embedding vector_cosine_ops)`
-  );
-
-  await prisma.$executeRawUnsafe(
-    `CREATE INDEX IF NOT EXISTS idx_job_embedding 
-    ON job_embeddings USING hnsw (embedding vector_cosine_ops)`
-  );
-
-  await prisma.$executeRawUnsafe(
-    `CREATE INDEX IF NOT EXISTS idx_transcript_embedding 
-    ON transcript_embeddings USING hnsw (embedding vector_cosine_ops)`
-  );
 }

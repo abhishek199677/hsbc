@@ -23,7 +23,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(networkFirst(request));
+    event.respondWith(fetch(request));
     return;
   }
 
@@ -45,19 +45,5 @@ async function cacheFirst(request) {
     return response;
   } catch {
     return caches.match(OFFLINE_PAGE);
-  }
-}
-
-async function networkFirst(request) {
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch {
-    const cached = await caches.match(request);
-    return cached || new Response("Offline", { status: 503 });
   }
 }

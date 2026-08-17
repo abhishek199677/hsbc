@@ -8,6 +8,8 @@ import {
   getPresignedUploadUrl,
   getPresignedUrl,
 } from "@/lib/storage";
+import { parseResume, ParsedResume } from "@/lib/resume-parser";
+import { prisma } from "@/lib/prisma";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -24,9 +26,22 @@ function isCaptionType(type: string) {
   return CAPTION_TYPES.includes(type);
 }
 
+function extensionForType(type: string): string | null {
+  const extensions: Record<string, string> = {
+    "application/pdf": "pdf",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "video/webm": "webm",
+    "video/mp4": "mp4",
+    "video/quicktime": "mov",
+    "text/vtt": "vtt",
+  };
+  return extensions[type] || null;
+}
+
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -43,21 +58,21 @@ export async function POST(request: Request) {
     // upload directly to Cloudflare R2 (bypasses the hosting function body limit).
     if (contentType.includes("application/json")) {
       const body = await request.json();
-      const { filename, type, size, kind } = body;
+      const { filename, type, size } = body;
 
       if (!isVideoType(type || "")) {
         return NextResponse.json({ error: "Only video uploads are supported in this mode" }, { status: 400 });
       }
 
       const maxSize = 200 * 1024 * 1024;
-      if (typeof size !== "number" || size > maxSize) {
+      if (typeof size !== "number" || size <= 0 || size > maxSize) {
         return NextResponse.json(
           { error: "File size exceeds 200MB limit" },
           { status: 400 }
         );
       }
 
-      const key = buildKey(user.organizationId, "interviews", filename, "webm");
+      const key = buildKey(user.organizationId, "interviews", extensionForType(type) || "webm");
       const uploadUrl = await getPresignedUploadUrl(key, type);
 
       if (!uploadUrl) {
@@ -105,12 +120,61 @@ export async function POST(request: Request) {
     }
 
     const folder = isVideo || isCaption ? "interviews" : "resumes";
-    const key = buildKey(user.organizationId, folder, file.name, isVideo ? "webm" : "pdf");
+    const extension = extensionForType(file.type);
+    if (!extension) return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+    const key = buildKey(user.organizationId, folder, extension);
 
     const bytes = await file.arrayBuffer();
     await saveFile(key, Buffer.from(bytes), file.type);
 
     const fileUrl = canonicalUrl(key);
+
+    // Parse resume if it's a document
+    let parsedResume: ParsedResume | null = null;
+    if (!isVideo && !isCaption) {
+      try {
+        parsedResume = await parseResume(Buffer.from(bytes), file.name);
+        
+        // Save parsed resume data to the user's profile
+        if (parsedResume) {
+          const skills = parsedResume.skills?.length > 0 ? parsedResume.skills.join(", ") : null;
+          
+          // Upsert profile with parsed data
+          await prisma.profile.upsert({
+            where: { userId: user.userId },
+            create: {
+              userId: user.userId,
+              resumeUrl: fileUrl,
+              resumeFileName: file.name,
+              currentRole: parsedResume.currentRole,
+              totalExperience: parsedResume.totalExperience,
+              currentLocation: parsedResume.currentLocation,
+              skills,
+              currentCompany: parsedResume.currentCompany,
+              education: parsedResume.education,
+              aboutYou: parsedResume.summary,
+              strengths: parsedResume.strengths,
+            },
+            update: {
+              resumeUrl: fileUrl,
+              resumeFileName: file.name,
+              // Only update fields if they have a value from parsing
+              ...(parsedResume.currentRole && { currentRole: parsedResume.currentRole }),
+              ...(parsedResume.totalExperience && { totalExperience: parsedResume.totalExperience }),
+              ...(parsedResume.currentLocation && { currentLocation: parsedResume.currentLocation }),
+              ...(skills && { skills }),
+              ...(parsedResume.currentCompany && { currentCompany: parsedResume.currentCompany }),
+              ...(parsedResume.education && { education: parsedResume.education }),
+              ...(parsedResume.summary && { aboutYou: parsedResume.summary }),
+              ...(parsedResume.strengths && { strengths: parsedResume.strengths }),
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Resume parsing failed:", error);
+        // Continue without parsed data - not a blocker
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -120,6 +184,7 @@ export async function POST(request: Request) {
         size: file.size,
         type: file.type,
       },
+      parsedResume,
     });
   } catch (error) {
     console.error("Upload error:", error);
@@ -130,12 +195,8 @@ export async function POST(request: Request) {
 function buildKey(
   organizationId: string,
   folder: string,
-  originalFilename: string,
-  fallbackExtension: string
+  extension: string
 ): string {
-  const fileExtension = (originalFilename?.split(".").pop() || "").toLowerCase();
-  const ext =
-    fileExtension && !fileExtension.includes(" ") ? fileExtension : fallbackExtension;
-  const uniqueFilename = `${uuidv4()}.${ext}`;
+  const uniqueFilename = `${uuidv4()}.${extension}`;
   return `org-${organizationId}/${folder}/${uniqueFilename}`;
 }

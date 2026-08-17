@@ -6,11 +6,6 @@
 
 **AI-powered background screening, job matching & video interviews**
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![OpenAI](https://img.shields.io/badge/OpenAI-gpt--5--nano-412991?logo=openai&logoColor=white)](https://openai.com)
 
 Runs free on Vercel + Cloudflare R2 + Turso. Stripe billing, email verification, GDPR, timezone-aware reminders, and plan-based limits built in.
 
@@ -18,7 +13,7 @@ Runs free on Vercel + Cloudflare R2 + Turso. Stripe billing, email verification,
 
 ---
 
-# Techcitta - Full Stack Application
+# Full Stack Application
 
 A complete background screening and job matching platform with Admin Portal and AI Video Interview.
 
@@ -253,8 +248,295 @@ npm run build     # typecheck + production build
 - React 19
 - Tailwind CSS
 - TypeScript
-- Prisma (SQLite / Turso)
+- Prisma (PostgreSQL via Neon)
 - Cloudflare R2 (video & file storage, presigned URLs)
 - OpenAI gpt-5-nano
 - MediaPipe FaceLandmarker (on-device anti-cheating / proctoring)
 - Nodemailer
+- LiveKit (real-time WebRTC video)
+- Deepgram (server-side transcription)
+- Inngest (background jobs)
+- Upstash Redis (rate limiting)
+- Sentry (error tracking)
+- Stripe (billing)
+
+---
+
+## Project File Structure — Intern Reference
+
+This section explains **every file and folder** and what it does.
+Read this before touching any code.
+
+---
+
+### Root Config Files
+
+| File | Purpose |
+|------|---------|
+| `package.json` | Dependencies and scripts (`dev`, `build`, `lint`, `test`) |
+| `next.config.ts` | Next.js config — CSP headers, R2 image domains, Sentry plugin |
+| `tsconfig.json` | TypeScript config — path aliases (`@/` → `src/`) |
+| `prisma.config.ts` | Prisma config — DB URL from env, migration path |
+| `vitest.config.ts` | Test runner config (Vitest) |
+| `eslint.config.mjs` | Linting rules |
+| `postcss.config.mjs` | Tailwind CSS PostCSS plugin |
+| `.env` | **Secrets** — DB URL, API keys, JWT secret (never commit) |
+
+---
+
+### `prisma/`
+
+| File | Purpose |
+|------|---------|
+| `schema.prisma` | **Database schema** — all tables (User, Profile, Interview, Organization, etc.). Edit this to change the DB structure. |
+| `migrations/` | Auto-generated SQL migration files. Never edit manually. |
+
+---
+
+### `src/middleware.ts`
+
+**Route protection.** Runs on every request. Checks JWT token, blocks unauthenticated users from protected routes (`/admin`, `/api/profile`, `/api/interview`, etc.). Sets CSP security headers.
+
+---
+
+### `src/contexts/AuthContext.tsx`
+
+**Global auth state.** Provides `user`, `token`, `organization`, and `login()`/`logout()` functions to the entire app via React Context. Wraps all pages in `Providers.tsx`.
+
+---
+
+### `src/lib/` — Core Business Logic
+
+This is the **most important folder**. Every file here is a utility/module used across the app.
+
+| File | Purpose |
+|------|---------|
+| `auth.ts` | JWT token creation/verification. `getUserFromRequest()` extracts the logged-in user from any API request. |
+| `prisma.ts` | Singleton Prisma client. Import this everywhere you need DB access. |
+| `storage.ts` | **File storage layer** — Cloudflare R2 (production) or local `public/uploads/` (dev). Functions: `saveFile()`, `getFile()`, `deleteFile()`, `getPresignedUploadUrl()`, `getPresignedUrl()`. |
+| `uploadFile.ts` | **Client-side upload helper.** Used by the browser to upload videos/resumes. Tries presigned PUT to R2 first, falls back to multipart. |
+| `email.ts` | Nodemailer transporter. Sends verification emails, password resets, interview confirmations. |
+| `whatsapp.ts` | WhatsApp Business API integration for sending interview reminders. |
+| `rateLimit.ts` | In-memory rate limiter. Protects API endpoints from abuse. |
+| `security.ts` | Security helpers — input sanitization, etc. |
+| `tokens.ts` | Random token generation for email verification and password reset links. |
+| `plan.ts` | Plan enforcement logic — checks user's plan (Starter/Pro/Enterprise) and interview limits. |
+| `pricing.ts` | Multi-currency pricing — converts USD prices to INR/EUR/GBP/AED/SGD/CAD/AUD for display. |
+| `timezone.ts` | Timezone conversion — ensures interview times display correctly in the user's local timezone. |
+| `livekit.ts` | LiveKit integration — room creation, token generation for real-time WebRTC video calls. |
+| `deepgram.ts` | Deepgram API client — server-side audio transcription of interview recordings. |
+| `proctor.ts` | **Client-side proctoring** — MediaPipe face/gaze detection. Detects looking away, multiple faces, hidden face. |
+| `proctor-server.ts` | Server-side proctoring logic — processes proctoring flags and generates reports. |
+| `stripe.ts` | Stripe client — checkout sessions, subscription management, billing portal. |
+| `two-factor.ts` | Two-factor authentication (TOTP) helpers. |
+| `sentry.ts` | Sentry error tracking initialization. |
+| `embeddings.ts` | OpenAI embeddings for resume/candidate matching. |
+| `useCurrency.ts` | React hook — currency selection state and formatting. |
+| `inngest/client.ts` | Inngest client — triggers background jobs (e.g. scheduled reminders). |
+| `inngest/functions.ts` | Inngest function definitions — background workflows. |
+
+---
+
+### `src/components/` — Shared UI Components
+
+| File | Purpose |
+|------|---------|
+| `Navbar.tsx` | Global top navigation bar — logo, links, auth menu, mobile hamburger. |
+| `Footer.tsx` | Site-wide footer. |
+| `Sidebar.tsx` | **Candidate-facing sidebar** (profile/interview/confirmation pages) — progress steps, org branding. NOT the admin sidebar. |
+| `Hero.tsx` | Landing page hero section. |
+| `Features.tsx` | Landing page features section. |
+| `HowItWorks.tsx` | Landing page "how it works" section. |
+| `CTA.tsx` | Call-to-action section. |
+| `CompanyLogos.tsx` | Trusted-by company logos section. |
+| `VideoSection.tsx` | Landing page video demo section. |
+| `StepIndicator.tsx` | Multi-step progress indicator (used in profile wizard). |
+| `Providers.tsx` | Root provider wrapper — AuthContext, ToastProvider, CrispChat, Branding. |
+| `ToastProvider.tsx` | Toast notification system. |
+| `Branding.tsx` | Dynamic org branding (colors, logo) based on URL params. |
+| `CrispChat.tsx` | Crisp live chat widget integration. |
+| `AIChatbot.tsx` | AI chatbot widget. |
+| `FeedbackWidget.tsx` | User feedback submission widget (floating button). |
+| `ReminderChecker.tsx` | Checks for upcoming interviews and shows reminders. |
+| `CurrencySelector.tsx` | Currency picker dropdown (INR/USD/EUR/etc.). |
+| `AnalyticsDashboard.tsx` | Analytics charts — used in admin analytics tab. |
+
+---
+
+### `src/components/admin/` — Admin Panel Components
+
+| File | Purpose |
+|------|---------|
+| `AdminSidebar.tsx` | **Admin sidebar + layout** — navigation, user info, org details, collapse toggle. Wraps all admin content. |
+| `OverviewDashboard.tsx` | Admin overview tab — stats cards (total users, interviews, scores, hire rate), charts. |
+| `CandidatePipeline.tsx` | Candidates tab — pipeline view of all candidates with status tracking. |
+| `ProctoringDashboard.tsx` | Proctoring tab — integrity monitoring, flagged interviews, incident reports. |
+| `TeamManagement.tsx` | Team tab — invite/remove team members, role management. |
+| `DataTable.tsx` | Reusable data table — sorting, filtering, search, CSV export. Used across all admin tabs. |
+
+---
+
+### `src/app/` — Pages (Next.js App Router)
+
+Each folder is a route. `page.tsx` = the page component. `layout.tsx` = shared layout for that route group.
+
+#### Public Pages
+
+| Folder | Route | Purpose |
+|--------|-------|---------|
+| `page.tsx` | `/` | Landing page |
+| `login/` | `/login` | User login |
+| `signup/` | `/signup` | User registration |
+| `verify-email/` | `/verify-email` | Email verification (link from email) |
+| `forgot-password/` | `/forgot-password` | Request password reset |
+| `reset-password/` | `/reset-password` | Set new password (via token link) |
+| `pricing/` | `/pricing` | Plan pricing page |
+| `terms/` | `/terms` | Terms of service |
+| `privacy/` | `/privacy` | Privacy policy |
+| `dpa/` | `/dpa` | Data processing agreement |
+| `enterprise/` | `/enterprise` | Enterprise plan page |
+| `government/` | `/government` | Government plan page |
+
+#### Authenticated User Pages
+
+| Folder | Route | Purpose |
+|--------|-------|---------|
+| `profile/` | `/profile` | Multi-step profile creation wizard |
+| `interview/` | `/interview` | Interview scheduling page |
+| `interview/room/` | `/interview/room` | Pre-interview device check (camera, mic, speaker) |
+| `interview/live/` | `/interview/live` | **Live AI video interview** — the main interview experience |
+| `confirmation/` | `/confirmation` | Booking confirmation page |
+| `settings/` | `/settings` | Account settings — verification, billing, timezone, GDPR |
+| `employer/` | `/employer` | Employer portal pages |
+
+#### Admin Pages
+
+| Folder | Route | Purpose |
+|--------|-------|---------|
+| `admin/` | `/admin` | Admin dashboard — managed by `AdminSidebar` + tab components |
+
+#### Root Layout
+
+| File | Purpose |
+|------|---------|
+| `layout.tsx` | Root layout — wraps all pages with `<Providers>`, fonts, metadata |
+| `globals.css` | Global styles + Tailwind imports |
+
+---
+
+### `src/app/api/` — API Endpoints
+
+Every folder is a route handler. `route.ts` = the handler file.
+
+#### Auth
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/auth/signup` | POST | Create new account + send verification email |
+| `/api/auth/login` | POST | Authenticate user, return JWT |
+| `/api/auth/verify-email` | POST | Verify email via token |
+| `/api/auth/resend-verification` | POST | Resend verification email |
+
+#### User
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/profile` | GET/PUT | Read/update user profile |
+| `/api/account/me` | GET | Current user info + plan details |
+| `/api/account/export` | GET | GDPR data export (JSON download) |
+| `/api/account/delete` | POST | GDPR account deletion (removes DB + R2 files) |
+| `/api/account/onboarding` | POST | Onboarding completion |
+| `/api/account/2fa` | POST | Two-factor auth setup/verify |
+
+#### Interview
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/interview` | GET/POST/PATCH | Schedule, view, and complete interviews |
+| `/api/ai-interview` | POST | AI interview engine — start, respond to answers, evaluate |
+| `/api/transcribe` | POST | Audio transcription via Deepgram |
+| `/api/reminders` | GET | Cron-triggered — sends due interview reminders via email/WhatsApp |
+
+#### File Storage
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/upload` | POST | Upload files — videos (presigned R2 PUT), resumes, captions |
+| `/api/files/[...path]` | GET | Authenticated file serving — reads from R2, enforces org isolation |
+
+#### AI / Matching
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/match` | POST | AI candidate-job matching |
+| `/api/chat` | POST | AI chat endpoint |
+| `/api/proctor` | POST | Server-side proctoring analysis |
+
+#### Billing
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/billing/checkout` | POST | Create Stripe checkout session |
+| `/api/billing/portal` | POST | Open Stripe billing portal |
+| `/api/billing/webhook` | POST | Stripe webhook — handles subscription events |
+
+#### Admin
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/admin/stats` | GET | Dashboard statistics |
+| `/api/admin/users` | GET | All users with interview data |
+| `/api/admin/feedback` | GET | User feedback submissions |
+| `/api/admin/analytics` | GET | Analytics data |
+| `/api/admin/team` | GET/POST | Team member management |
+
+#### Integrations
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/livekit` | POST | LiveKit room/token management |
+| `/api/feedback` | POST | Submit user feedback |
+| `/api/inngest` | POST | Inngest background job endpoints |
+| `/api/sentry-example` | GET | Sentry test endpoint |
+
+---
+
+### `src/generated/` — Auto-Generated
+
+| Folder | Purpose |
+|--------|---------|
+| `prisma/` | Prisma Client — auto-generated from `schema.prisma`. **Never edit manually.** Re-generated on `npx prisma generate`. |
+
+---
+
+### Key Flows to Understand
+
+#### Video Recording → Upload → DB Save
+```
+Browser (MediaRecorder) → src/app/interview/live/LiveInterviewContent.tsx
+  → src/lib/uploadFile.ts (client upload helper)
+    → POST /api/upload (get presigned R2 URL)
+      → src/lib/storage.ts (saveFile / getPresignedUploadUrl)
+        → Cloudflare R2 (actual storage)
+  → PATCH /api/interview (save videoUrl to DB)
+    → src/app/api/interview/route.ts
+      → Prisma → PostgreSQL
+```
+
+#### Authentication Flow
+```
+Login → POST /api/auth/login → src/lib/auth.ts (create JWT)
+  → Cookie stored in browser
+  → Every request → src/middleware.ts (verify JWT, protect routes)
+  → src/lib/auth.ts getUserFromRequest() (extract user in API handlers)
+```
+
+#### Interview AI Flow
+```
+Start → POST /api/ai-interview (action: "start") → OpenAI generates questions
+  → Client displays question
+  → User speaks → Voice-to-text captured
+  → Submit answer → POST /api/ai-interview (action: "respond") → AI evaluates
+  → Final → POST /api/ai-interview (action: "evaluate") → Score + feedback
+  → Video uploaded to R2 → Caption file uploaded → DB updated
+```

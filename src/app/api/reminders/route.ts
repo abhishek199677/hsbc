@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
 import { sendEmail, generateReminderEmail } from "@/lib/email";
 import { sendWhatsAppMessage, generateReminderWhatsApp } from "@/lib/whatsapp";
 
@@ -44,13 +43,17 @@ function getInterviewDateTime(date: string, time: string): Date {
 // GET - Check and send reminders for upcoming interviews
 export async function GET(request: Request) {
   try {
-    const user = getUserFromRequest(request);
-    if (!user) {
+    const cronSecret = process.env.CRON_SECRET;
+    const authorization = request.headers.get("authorization");
+    if (!cronSecret) {
+      return NextResponse.json({ error: "Reminder worker is not configured" }, { status: 503 });
+    }
+    if (authorization !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const now = new Date();
-    const results: string[] = [];
+    let sent = 0;
 
     // Find all scheduled interviews
     const interviews = await prisma.interview.findMany({
@@ -101,7 +104,7 @@ export async function GET(request: Request) {
             data: { reminder24hSent: true },
           });
 
-          results.push(`24h reminder sent to ${interview.user.email}`);
+          sent++;
         } catch (error) {
           console.error(`Failed to send 24h reminder to ${interview.user.email}:`, error);
         }
@@ -143,7 +146,7 @@ export async function GET(request: Request) {
             data: { reminder1hSent: true },
           });
 
-          results.push(`1h reminder sent to ${interview.user.email}`);
+          sent++;
         } catch (error) {
           console.error(`Failed to send 1h reminder to ${interview.user.email}:`, error);
         }
@@ -185,7 +188,7 @@ export async function GET(request: Request) {
             data: { reminder15mSent: true },
           });
 
-          results.push(`15m reminder sent to ${interview.user.email}`);
+          sent++;
         } catch (error) {
           console.error(`Failed to send 15m reminder to ${interview.user.email}:`, error);
         }
@@ -227,7 +230,7 @@ export async function GET(request: Request) {
             data: { reminderNowSent: true },
           });
 
-          results.push(`Now reminder sent to ${interview.user.email}`);
+          sent++;
         } catch (error) {
           console.error(`Failed to send now reminder to ${interview.user.email}:`, error);
         }
@@ -236,7 +239,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      results,
+      sent,
       checked: interviews.length 
     });
   } catch (error) {

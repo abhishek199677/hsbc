@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && npx prisma db push --skip-generate && next build",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    },
+    "src/app/api/auth/login/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/upload/route.ts": {
+      "maxDuration": 60,
+      "memory": 2048
+    },
+    "src/app/api/ai-interview/**/*.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/transcribe/route.ts": {
+      "maxDuration": 120
+    }
+  },
+  "crons": []
+}

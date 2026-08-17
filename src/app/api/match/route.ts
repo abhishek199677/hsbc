@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveUser, requireOrganizationRole } from "@/lib/authorization";
 import {
   generateEmbedding,
   storeProfileEmbedding,
@@ -14,13 +14,13 @@ import {
 
 /**
  * POST /api/match - Generate embeddings and find matches
- * Body: 
+ * Body:
  *   { action: "index_profile" | "index_job" | "find_jobs" | "find_candidates" | "search_transcripts",
  *     jobId?: string, query?: string, limit?: number }
  */
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getActiveUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     // --- Index user profile embedding ---
     if (action === "index_profile") {
       const profile = await prisma.profile.findUnique({
-        where: { userId: user.userId },
+        where: { userId: user.id },
       });
 
       if (!profile) {
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       }
 
       const embedding = await generateEmbedding(text);
-      await storeProfileEmbedding(user.userId, embedding);
+      await storeProfileEmbedding(user.id, embedding);
 
       return NextResponse.json({
         success: true,
@@ -71,6 +71,8 @@ export async function POST(request: Request) {
 
     // --- Index job embedding ---
     if (action === "index_job") {
+      const operator = await requireOrganizationRole(request, ["owner", "admin", "interviewer"]);
+      if (!operator) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       if (!jobId) {
         return NextResponse.json(
           { error: "Job ID required" },
@@ -83,6 +85,9 @@ export async function POST(request: Request) {
       });
 
       if (!job) {
+        return NextResponse.json({ error: "Job not found" }, { status: 404 });
+      }
+      if (job.organizationId !== operator.organizationId) {
         return NextResponse.json({ error: "Job not found" }, { status: 404 });
       }
 
@@ -109,9 +114,8 @@ export async function POST(request: Request) {
     // --- Find matching jobs for current user ---
     if (action === "find_jobs") {
       const matchLimit = Math.min(limit || 10, 50);
-      const matches = await findMatchingJobs(user.userId, matchLimit);
+      const matches = await findMatchingJobs(user.id, user.organizationId, matchLimit);
 
-      // Fetch full job details
       const jobIds = matches.map((m) => m.jobId);
       const jobs = await prisma.job.findMany({
         where: { id: { in: jobIds } },
@@ -136,7 +140,7 @@ export async function POST(request: Request) {
         const job = jobs.find((j: { id: string }) => j.id === m.jobId);
         return {
           ...job,
-          similarity: Math.round(m.similarity * 10000) / 100, // percentage with 2 decimals
+          similarity: Math.round(m.similarity * 10000) / 100,
         };
       });
 
@@ -145,6 +149,8 @@ export async function POST(request: Request) {
 
     // --- Find matching candidates for a job ---
     if (action === "find_candidates") {
+      const operator = await requireOrganizationRole(request, ["owner", "admin", "interviewer", "viewer"]);
+      if (!operator) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       if (!jobId) {
         return NextResponse.json(
           { error: "Job ID required" },
@@ -152,7 +158,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // Verify the job belongs to this user's organization
       const job = await prisma.job.findUnique({
         where: { id: jobId },
         select: { organizationId: true },
@@ -161,14 +166,19 @@ export async function POST(request: Request) {
       if (!job) {
         return NextResponse.json({ error: "Job not found" }, { status: 404 });
       }
+      if (job.organizationId !== operator.organizationId) {
+        return NextResponse.json({ error: "Job not found" }, { status: 404 });
+      }
 
       const matchLimit = Math.min(limit || 10, 50);
-      const matches = await findMatchingCandidates(jobId, matchLimit);
+      const matches = await findMatchingCandidates(jobId, operator.organizationId, matchLimit);
 
-      // Fetch full candidate details
       const userIds = matches.map((m) => m.userId);
       const profiles = await prisma.profile.findMany({
-        where: { userId: { in: userIds } },
+        where: {
+          userId: { in: userIds },
+          user: { organizationId: operator.organizationId },
+        },
         include: {
           user: {
             select: { name: true, email: true },
@@ -176,9 +186,10 @@ export async function POST(request: Request) {
         },
       });
 
-      const results = matches.map((m) => {
+      const results = matches.flatMap((m) => {
         const profile = profiles.find((p: { userId: string }) => p.userId === m.userId);
-        return {
+        if (!profile) return [];
+        return [{
           userId: m.userId,
           name: profile?.user?.name || "Unknown",
           email: profile?.user?.email,
@@ -186,7 +197,7 @@ export async function POST(request: Request) {
           skills: profile?.skills,
           totalExperience: profile?.totalExperience,
           similarity: Math.round(m.similarity * 10000) / 100,
-        };
+        }];
       });
 
       return NextResponse.json({ success: true, matches: results });
@@ -194,6 +205,8 @@ export async function POST(request: Request) {
 
     // --- Semantic search across transcripts ---
     if (action === "search_transcripts") {
+      const operator = await requireOrganizationRole(request, ["owner", "admin", "interviewer", "viewer"]);
+      if (!operator) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       if (!query) {
         return NextResponse.json(
           { error: "Query required" },
@@ -203,7 +216,7 @@ export async function POST(request: Request) {
 
       const queryEmbedding = await generateEmbedding(query);
       const searchLimit = Math.min(limit || 10, 50);
-      const results = await searchTranscripts(queryEmbedding, searchLimit);
+      const results = await searchTranscripts(queryEmbedding, operator.organizationId, searchLimit);
 
       return NextResponse.json({ success: true, results });
     }

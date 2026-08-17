@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { requireOrganizationRole } from "@/lib/authorization";
 import { getStripe, getPriceId, isStripeConfigured, isTaxEnabled } from "@/lib/stripe";
 import { getAppBaseUrl } from "@/lib/email";
 import { rateLimitByIp } from "@/lib/rateLimit";
@@ -10,9 +10,9 @@ const PLANS = ["pro", "enterprise"] as const;
 
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await requireOrganizationRole(request, ["owner", "admin"]);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const rateLimit = await rateLimitByIp(request, "billing", { limit: 20, windowMs: 60_000 });
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     const userData = await prisma.user.findUnique({
-      where: { id: user.userId },
+      where: { id: user.id },
       include: { organization: true },
     });
     if (!userData?.organization) {

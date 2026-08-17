@@ -49,7 +49,7 @@ const features = [
 const stats = [
   { number: "10M+", label: "Verified Candidates" },
   { number: "1000+", label: "Partner Companies" },
-  { number: "99.9%", label: "Accuracy Rate" },
+  { number: "24/7", label: "Workflow Access" },
   { number: "24/7", label: "AI Support" },
 ];
 
@@ -100,10 +100,10 @@ export default function Features() {
         <div className="mt-16 card-glare bg-white rounded-2xl p-8 shadow-lg">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: Shield, label: "ISO 27001 Certified" },
-              { icon: Lock, label: "GDPR Compliant" },
-              { icon: CheckCircle, label: "SOC 2 Type II" },
-              { icon: Star, label: "99.9% Uptime" },
+              { icon: Shield, label: "Security Controls" },
+              { icon: Lock, label: "Privacy Tools" },
+              { icon: CheckCircle, label: "Tenant Isolation" },
+              { icon: Star, label: "Service Monitoring" },
             ].map((badge) => (
               <div key={badge.label} className="flex items-center gap-3 hover:scale-105 transition-transform">
                 <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">

@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { login, organization } = useAuth();
+  const { organization } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -49,21 +49,7 @@ export default function SignupPage() {
         throw new Error(data.error || "Signup failed");
       }
 
-      // Store session (token, user, organization branding)
-      login(data.token, data.user, data.organization);
-
-      // Ask new users to verify their email before proceeding
-      if (!data.user.emailVerified) {
-        router.push("/verify-email");
-        return;
-      }
-
-      // Redirect based on role
-      if (data.user.role === "employer") {
-        router.push("/employer");
-      } else {
-        router.push("/profile");
-      }
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {

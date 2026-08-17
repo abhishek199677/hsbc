@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, generateToken } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { sendEmail, generateVerificationEmail, getAppBaseUrl } from "@/lib/email";
 import { isValidEmail, isValidPassword } from "@/lib/security";
 import { rateLimitByIp } from "@/lib/rateLimit";
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { email, password, name, phone, role, orgName } = body;
+    const accountRole = role === "employer" ? "employer" : "jobseeker";
 
     if (!email || !password) {
       return NextResponse.json(
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
@@ -81,27 +82,28 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create user
     const user = await prisma.user.create({
       data: {
-        email,
+        email: email.toLowerCase(),
         password: hashedPassword,
         name: name || null,
         phone: phone || null,
-        role: role || "jobseeker",
+        role: accountRole,
         organizationId: organization.id,
+        profile: { create: {} },
+        ...(accountRole === "employer"
+          ? {
+              teamMemberships: {
+                create: {
+                  organizationId: organization.id,
+                  role: "owner",
+                  acceptedAt: new Date(),
+                },
+              },
+            }
+          : {}),
       },
     });
-
-    // Create profile
-    await prisma.profile.create({
-      data: {
-        userId: user.id,
-      },
-    });
-
-    // Generate token
-    const token = generateToken(user.id, user.email, organization.id);
 
     // Create email verification token
     const verifyToken = generateVerificationToken();
@@ -114,7 +116,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Send verification email (best-effort; login still works with a banner)
+    // Send verification email. Login remains blocked until verification succeeds.
     await sendEmail({
       to: user.email,
       subject: "Verify your HireRight email address",
@@ -146,7 +148,6 @@ export async function POST(request: Request) {
         plan: organization.plan,
         planStatus: organization.planStatus,
       },
-      token,
     });
   } catch (error) {
     console.error("Signup error:", error);

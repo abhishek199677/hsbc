@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { requireOrganizationRole } from "@/lib/authorization";
 
 export async function GET(request: Request) {
   try {
-    const authUser = getUserFromRequest(request);
+    const authUser = await requireOrganizationRole(request, ["owner", "admin"]);
     if (!authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: authUser.userId },
+      where: { id: authUser.id },
       select: {
         organization: {
           select: {
@@ -43,16 +43,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authUser = getUserFromRequest(request);
+    const authUser = await requireOrganizationRole(request, ["owner", "admin"]);
     if (!authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
     const { step, data } = body;
 
     const user = await prisma.user.findUnique({
-      where: { id: authUser.userId },
+      where: { id: authUser.id },
       select: { organizationId: true },
     });
 

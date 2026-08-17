@@ -22,7 +22,7 @@ const features = [
   {
     icon: Lock,
     title: "Data Sovereignty",
-    description: "All data stored within national borders with end-to-end encryption and audit trails.",
+    description: "Deployment and data-location requirements are reviewed and agreed for each customer environment.",
   },
   {
     icon: Globe,
@@ -39,7 +39,7 @@ const features = [
 const stats = [
   { number: "50+", label: "Government Departments" },
   { number: "10M+", label: "Verifications Completed" },
-  { number: "99.9%", label: "Accuracy Rate" },
+  { number: "24/7", label: "Workflow Access" },
   { number: "< 24hrs", label: "Average Turnaround" },
 ];
 

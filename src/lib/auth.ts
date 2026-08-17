@@ -1,15 +1,20 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { createHash, randomBytes } from "node:crypto";
+import { prisma } from "@/lib/prisma";
 
-const DEV_SECRET = "hireright-dev-only-secret";
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (secret) return secret;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("JWT_SECRET environment variable is required in production.");
-  }
-  return DEV_SECRET;
+export const SESSION_COOKIE = "techcitta_session";
+
+export interface AuthUser {
+  sessionId: string;
+  userId: string;
+  email: string;
+  organizationId: string;
+}
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -20,34 +25,105 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export interface AuthUser {
-  userId: string;
-  email: string;
-  organizationId: string;
+export async function createSession(
+  userId: string,
+  organizationId: string
+): Promise<{ token: string; expiresAt: Date }> {
+  const token = randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+  await prisma.session.create({
+    data: {
+      tokenHash: hashToken(token),
+      userId,
+      organizationId,
+      expiresAt,
+    },
+  });
+
+  return { token, expiresAt };
 }
 
-export function generateToken(userId: string, email: string, organizationId: string): string {
-  return jwt.sign({ userId, email, organizationId }, getJwtSecret(), { expiresIn: "7d" });
-}
-
-export function verifyToken(token: string): AuthUser | null {
+function getCookieToken(request: Request): string | null {
+  const cookie = request.headers.get("cookie");
+  const match = cookie
+    ?.split(";")
+    .map((p) => p.trim())
+    .find((p) => p.startsWith(`${SESSION_COOKIE}=`));
+  if (!match) return null;
   try {
-    return jwt.verify(token, getJwtSecret()) as AuthUser;
+    return decodeURIComponent(match.slice(SESSION_COOKIE.length + 1)) || null;
   } catch {
     return null;
   }
 }
 
+function getBearerToken(request: Request): string | null {
+  const auth = request.headers.get("authorization");
+  const m = auth?.match(/^Bearer\s+(.+)$/i);
+  return m?.[1]?.trim() || null;
+}
+
+function getTokenCandidates(request: Request): string[] {
+  const bearer = getBearerToken(request);
+  const cookie = getCookieToken(request);
+  return [...new Set([bearer, cookie].filter((t): t is string => Boolean(t)))];
+}
+
 export function getTokenFromRequest(request: Request): string | null {
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.substring(7);
+  return getBearerToken(request) || getCookieToken(request);
+}
+
+async function resolveSession(token: string): Promise<AuthUser | null> {
+  const session = await prisma.session.findUnique({
+    where: { tokenHash: hashToken(token) },
+    select: {
+      id: true,
+      userId: true,
+      organizationId: true,
+      expiresAt: true,
+      revokedAt: true,
+      user: { select: { email: true } },
+    },
+  });
+
+  if (!session || session.revokedAt || session.expiresAt <= new Date()) return null;
+
+  return {
+    sessionId: session.id,
+    userId: session.userId,
+    email: session.user.email,
+    organizationId: session.organizationId,
+  };
+}
+
+export async function getUserFromRequest(request: Request): Promise<AuthUser | null> {
+  for (const token of getTokenCandidates(request)) {
+    const user = await resolveSession(token);
+    if (user) return user;
   }
   return null;
 }
 
-export function getUserFromRequest(request: Request): AuthUser | null {
-  const token = getTokenFromRequest(request);
-  if (!token) return null;
-  return verifyToken(token);
+export async function revokeCurrentSession(request: Request): Promise<boolean> {
+  for (const token of getTokenCandidates(request)) {
+    const result = await prisma.session.updateMany({
+      where: {
+        tokenHash: hashToken(token),
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { revokedAt: new Date() },
+    });
+    if (result.count > 0) return true;
+  }
+  return false;
+}
+
+export async function revokeUserSessions(userId: string): Promise<number> {
+  const result = await prisma.session.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  return result.count;
 }

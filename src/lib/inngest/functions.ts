@@ -8,6 +8,7 @@ import {
   generateInterviewConfirmationEmail,
 } from "@/lib/email";
 import OpenAI from "openai";
+import { trackedChatCompletion } from "@/lib/openai-usage";
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -252,7 +253,7 @@ export const evaluateInterview = inngest.createFunction(
     const interview = await step.run("fetch-interview", async () => {
       return prisma.interview.findUnique({
         where: { id: interviewId },
-        include: { user: { select: { id: true, name: true, email: true } } },
+        include: { user: { select: { id: true, name: true, email: true, organizationId: true } } },
       });
     });
 
@@ -349,15 +350,24 @@ export const evaluateInterview = inngest.createFunction(
     });
 
     const completion = await step.run("call-openai", async () => {
-      return getOpenAI().chat.completions.create({
-        model: "gpt-5-nano",
-        messages: [
-          { role: "system", content: "You are an interview evaluator. Provide structured feedback. Always return valid JSON." },
-          { role: "user", content: evaluationPrompt },
-        ],
-        max_completion_tokens: 2000,
-        reasoning_effort: "low",
-      });
+      return trackedChatCompletion(
+        () => getOpenAI().chat.completions.create({
+          model: "gpt-5-nano",
+          messages: [
+            { role: "system", content: "You are an interview evaluator. Provide structured feedback. Always return valid JSON." },
+            { role: "user", content: evaluationPrompt },
+          ],
+          max_completion_tokens: 2000,
+          reasoning_effort: "low",
+        }),
+        {
+          model: "gpt-5-nano",
+          endpoint: "ai-interview/evaluate-background",
+          userId: interview?.user?.id,
+          organizationId: interview?.user?.organizationId,
+          interviewId,
+        }
+      );
     });
 
     const evaluation = completion.choices[0]?.message?.content;

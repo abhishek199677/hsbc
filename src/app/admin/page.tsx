@@ -9,7 +9,10 @@ import CandidatePipeline from "@/components/admin/CandidatePipeline";
 import ProctoringDashboard from "@/components/admin/ProctoringDashboard";
 import TeamManagement from "@/components/admin/TeamManagement";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import OpenAIMetrics from "@/components/admin/OpenAIMetrics";
+import LoginLogsTab from "@/components/admin/LoginLogsTab";
 import DataTable from "@/components/admin/DataTable";
+import EnterpriseSettings from "@/components/admin/EnterpriseSettings";
 import { Download } from "lucide-react";
 
 interface Feedback {
@@ -185,14 +188,20 @@ export default function AdminDashboard() {
         return <CandidatePipeline token={token} />;
       case "interviews":
         return <InterviewsTab users={users} loading={loading} onExport={exportInterviews} />;
+      case "login-logs":
+        return <LoginLogsTab token={token} />;
       case "analytics":
         return <AnalyticsDashboard />;
+      case "openai-metrics":
+        return <OpenAIMetrics token={token} />;
       case "feedback":
         return <FeedbackTab feedback={feedback} loading={loading} onExport={exportFeedback} />;
       case "team":
         return <TeamManagement token={token} />;
       case "proctoring":
         return <ProctoringDashboard token={token} />;
+      case "enterprise":
+        return <EnterpriseSettings token={token} />;
       case "settings":
         return <SettingsTab organization={organization} />;
       default:

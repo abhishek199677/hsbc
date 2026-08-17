@@ -100,8 +100,8 @@ export async function uploadFile(
   return uploadViaFormData(file, token);
 }
 
-export function buildPlaybackUrl(url: string, token?: string | null): string {
+export function buildPlaybackUrl(url: string, _token?: string | null): string {
   if (!url) return url;
   if (url.startsWith("http")) return url;
-  return `${url}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+  return url;
 }

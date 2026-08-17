@@ -41,6 +41,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [resumeParsed, setResumeParsed] = useState(false);
+  const [autoFilledFields, setAutoFilledFields] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     resume: null as File | null,
     resumeUrl: "",
@@ -177,18 +179,63 @@ export default function ProfilePage() {
           resumeUrl: data.file.url,
           resumeFileName: data.file.filename,
         }));
-        // Save to profile
-        await fetch("/api/profile", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            resumeUrl: data.file.url,
-            resumeFileName: file.name,
-          }),
-        });
+
+        // Auto-fill profile fields from parsed resume
+        if (data.parsedResume) {
+          const parsed = data.parsedResume;
+          const filled: string[] = [];
+          
+          setFormData((prev) => {
+            const updated = { ...prev };
+            
+            // Auto-fill all fields with parsed data
+            if (parsed.currentRole) {
+              updated.currentRole = parsed.currentRole;
+              filled.push("Current Role");
+            }
+            if (parsed.totalExperience) {
+              updated.totalExperience = parsed.totalExperience;
+              filled.push("Experience");
+            }
+            if (parsed.currentLocation) {
+              updated.currentLocation = parsed.currentLocation;
+              filled.push("Location");
+            }
+            if (parsed.skills?.length > 0) {
+              updated.skills = parsed.skills.join(", ");
+              filled.push("Skills");
+            }
+            if (parsed.currentCompany) {
+              updated.currentCompany = parsed.currentCompany;
+              filled.push("Company");
+            }
+            if (parsed.education) {
+              updated.education = parsed.education;
+              filled.push("Education");
+            }
+            if (parsed.summary) {
+              updated.aboutYou = parsed.summary;
+              filled.push("About You");
+            }
+            if (parsed.strengths) {
+              updated.strengths = parsed.strengths;
+              filled.push("Strengths");
+            }
+            
+            return {
+              ...updated,
+              resume: file,
+              resumeUrl: data.file.url,
+              resumeFileName: data.file.filename,
+            };
+          });
+
+          if (filled.length > 0) {
+            setResumeParsed(true);
+            setAutoFilledFields(filled);
+            setTimeout(() => setResumeParsed(false), 8000);
+          }
+        }
       }
     } catch (error) {
       console.error("Upload failed:", error);
@@ -336,6 +383,16 @@ export default function ProfilePage() {
               <div className="mt-3 flex items-center gap-2 text-green-600">
                 <CheckCircle className="w-4 h-4" />
                 <span className="text-sm">{formData.resumeFileName}</span>
+              </div>
+            )}
+            {resumeParsed && autoFilledFields.length > 0 && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-800">
+                  ✨ Resume parsed successfully!
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Auto-filled: {autoFilledFields.join(", ")}
+                </p>
               </div>
             )}
             <p className="text-xs text-green-600 mt-3 flex items-center gap-1">

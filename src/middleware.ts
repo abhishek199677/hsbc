@@ -20,22 +20,25 @@ const productionHeaders = [
 ];
 
 function handleCors(request: NextRequest): NextResponse {
-  const response = NextResponse.next();
+  const origin = request.headers.get("origin");
+  const configuredOrigins = (process.env.CORS_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const sameOrigin = origin === request.nextUrl.origin;
+  const allowedOrigin = origin && (sameOrigin || configuredOrigins.includes(origin)) ? origin : null;
+  const response = request.method === "OPTIONS"
+    ? new NextResponse(null, { status: 204 })
+    : NextResponse.next();
 
-  if (request.method === "OPTIONS") {
-    return new NextResponse(null, { status: 204 });
+  if (allowedOrigin) {
+    response.headers.set("Access-Control-Allow-Origin", allowedOrigin);
+    response.headers.set("Vary", "Origin");
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    response.headers.set("Access-Control-Max-Age", "86400");
   }
-
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  response.headers.set(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
-  );
-  response.headers.set("Access-Control-Max-Age", "86400");
+  response.headers.set("Cache-Control", "no-store");
 
   return response;
 }
@@ -87,13 +90,13 @@ export function middleware(request: NextRequest) {
   // Content Security Policy - allow LiveKit WebSocket, camera, microphone
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.sentry-cdn.com",
+    `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : ""} https://js.sentry-cdn.com https://js.stripe.com`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' https://*.cloudflare.com https://*.r2.cloudflarestorage.com data: blob:",
-    "font-src 'self'",
-    `connect-src 'self' https://*.cloudflare.com https://api.openai.com https://*.upstash.io https://*.sentry.io ${process.env.LIVEKIT_URL || "wss://livekit.hireright.com"} wss://*.livekit.cloud https://*.livekit.cloud ${process.env.NODE_ENV !== "production" ? "http://localhost:* ws://localhost:*" : ""}`,
+    "img-src 'self' https://*.cloudflare.com https://*.r2.cloudflarestorage.com https://*.vercel.app data: blob:",
+    "font-src 'self' https://fonts.gstatic.com",
+    `connect-src 'self' https://*.cloudflare.com https://api.openai.com https://*.upstash.io https://*.sentry.io ${process.env.LIVEKIT_URL || "wss://livekit.hireright.com"} wss://*.livekit.cloud https://*.livekit.cloud https://api.stripe.com ${process.env.NODE_ENV !== "production" ? "http://localhost:* ws://localhost:*" : ""}`,
     `media-src 'self' blob: https://*.r2.cloudflarestorage.com`,
-    `frame-src 'none'`,
+    `frame-src 'self' https://js.stripe.com https://hooks.stripe.com`,
     `worker-src 'self' blob:`,
     `child-src 'self' blob:`,
     `object-src 'none'`,

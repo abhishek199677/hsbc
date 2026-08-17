@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { getActiveUser } from "@/lib/authorization";
+import { revokeUserSessions } from "@/lib/auth";
 import { keyFromCanonicalUrl, deleteFile } from "@/lib/storage";
 
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getActiveUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -19,8 +20,8 @@ export async function POST(request: Request) {
     }
 
     const [profile, interview] = await Promise.all([
-      prisma.profile.findUnique({ where: { userId: user.userId } }),
-      prisma.interview.findUnique({ where: { userId: user.userId } }),
+      prisma.profile.findUnique({ where: { userId: user.id } }),
+      prisma.interview.findUnique({ where: { userId: user.id } }),
     ]);
 
     // Delete stored files (resume, video, captions) from R2/local storage.
@@ -34,8 +35,11 @@ export async function POST(request: Request) {
 
     await Promise.allSettled(fileKeys.map((key) => deleteFile(key)));
 
-    // Delete user and all related rows (cascade covers profile, interview, tokens).
-    await prisma.user.delete({ where: { id: user.userId } });
+    // Revoke all sessions before deleting the user
+    await revokeUserSessions(user.id);
+
+    // Delete user and all related rows (cascade covers profile, interview, tokens, sessions).
+    await prisma.user.delete({ where: { id: user.id } });
 
     return NextResponse.json({
       success: true,

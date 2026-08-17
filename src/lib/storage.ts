@@ -14,7 +14,7 @@ export const isR2Enabled = Boolean(
 
 export const STORAGE_MODE = isR2Enabled ? "r2" : "local";
 
-const UPLOADS_ROOT = join(process.cwd(), "public", "uploads");
+const UPLOADS_ROOT = join(process.cwd(), ".data", "uploads");
 
 let s3Client: S3Client | null = null;
 
@@ -96,7 +96,7 @@ export async function getPresignedUrl(key: string, expiresInSeconds = 3600): Pro
 export async function getPresignedUploadUrl(
   key: string,
   contentType: string,
-  expiresInSeconds = 900
+  expiresInSeconds = 300
 ): Promise<string | null> {
   if (!isR2Enabled) return null;
   return getSignedUrl(getS3(), new PutObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }), {

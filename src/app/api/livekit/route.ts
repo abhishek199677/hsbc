@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -35,6 +35,14 @@ export async function POST(request: Request) {
           { error: "Interview ID required" },
           { status: 400 }
         );
+      }
+
+      const interview = await prisma.interview.findFirst({
+        where: { id: interviewId, userId: user.userId },
+        select: { id: true },
+      });
+      if (!interview) {
+        return NextResponse.json({ error: "Interview not found" }, { status: 404 });
       }
 
       const { roomName, token } = await createInterviewRoom(

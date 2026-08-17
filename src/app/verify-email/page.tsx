@@ -10,6 +10,7 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const { user, token: authToken } = useAuth();
   const token = searchParams.get("token");
+  const pendingEmail = searchParams.get("email");
   const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">(
     token ? "verifying" : "idle"
   );
@@ -48,13 +49,6 @@ function VerifyEmailContent() {
     })();
   }, [token, status]);
 
-  useEffect(() => {
-    if (!token && user?.emailVerified) {
-      setStatus("success");
-      setMessage("Your email is already verified. You can sign in.");
-    }
-  }, [token, user]);
-
   const handleResend = async () => {
     setResending(true);
     try {
@@ -64,7 +58,7 @@ function VerifyEmailContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken || ""}`,
         },
-        body: JSON.stringify({ email: user?.email || "" }),
+        body: JSON.stringify({ email: user?.email || pendingEmail || "" }),
       });
       const data = await response.json();
       setMessage(data.message || (data.error || "Please try again later."));

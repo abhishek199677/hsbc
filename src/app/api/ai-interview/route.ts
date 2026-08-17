@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { getUserFromRequest } from "@/lib/auth";
+import { getActiveUser } from "@/lib/authorization";
 import { rateLimitByIp, rateLimit } from "@/lib/rateLimit";
+import { trackedChatCompletion } from "@/lib/openai-usage";
+import { prisma } from "@/lib/prisma";
+import { validateProctoringReport } from "@/lib/proctor-server";
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -59,7 +62,7 @@ function formatProctoring(proctoring: unknown): string {
 // Generate interview questions based on resume/profile
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getActiveUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -70,13 +73,23 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action, profile, userMessage, conversationHistory, proctoring } = body;
+    const { action, userMessage, conversationHistory, proctoring } = body;
 
     if (typeof action !== "string" || !["start", "respond", "evaluate"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    const userLimit = await rateLimit(`ai:${user.userId}:${action}`, { limit: 120, windowMs: 60_000 });
+    const interview = await prisma.interview.findUnique({ where: { userId: user.id } });
+    if (!interview) return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+    const storedProfile = await prisma.profile.findUnique({ where: { userId: user.id } });
+    const effectiveProfile = {
+      name: user.name || "Candidate",
+      currentRole: storedProfile?.currentRole || "Professional",
+      totalExperience: storedProfile?.totalExperience || "Not specified",
+      skills: storedProfile?.skills || "Not specified",
+    };
+
+    const userLimit = await rateLimit(`ai:${user.id}:${action}`, { limit: 120, windowMs: 60_000 });
     if (!userLimit.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -86,7 +99,7 @@ export async function POST(request: Request) {
       const systemPrompt = `You are an AI interviewer for HireRight, a job screening platform. 
       You are conducting a 15-minute professional interview.
       
-      ${asData("candidate_profile", `Name: ${profile?.name || "Candidate"}\nRole: ${profile?.currentRole || "Professional"}\nExperience: ${profile?.totalExperience || "Not specified"}\nSkills: ${profile?.skills || "Not specified"}`)}
+      ${asData("candidate_profile", `Name: ${effectiveProfile.name}\nRole: ${effectiveProfile.currentRole}\nExperience: ${effectiveProfile.totalExperience}\nSkills: ${effectiveProfile.skills}`)}
       
       Your role:
       1. Be professional, friendly, and concise
@@ -103,15 +116,23 @@ export async function POST(request: Request) {
 
       Start by introducing yourself, mentioning the anti-cheating monitoring, and asking the first question.`;
 
-      const completion = await getOpenAI().chat.completions.create({
-        model: "gpt-5-nano",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: "Start the interview" },
-        ],
-        max_completion_tokens: 1000,
-        reasoning_effort: "low",
-      });
+      const completion = await trackedChatCompletion(
+        () => getOpenAI().chat.completions.create({
+          model: "gpt-5-nano",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: "Start the interview" },
+          ],
+          max_completion_tokens: 1000,
+          reasoning_effort: "low",
+        }),
+        {
+          model: "gpt-5-nano",
+          endpoint: "ai-interview/start",
+          userId: user.id,
+          organizationId: user.organizationId,
+        }
+      );
 
       const assistantMessage = completion.choices[0]?.message?.content;
 
@@ -140,12 +161,20 @@ export async function POST(request: Request) {
         { role: "user", content: asData("user_message", typeof userMessage === "string" ? userMessage : "") },
       ];
 
-      const completion = await getOpenAI().chat.completions.create({
-        model: "gpt-5-nano",
-        messages,
-        max_completion_tokens: 1000,
-        reasoning_effort: "low",
-      });
+      const completion = await trackedChatCompletion(
+        () => getOpenAI().chat.completions.create({
+          model: "gpt-5-nano",
+          messages,
+          max_completion_tokens: 1000,
+          reasoning_effort: "low",
+        }),
+        {
+          model: "gpt-5-nano",
+          endpoint: "ai-interview/respond",
+          userId: user.id,
+          organizationId: user.organizationId,
+        }
+      );
 
       const assistantMessage = completion.choices[0]?.message?.content;
       const messageCount = (conversationHistory?.length || 0) / 2 + 1;
@@ -160,6 +189,20 @@ export async function POST(request: Request) {
 
     // action === "evaluate"
     const history = (conversationHistory || []) as Message[];
+    const validatedProctoring = proctoring && typeof proctoring === "object"
+      ? await validateProctoringReport(interview.id, proctoring)
+      : null;
+    const proctoringStatus = validatedProctoring?.tampered
+      ? "fail"
+      : typeof proctoring?.result === "string"
+        ? proctoring.result
+        : "off";
+    const trustedProctoring = proctoring && typeof proctoring === "object"
+      ? { ...proctoring, serverValidation: validatedProctoring }
+      : { enabled: false, result: "off" };
+    const transcript = history
+      .map((message) => `${message.role === "user" ? "Candidate" : "AI Interviewer"}: ${message.content}`)
+      .join("\n");
     const candidateAnswers = history.filter(
       (m) => m.role === "user" && m.content && m.content.trim().length >= 3
     );
@@ -179,9 +222,7 @@ export async function POST(request: Request) {
         ? "The interview ended before any substantive answers were provided, so your skills could not be assessed."
         : "No interview responses were recorded, so your skills could not be assessed.";
 
-      return NextResponse.json({
-        success: true,
-        evaluation: JSON.stringify({
+      const noAnswerEvaluation = JSON.stringify({
           score: 0,
           strengths: [],
           weaknesses: [
@@ -193,24 +234,39 @@ export async function POST(request: Request) {
           ],
           topicsToLearn: [],
           recommendation: "Reject",
-          integrity: formatProctoring(proctoring),
+          integrity: formatProctoring(trustedProctoring),
           questionScores: questions.map((question) => ({
             question,
             answer: "No answer provided",
             score: 0,
             feedback: "No response was given for this question.",
           })),
-        }),
+        });
+      await prisma.interview.update({
+        where: { id: interview.id },
+        data: {
+          evaluation: noAnswerEvaluation,
+          evaluationScore: 0,
+          transcript,
+          status: "completed",
+          proctoringReport: JSON.stringify(trustedProctoring),
+          proctoringFlags: Array.isArray(proctoring?.incidents) ? proctoring.incidents.length : 0,
+          proctoringStatus,
+        },
+      });
+      return NextResponse.json({
+        success: true,
+        evaluation: noAnswerEvaluation,
       });
     }
 
     const evaluationPrompt = `Evaluate this interview and provide a score and feedback.
     
-    ${asData("candidate_profile", `Name: ${profile?.name || "Candidate"}\nRole: ${profile?.currentRole || "Professional"}`)}
+    ${asData("candidate_profile", `Name: ${effectiveProfile.name}\nRole: ${effectiveProfile.currentRole}`)}
     
     ${asData("conversation_history", history.map((m: Message) => `${m.role}: ${m.content}`).join("\n"))}
     
-    ${asData("proctoring_report", formatProctoring(proctoring))}
+    ${asData("proctoring_report", formatProctoring(trustedProctoring))}
     
     ${INJECTION_GUARD}
     
@@ -237,17 +293,48 @@ export async function POST(request: Request) {
     
     Format as JSON with keys: score, strengths, weaknesses, areasForImprovement, topicsToLearn, recommendation, integrity, questionScores.`;
 
-    const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-5-nano",
-      messages: [
-        { role: "system", content: "You are an interview evaluator. Provide structured feedback. Always return valid JSON." },
-        { role: "user", content: evaluationPrompt },
-      ],
-      max_completion_tokens: 2000,
-      reasoning_effort: "low",
-    });
+    const completion = await trackedChatCompletion(
+      () => getOpenAI().chat.completions.create({
+        model: "gpt-5-nano",
+        messages: [
+          { role: "system", content: "You are an interview evaluator. Provide structured feedback. Always return valid JSON." },
+          { role: "user", content: evaluationPrompt },
+        ],
+        max_completion_tokens: 2000,
+        reasoning_effort: "low",
+      }),
+      {
+        model: "gpt-5-nano",
+        endpoint: "ai-interview/evaluate",
+        userId: user.id,
+        organizationId: user.organizationId,
+      }
+    );
 
     const evaluation = completion.choices[0]?.message?.content;
+
+    let evaluationScore: number | null = null;
+    try {
+      const parsed = JSON.parse(evaluation || "{}");
+      if (typeof parsed.score === "number" && Number.isFinite(parsed.score)) {
+        evaluationScore = Math.max(0, Math.min(10, parsed.score));
+      }
+    } catch {
+      // Keep the raw evaluation for review when a provider returns malformed JSON.
+    }
+
+    await prisma.interview.update({
+      where: { id: interview.id },
+      data: {
+        evaluation: evaluation || null,
+        evaluationScore,
+        transcript,
+        status: "completed",
+        proctoringReport: JSON.stringify(trustedProctoring),
+        proctoringFlags: Array.isArray(proctoring?.incidents) ? proctoring.incidents.length : 0,
+        proctoringStatus,
+      },
+    });
 
     return NextResponse.json({
       success: true,

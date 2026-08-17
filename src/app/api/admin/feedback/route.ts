@@ -4,17 +4,17 @@ import { getUserFromRequest } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
-    const auth = getUserFromRequest(request);
-    if (!auth) {
+    const authUser = await getUserFromRequest(request);
+    if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const requester = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: { role: true },
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.userId },
+      select: { role: true, organizationId: true },
     });
 
-    if (!requester || requester.role !== "admin") {
+    if (!user || (user.role !== "admin" && user.role !== "employer")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const status = searchParams.get("status");
     const type = searchParams.get("type");
 
-    const where: Record<string, string> = {};
+    const where: Record<string, string> = { organizationId: user.organizationId };
     if (status) where.status = status;
     if (type) where.type = type;
 
@@ -43,17 +43,17 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const auth = getUserFromRequest(request);
-    if (!auth) {
+    const authUser = await getUserFromRequest(request);
+    if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const requester = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: { role: true },
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.userId },
+      select: { role: true, organizationId: true },
     });
 
-    if (!requester || requester.role !== "admin") {
+    if (!user || (user.role !== "admin" && user.role !== "employer")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -64,8 +64,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "ID and status are required" }, { status: 400 });
     }
 
+    const existing = await prisma.feedback.findFirst({
+      where: { id, organizationId: user.organizationId },
+      select: { id: true },
+    });
+    if (!existing) return NextResponse.json({ error: "Feedback not found" }, { status: 404 });
+
     const feedback = await prisma.feedback.update({
-      where: { id },
+      where: { id: existing.id },
       data: { status },
     });
 

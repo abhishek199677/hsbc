@@ -86,16 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const organization = useStoredState<Organization>("organization", (raw) => JSON.parse(raw));
   const isLoading = !useHydrated();
 
-  const login = (newToken: string, newUser: User, newOrganization: Organization) => {
-    localStorage.setItem("token", newToken);
+  const login = (_newToken: string, newUser: User, newOrganization: Organization) => {
+    // The real session is held in an HttpOnly cookie and is not available to JavaScript.
+    localStorage.setItem("token", "cookie-session");
     localStorage.setItem("user", JSON.stringify(newUser));
     localStorage.setItem("organization", JSON.stringify(newOrganization));
   };
 
   const logout = () => {
+    void fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("organization");
+    if ("caches" in window) void caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))));
     router.push("/login");
   };
 

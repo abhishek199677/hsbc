@@ -5,7 +5,7 @@ import { getUserFromRequest } from "@/lib/auth";
 // GET - Fetch profile
 export async function GET(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 // PUT - Update profile
 export async function PUT(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

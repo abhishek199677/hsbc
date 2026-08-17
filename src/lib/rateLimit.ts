@@ -20,7 +20,7 @@ const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 // Cache Ratelimit instances per window duration so each unique window size
 // gets its own correctly-configured sliding-window limiter.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const upstashLimiters = new Map<number, any>();
+const upstashLimiters = new Map<string, any>();
 
 let upstashInitialised = false;
 
@@ -51,8 +51,9 @@ async function ensureUpstash(): Promise<boolean> {
   }
 }
 
-function getUpstashLimiter(windowMs: number) {
-  if (upstashLimiters.has(windowMs)) return upstashLimiters.get(windowMs)!;
+function getUpstashLimiter(limit: number, windowMs: number) {
+  const cacheKey = `${limit}:${windowMs}`;
+  if (upstashLimiters.has(cacheKey)) return upstashLimiters.get(cacheKey)!;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Ratelimit = (globalThis as Record<string, unknown>).__upstashRatelimitFactory as any;
@@ -63,12 +64,12 @@ function getUpstashLimiter(windowMs: number) {
 
   const limiter = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(1, `${windowSec}s`),
+    limiter: Ratelimit.slidingWindow(limit, `${windowSec}s`),
     analytics: false,
     enableProtection: false,
   });
 
-  upstashLimiters.set(windowMs, limiter);
+  upstashLimiters.set(cacheKey, limiter);
   return limiter;
 }
 
@@ -76,7 +77,7 @@ async function upstashRateLimitByKey(
   key: string,
   { limit, windowMs }: RateLimitOptions
 ): Promise<RateLimitResult> {
-  const limiter = getUpstashLimiter(windowMs);
+  const limiter = getUpstashLimiter(limit, windowMs);
   const res = await limiter.limit(key);
   return {
     allowed: res.success,
@@ -116,7 +117,7 @@ function inMemoryRateLimit(key: string, { limit, windowMs }: RateLimitOptions): 
     buckets.set(id, bucket);
   }
   if (bucket.timestamps.length >= limit) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((t - bucket.timestamps[0]) / 1000));
+    const retryAfterSeconds = Math.max(1, Math.ceil((bucket.timestamps[0] + windowMs - t) / 1000));
     return { allowed: false, limit, remaining: 0, retryAfterSeconds };
   }
   bucket.timestamps.push(t);

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isValidPassword } from "@/lib/security";
+import { hashToken, isTokenExpired } from "@/lib/tokens";
 
 export async function POST(request: Request) {
   try {
@@ -9,9 +11,12 @@ export async function POST(request: Request) {
     if (!token) {
       return NextResponse.json({ error: "Invite token is required" }, { status: 400 });
     }
+    if (!password || !isValidPassword(password)) {
+      return NextResponse.json({ error: "A valid password is required" }, { status: 400 });
+    }
 
     const teamMember = await prisma.teamMember.findFirst({
-      where: { inviteToken: token },
+      where: { inviteToken: hashToken(token) },
       include: {
         user: {
           select: { id: true, email: true, name: true, organizationId: true },
@@ -26,11 +31,15 @@ export async function POST(request: Request) {
     if (teamMember.acceptedAt) {
       return NextResponse.json({ error: "This invitation has already been accepted" }, { status: 400 });
     }
+    if (!teamMember.inviteExpiresAt || isTokenExpired(teamMember.inviteExpiresAt)) {
+      return NextResponse.json({ error: "This invitation has expired" }, { status: 400 });
+    }
 
     // Update user's name and password if provided
     const updateData: Record<string, unknown> = {
       acceptedAt: new Date(),
       inviteToken: null,
+      inviteExpiresAt: null,
     };
 
     if (name) {
@@ -40,14 +49,12 @@ export async function POST(request: Request) {
       });
     }
 
-    if (password) {
-      const { hashPassword } = await import("@/lib/auth");
-      const hashed = await hashPassword(password);
-      await prisma.user.update({
-        where: { id: teamMember.userId },
-        data: { password: hashed },
-      });
-    }
+    const { hashPassword } = await import("@/lib/auth");
+    const hashed = await hashPassword(password);
+    await prisma.user.update({
+      where: { id: teamMember.userId },
+      data: { password: hashed, emailVerifiedAt: new Date() },
+    });
 
     const updated = await prisma.teamMember.update({
       where: { id: teamMember.id },

@@ -8,7 +8,7 @@ import { getPlanLimits, isPlanActive } from "@/lib/plan";
 // GET - Fetch interview
 export async function GET(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 // POST - Schedule interview
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -185,13 +185,13 @@ export async function POST(request: Request) {
 // PATCH - Complete interview (save video recording & evaluation)
 export async function PATCH(request: Request) {
   try {
-    const user = getUserFromRequest(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { videoUrl, captionUrl, evaluation, evaluationScore, transcript, status, proctoringReport, proctoringFlags, proctoringStatus } = body;
+    const { videoUrl, captionUrl } = body;
 
     const existingInterview = await prisma.interview.findUnique({
       where: { userId: user.userId },
@@ -201,29 +201,19 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Interview not found" }, { status: 404 });
     }
 
+    const orgPrefix = `/api/files/org-${user.organizationId}/interviews/`;
+    if (videoUrl !== undefined && (typeof videoUrl !== "string" || !videoUrl.startsWith(orgPrefix))) {
+      return NextResponse.json({ error: "Invalid video URL" }, { status: 400 });
+    }
+    if (captionUrl !== undefined && (typeof captionUrl !== "string" || !captionUrl.startsWith(orgPrefix))) {
+      return NextResponse.json({ error: "Invalid caption URL" }, { status: 400 });
+    }
+
     const interview = await prisma.interview.update({
       where: { id: existingInterview.id },
       data: {
         videoUrl: videoUrl ?? existingInterview.videoUrl,
         captionUrl: captionUrl ?? existingInterview.captionUrl,
-        evaluation: evaluation ?? existingInterview.evaluation,
-        evaluationScore: evaluationScore ?? existingInterview.evaluationScore,
-        transcript: transcript ?? existingInterview.transcript,
-        status: status ?? "completed",
-        proctoringReport:
-          typeof proctoringReport === "string" || proctoringReport === null
-            ? proctoringReport
-            : proctoringReport !== undefined
-              ? JSON.stringify(proctoringReport)
-              : existingInterview.proctoringReport,
-        proctoringFlags:
-          typeof proctoringFlags === "number"
-            ? proctoringFlags
-            : existingInterview.proctoringFlags,
-        proctoringStatus:
-          typeof proctoringStatus === "string"
-            ? proctoringStatus
-            : existingInterview.proctoringStatus,
       },
     });
 
