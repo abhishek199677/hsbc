@@ -5,40 +5,63 @@ import { fromPath } from "pdf2pic";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import type { ParsedResume } from "@/types/resume";
+
+export type { ParsedResume, ParsedWorkExperience, ParsedProject } from "@/types/resume";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export interface ParsedResume {
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-  currentRole: string | null;
-  totalExperience: string | null;
-  currentLocation: string | null;
-  skills: string[];
-  education: string | null;
-  currentCompany: string | null;
-  summary: string | null;
-  strengths: string | null;
+const RESUME_PARSING_PROMPT = `You are an expert resume parser. Extract structured information from the resume provided (text or image).
+Handle ALL resume formats: structured, unstructured, tabular, OCR-scanned, and image-based resumes.
+When data is in tables, extract from tables. When data is in free-form text, extract from paragraphs.
+
+Return a JSON object with exactly these fields:
+{
+  "name": "Full name of the candidate or null",
+  "email": "Primary email address or null",
+  "phone": "Phone number with country code if available, or null",
+  "currentRole": "Most recent job title/position or null",
+  "totalExperience": "Total years of experience (e.g. '3-5 years', '5+ years', '10+ years') or null",
+  "currentLocation": "City, State/Country or null",
+  "skills": ["Array of technical skills", "programming languages", "tools", "frameworks", "soft skills"],
+  "education": "Highest qualification with institution and year if available (e.g. 'B.Tech Computer Science, IIT Delhi, 2018') or null",
+  "currentCompany": "Current/most recent employer name or null",
+  "summary": "Professional summary or career objective (2-3 sentences) or null",
+  "strengths": "Key strengths mentioned (comma-separated) or null",
+  "linkedinUrl": "Full LinkedIn profile URL (https://linkedin.com/in/...) or null",
+  "workExperience": [
+    {
+      "company": "Company name",
+      "role": "Job title",
+      "startDate": "Start date (e.g. 'Jan 2020', '2020-01', 'Jan 2020 - Present')",
+      "endDate": "End date or 'Present' if current",
+      "description": "Key responsibilities and achievements in 1-2 sentences"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project name",
+      "description": "Brief description of the project",
+      "url": "Project URL if available or null",
+      "technologies": ["technologies", "used"]
+    }
+  ],
+  "keyAchievements": ["Notable achievements, awards, certifications, or accomplishments"],
+  "certifications": ["Professional certifications like AWS Certified, PMP, etc."],
+  "languages": ["Languages spoken with proficiency if mentioned"]
 }
 
-const RESUME_PARSING_PROMPT = `You are an expert resume parser. Extract structured information from the resume image(s) provided.
-Return a JSON object with these fields:
-- name: Full name of the candidate
-- email: Email address
-- phone: Phone number
-- currentRole: Current job title/position
-- totalExperience: Total years of experience (format: "3-5 years" or "5+ years" based on what you can determine)
-- currentLocation: City, State/Country
-- skills: Array of technical and soft skills found
-- education: Highest education qualification
-- currentCompany: Current employer name
-- summary: Brief professional summary (1-2 sentences)
-- strengths: Key strengths mentioned (comma-separated)
-
-If a field is not found, use null. Return ONLY valid JSON, no other text.`;
+Rules:
+- Extract ALL work experience entries in chronological order (most recent first)
+- Extract ALL projects mentioned in the resume
+- For skills, include both technical and soft skills
+- For keyAchievements, include awards, recognitions, patents, publications, and notable accomplishments
+- If a field is not found, use null for strings, [] for arrays, and [] for arrays of objects
+- For tabular data (e.g. columns for Company, Role, Duration), extract each row as a workExperience entry
+- For OCR/image resumes, read all text visible in the image
+- Return ONLY valid JSON, no markdown, no other text`;
 
 function getDefaultParsedResume(): ParsedResume {
   return {
@@ -53,6 +76,55 @@ function getDefaultParsedResume(): ParsedResume {
     currentCompany: null,
     summary: null,
     strengths: null,
+    linkedinUrl: null,
+    workExperience: [],
+    projects: [],
+    keyAchievements: [],
+    certifications: [],
+    languages: [],
+  };
+}
+
+function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
+  return {
+    name: (parsed.name as string) || null,
+    email: (parsed.email as string) || null,
+    phone: (parsed.phone as string) || null,
+    currentRole: (parsed.currentRole as string) || null,
+    totalExperience: (parsed.totalExperience as string) || null,
+    currentLocation: (parsed.currentLocation as string) || null,
+    skills: Array.isArray(parsed.skills) ? (parsed.skills as string[]).filter(Boolean) : [],
+    education: (parsed.education as string) || null,
+    currentCompany: (parsed.currentCompany as string) || null,
+    summary: (parsed.summary as string) || null,
+    strengths: (parsed.strengths as string) || null,
+    linkedinUrl: (parsed.linkedinUrl as string) || null,
+    workExperience: Array.isArray(parsed.workExperience)
+      ? (parsed.workExperience as Record<string, unknown>[]).map((w) => ({
+          company: (w.company as string) || "",
+          role: (w.role as string) || "",
+          startDate: (w.startDate as string) || "",
+          endDate: (w.endDate as string) || "",
+          description: (w.description as string) || "",
+        }))
+      : [],
+    projects: Array.isArray(parsed.projects)
+      ? (parsed.projects as Record<string, unknown>[]).map((p) => ({
+          name: (p.name as string) || "",
+          description: (p.description as string) || "",
+          url: (p.url as string) || undefined,
+          technologies: Array.isArray(p.technologies) ? (p.technologies as string[]) : undefined,
+        }))
+      : [],
+    keyAchievements: Array.isArray(parsed.keyAchievements)
+      ? (parsed.keyAchievements as string[]).filter(Boolean)
+      : [],
+    certifications: Array.isArray(parsed.certifications)
+      ? (parsed.certifications as string[]).filter(Boolean)
+      : [],
+    languages: Array.isArray(parsed.languages)
+      ? (parsed.languages as string[]).filter(Boolean)
+      : [],
   };
 }
 
@@ -61,19 +133,25 @@ function parseResumeFallback(text: string): ParsedResume {
     .split(/\r?\n/)
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean);
+
   const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || null;
   const phone = text.match(/(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3,5}\)?[\s.-]?)?\d{6,10}/)?.[0]?.trim() || null;
-  const ignoredHeadings = /^(resume|curriculum vitae|cv|profile|professional summary|summary)$/i;
+
+  const ignoredHeadings = /^(resume|curriculum vitae|cv|profile|professional summary|summary|contact|personal)$/i;
   const name = lines.find((line) => {
     if (ignoredHeadings.test(line) || line.includes("@") || /\d{4,}/.test(line)) return false;
     return line.length >= 3 && line.length <= 80 && /^[\p{L}][\p{L} .'-]+$/u.test(line);
   }) || null;
+
+  const linkedinMatch = text.match(/linkedin\.com\/in\/[a-zA-Z0-9._%-]+/i);
+  const linkedinUrl = linkedinMatch ? `https://www.${linkedinMatch[0]}` : null;
 
   return {
     ...getDefaultParsedResume(),
     name,
     email,
     phone,
+    linkedinUrl,
   };
 }
 
@@ -131,7 +209,7 @@ async function parseImageWithVision(base64Images: string[]): Promise<ParsedResum
       model: "gpt-4o",
       messages: [{ role: "user", content }],
       temperature: 0.1,
-      max_tokens: 1500,
+      max_tokens: 2500,
       response_format: { type: "json_object" },
     });
 
@@ -145,20 +223,8 @@ async function parseImageWithVision(base64Images: string[]): Promise<ParsedResum
       return getDefaultParsedResume();
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    return {
-      name: parsed.name || null,
-      email: parsed.email || null,
-      phone: parsed.phone || null,
-      currentRole: parsed.currentRole || null,
-      totalExperience: parsed.totalExperience || null,
-      currentLocation: parsed.currentLocation || null,
-      skills: Array.isArray(parsed.skills) ? parsed.skills : [],
-      education: parsed.education || null,
-      currentCompany: parsed.currentCompany || null,
-      summary: parsed.summary || null,
-      strengths: parsed.strengths || null,
-    };
+    const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+    return mapParsedResponse(parsed);
   } catch (error) {
     console.error("Vision parsing failed:", error);
     return getDefaultParsedResume();
@@ -171,10 +237,10 @@ async function parseTextWithAI(text: string): Promise<ParsedResume> {
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: RESUME_PARSING_PROMPT },
-        { role: "user", content: `Parse this resume:\n\n${text.slice(0, 8000)}` },
+        { role: "user", content: `Parse this resume:\n\n${text.slice(0, 12000)}` },
       ],
       temperature: 0.1,
-      max_tokens: 1000,
+      max_tokens: 2000,
       response_format: { type: "json_object" },
     });
 
@@ -184,20 +250,8 @@ async function parseTextWithAI(text: string): Promise<ParsedResume> {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return getDefaultParsedResume();
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    return {
-      name: parsed.name || null,
-      email: parsed.email || null,
-      phone: parsed.phone || null,
-      currentRole: parsed.currentRole || null,
-      totalExperience: parsed.totalExperience || null,
-      currentLocation: parsed.currentLocation || null,
-      skills: Array.isArray(parsed.skills) ? parsed.skills : [],
-      education: parsed.education || null,
-      currentCompany: parsed.currentCompany || null,
-      summary: parsed.summary || null,
-      strengths: parsed.strengths || null,
-    };
+    const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+    return mapParsedResponse(parsed);
   } catch (error) {
     console.error("Text AI parsing failed:", error);
     return getDefaultParsedResume();
@@ -212,6 +266,28 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 export async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
   const result = await mammoth.extractRawText({ buffer });
   return result.value;
+}
+
+function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedResume {
+  return {
+    name: ai.name || fallback.name,
+    email: ai.email || fallback.email,
+    phone: ai.phone || fallback.phone,
+    currentRole: ai.currentRole,
+    totalExperience: ai.totalExperience,
+    currentLocation: ai.currentLocation || fallback.currentLocation,
+    skills: ai.skills.length > 0 ? ai.skills : [],
+    education: ai.education,
+    currentCompany: ai.currentCompany,
+    summary: ai.summary,
+    strengths: ai.strengths,
+    linkedinUrl: ai.linkedinUrl || fallback.linkedinUrl,
+    workExperience: ai.workExperience,
+    projects: ai.projects,
+    keyAchievements: ai.keyAchievements,
+    certifications: ai.certifications,
+    languages: ai.languages,
+  };
 }
 
 export async function parseResume(
@@ -236,21 +312,8 @@ export async function parseResume(
     }
 
     const fallback = parseResumeFallback(text);
-    const parsed = await parseTextWithAI(text);
-
-    return {
-      name: parsed.name || fallback.name,
-      email: parsed.email || fallback.email,
-      phone: parsed.phone || fallback.phone,
-      currentRole: parsed.currentRole,
-      totalExperience: parsed.totalExperience,
-      currentLocation: parsed.currentLocation,
-      skills: parsed.skills,
-      education: parsed.education,
-      currentCompany: parsed.currentCompany,
-      summary: parsed.summary,
-      strengths: parsed.strengths,
-    };
+    const ai = await parseTextWithAI(text);
+    return mergeParsedResults(ai, fallback);
   }
 
   if (ext === "docx" || ext === "doc") {
@@ -261,21 +324,8 @@ export async function parseResume(
     }
 
     const fallback = parseResumeFallback(text);
-    const parsed = await parseTextWithAI(text);
-
-    return {
-      name: parsed.name || fallback.name,
-      email: parsed.email || fallback.email,
-      phone: parsed.phone || fallback.phone,
-      currentRole: parsed.currentRole,
-      totalExperience: parsed.totalExperience,
-      currentLocation: parsed.currentLocation,
-      skills: parsed.skills,
-      education: parsed.education,
-      currentCompany: parsed.currentCompany,
-      summary: parsed.summary,
-      strengths: parsed.strengths,
-    };
+    const ai = await parseTextWithAI(text);
+    return mergeParsedResults(ai, fallback);
   }
 
   const text = buffer.toString("utf-8");

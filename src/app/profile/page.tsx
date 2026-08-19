@@ -57,6 +57,12 @@ export default function ProfilePage() {
     skills: "",
     currentCompany: "",
     education: "",
+    linkedinUrl: "",
+    workExperience: "" as string,
+    projects: "" as string,
+    keyAchievements: "" as string,
+    certifications: "" as string,
+    languages: "" as string,
     jobType: "",
     salaryRange: "",
     preferredLocation: "",
@@ -106,6 +112,12 @@ export default function ProfilePage() {
             skills: data.profile.skills || "",
             currentCompany: data.profile.currentCompany || "",
             education: data.profile.education || "",
+            linkedinUrl: data.profile.linkedinUrl || "",
+            workExperience: data.profile.workExperience || "",
+            projects: data.profile.projects || "",
+            keyAchievements: data.profile.keyAchievements || "",
+            certifications: data.profile.certifications || "",
+            languages: data.profile.languages || "",
             jobType: data.profile.jobType || "",
             salaryRange: data.profile.salaryRange || "",
             preferredLocation: data.profile.preferredLocation || "",
@@ -220,6 +232,30 @@ export default function ProfilePage() {
             if (parsed.strengths) {
               updated.strengths = parsed.strengths;
               filled.push("Strengths");
+            }
+            if (parsed.linkedinUrl) {
+              updated.linkedinUrl = parsed.linkedinUrl;
+              filled.push("LinkedIn");
+            }
+            if (parsed.workExperience?.length > 0) {
+              updated.workExperience = JSON.stringify(parsed.workExperience);
+              filled.push("Work Experience");
+            }
+            if (parsed.projects?.length > 0) {
+              updated.projects = JSON.stringify(parsed.projects);
+              filled.push("Projects");
+            }
+            if (parsed.keyAchievements?.length > 0) {
+              updated.keyAchievements = JSON.stringify(parsed.keyAchievements);
+              filled.push("Key Achievements");
+            }
+            if (parsed.certifications?.length > 0) {
+              updated.certifications = JSON.stringify(parsed.certifications);
+              filled.push("Certifications");
+            }
+            if (parsed.languages?.length > 0) {
+              updated.languages = JSON.stringify(parsed.languages);
+              filled.push("Languages");
             }
             
             return {

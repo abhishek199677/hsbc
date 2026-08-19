@@ -138,7 +138,12 @@ export async function POST(request: Request) {
         // Save parsed resume data to the user's profile
         if (parsedResume) {
           const skills = parsedResume.skills?.length > 0 ? parsedResume.skills.join(", ") : null;
-          
+          const workExperience = parsedResume.workExperience?.length > 0 ? JSON.stringify(parsedResume.workExperience) : null;
+          const projects = parsedResume.projects?.length > 0 ? JSON.stringify(parsedResume.projects) : null;
+          const keyAchievements = parsedResume.keyAchievements?.length > 0 ? JSON.stringify(parsedResume.keyAchievements) : null;
+          const certifications = parsedResume.certifications?.length > 0 ? JSON.stringify(parsedResume.certifications) : null;
+          const languages = parsedResume.languages?.length > 0 ? JSON.stringify(parsedResume.languages) : null;
+
           // Upsert profile with parsed data
           await prisma.profile.upsert({
             where: { userId: user.userId },
@@ -154,6 +159,12 @@ export async function POST(request: Request) {
               education: parsedResume.education,
               aboutYou: parsedResume.summary,
               strengths: parsedResume.strengths,
+              linkedinUrl: parsedResume.linkedinUrl,
+              workExperience,
+              projects,
+              keyAchievements,
+              certifications,
+              languages,
             },
             update: {
               resumeUrl: fileUrl,
@@ -167,6 +178,12 @@ export async function POST(request: Request) {
               ...(parsedResume.education && { education: parsedResume.education }),
               ...(parsedResume.summary && { aboutYou: parsedResume.summary }),
               ...(parsedResume.strengths && { strengths: parsedResume.strengths }),
+              ...(parsedResume.linkedinUrl && { linkedinUrl: parsedResume.linkedinUrl }),
+              ...(workExperience && { workExperience }),
+              ...(projects && { projects }),
+              ...(keyAchievements && { keyAchievements }),
+              ...(certifications && { certifications }),
+              ...(languages && { languages }),
             },
           });
         }
