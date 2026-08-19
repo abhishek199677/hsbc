@@ -24,7 +24,7 @@ export interface WebhookPayload {
   event: WebhookEvent;
   timestamp: string;
   organizationId: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface WebhookConfig {
@@ -81,7 +81,7 @@ export async function updateWebhook(
       data: updates,
     });
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -101,7 +101,7 @@ export async function deleteWebhook(
       },
     });
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -139,7 +139,7 @@ function generateSignature(payload: string, secret: string): string {
 export async function triggerWebhooks(
   organizationId: string,
   event: WebhookEvent,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): Promise<void> {
   // Find all webhooks subscribed to this event
   const webhooks = await prisma.webhook.findMany({

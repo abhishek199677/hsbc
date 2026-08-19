@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import {
-  BarChart3,
   DollarSign,
   Zap,
   Clock,
@@ -77,7 +75,6 @@ interface Metrics {
 }
 
 export default function OpenAIMetrics({ token }: { token: string | null }) {
-  const { user } = useAuth();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("7d");

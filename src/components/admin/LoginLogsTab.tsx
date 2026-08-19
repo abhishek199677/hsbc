@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, Download, Search, CheckCircle, XCircle, Monitor, Smartphone, Tablet } from "lucide-react";
 
 interface LoginLog {
@@ -46,11 +46,11 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
   const [searchEmail, setSearchEmail] = useState("");
   const [filterSuccess, setFilterSuccess] = useState<string>("all");
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async (email = "") => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ period });
-      if (searchEmail) params.set("email", searchEmail);
+      if (email) params.set("email", email);
       if (filterSuccess !== "all") params.set("success", filterSuccess);
 
       const res = await fetch(`/api/admin/login-logs?${params}`, {
@@ -60,19 +60,42 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
       if (data.success) {
         setMetrics(data.metrics);
       }
-    } catch (error) {
-      console.error("Failed to fetch login logs:", error);
+    } catch (err) {
+      console.error("Failed to fetch login logs:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterSuccess, period, token]);
 
   useEffect(() => {
-    fetchLogs();
-  }, [period, filterSuccess]);
+    const controller = new AbortController();
+    async function load() {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ period });
+        if (filterSuccess !== "all") params.set("success", filterSuccess);
+
+        const res = await fetch(`/api/admin/login-logs?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (data.success) {
+          setMetrics(data.metrics);
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Failed to fetch login logs:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+    return () => controller.abort();
+  }, [period, filterSuccess, token]);
 
   const handleSearch = () => {
-    fetchLogs();
+    void fetchLogs(searchEmail);
   };
 
   const exportCSV = () => {
@@ -127,7 +150,7 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={fetchLogs}
+            onClick={() => void fetchLogs()}
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             <RefreshCw className="h-4 w-4" />

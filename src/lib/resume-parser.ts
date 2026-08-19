@@ -116,7 +116,7 @@ async function convertPDFToImages(buffer: Buffer): Promise<string[]> {
 
 async function parseImageWithVision(base64Images: string[]): Promise<ParsedResume> {
   try {
-    const content: any[] = [
+    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
       { type: "text", text: RESUME_PARSING_PROMPT },
     ];
 

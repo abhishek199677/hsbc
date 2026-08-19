@@ -168,7 +168,7 @@ export function parseSAMLResponse(
         },
       },
     };
-  } catch (error) {
+  } catch {
     return { profile: null, error: "Failed to parse SAML response" };
   }
 }
@@ -178,6 +178,7 @@ export function parseSAMLResponse(
  */
 export function validateSAMLSignature(
   samlResponse: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   certificate: string
 ): boolean {
   // In production, use a proper SAML library like passport-saml or saml2-js
@@ -255,7 +256,7 @@ export async function exchangeOIDCCode(
       accessToken: data.access_token,
       idToken: data.id_token,
     };
-  } catch (error) {
+  } catch {
     return { error: "OIDC token exchange failed" };
   }
 }
@@ -294,7 +295,7 @@ export async function getOIDCUserInfo(
         attributes: data,
       },
     };
-  } catch (error) {
+  } catch {
     return { profile: null, error: "OIDC user info fetch failed" };
   }
 }
@@ -339,7 +340,7 @@ export async function createOrUpdateSSOUser(
     data: {
       userId: newUser.id,
       organizationId,
-      role: config.defaultRole as any,
+      role: config.defaultRole,
       acceptedAt: new Date(),
     },
   });

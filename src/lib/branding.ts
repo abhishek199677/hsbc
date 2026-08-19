@@ -189,7 +189,7 @@ export async function verifyDomainOwnership(
     });
 
     return { verified: true };
-  } catch (error) {
+  } catch {
     return { verified: false, error: "Domain verification failed" };
   }
 }

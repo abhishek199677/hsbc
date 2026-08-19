@@ -47,8 +47,7 @@ export interface ValidateApiKeyResult {
   error?: string;
 }
 
-// API Key prefix for identification
-const API_KEY_PREFIX = "tc";
+// API Key separator for identification
 const API_KEY_SEPARATOR = "_";
 
 // Available permissions
@@ -208,7 +207,7 @@ export async function validateApiKey(
       organizationId: apiKey.organizationId,
       permissions: apiKey.permissions,
     };
-  } catch (error) {
+  } catch {
     return { valid: false, error: "API key validation failed" };
   }
 }
@@ -242,7 +241,7 @@ export async function revokeApiKey(apiKeyId: string, organizationId: string): Pr
       },
     });
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -264,7 +263,7 @@ export async function toggleApiKey(
       data: { enabled },
     });
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

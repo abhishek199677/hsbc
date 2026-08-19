@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   UserPlus,
   MoreVertical,
@@ -85,16 +85,17 @@ export default function TeamManagement({ token }: TeamManagementProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const headers: HeadersInit = token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
+  const headers: HeadersInit = useMemo<HeadersInit>(
+    () => (token ? { Authorization: `Bearer ${token}` } : {}),
+    [token]
+  );
 
-  const showToast = (type: "success" | "error", message: string) => {
+  const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
-  };
+  }, []);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/admin/team", { headers });
@@ -108,12 +109,12 @@ export default function TeamManagement({ token }: TeamManagementProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, showToast]);
 
   useEffect(() => {
     const timer = window.setTimeout(fetchMembers, 0);
     return () => window.clearTimeout(timer);
-  }, [token]);
+  }, [token, fetchMembers]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

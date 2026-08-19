@@ -20,11 +20,9 @@ import {
   XCircle,
   Shield,
   Clock,
-  Search,
   User,
   ChevronRight,
   X,
-  FileText,
   AlertOctagon,
   EyeOff,
   Users,
@@ -93,12 +91,6 @@ const INCIDENT_COLORS: Record<string, string> = {
   tab_switch: "#8b5cf6",
   copy_paste: "#ec4899",
   window_blur: "#a855f7",
-};
-
-const SEVERITY_COLORS: Record<string, string> = {
-  low: "#22c55e",
-  medium: "#f59e0b",
-  high: "#ef4444",
 };
 
 function getIncidentSeverity(type: string): string {
@@ -790,7 +782,6 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">Incident Timeline</h4>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {selectedInterview.report.incidents.map((incident, idx) => {
-                      const severity = getIncidentSeverity(incident.type);
                       const color = INCIDENT_COLORS[incident.type] || "#6b7280";
                       return (
                         <div

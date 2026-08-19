@@ -100,6 +100,7 @@ export async function uploadFile(
   return uploadViaFormData(file, token);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function buildPlaybackUrl(url: string, _token?: string | null): string {
   if (!url) return url;
   if (url.startsWith("http")) return url;

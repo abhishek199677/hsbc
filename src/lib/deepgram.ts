@@ -96,7 +96,7 @@ export async function transcribeAndStore(
   fullTranscript: string;
   segmentCount: number;
 }> {
-  const { transcript, words, paragraphs } = await transcribeAudio(audioBuffer);
+  const { transcript, paragraphs } = await transcribeAudio(audioBuffer);
 
   if (!transcript.trim()) {
     return { fullTranscript: "", segmentCount: 0 };
@@ -131,7 +131,6 @@ export function wordsToVtt(
   if (!words.length) return "WEBVTT\n";
 
   const lines = ["WEBVTT", ""];
-  let cueIndex = 1;
   let currentCueWords: typeof words = [];
   let cueStart = words[0].start;
   let lastSpeaker = words[0].speaker;
@@ -152,7 +151,6 @@ export function wordsToVtt(
         lines.push(`${formatVttTime(cueStart)} --> ${formatVttTime(cueEnd)}`);
         lines.push(`${speakerLabel}: ${text}`);
         lines.push("");
-        cueIndex++;
       }
       currentCueWords = [];
       cueStart = word.start;
