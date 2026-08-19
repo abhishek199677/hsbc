@@ -1,33 +1,51 @@
 "use client";
 
 const companies = [
-  { name: "TATA", color: "#1f3864" },
-  { name: "wipro", color: "#0057b8" },
-  { name: "Infosys", color: "#007cc3" },
-  { name: "accenture", color: "#a100ff" },
-  { name: "amazon", color: "#ff9900" },
-  { name: "Deloitte.", color: "#86bc25" },
-  { name: "Reliance", color: "#d42a2a" },
-  { name: "HDFC Bank", color: "#004b8d" },
+  { name: "TATA", color: "#6366f1" },
+  { name: "Wipro", color: "#818cf8" },
+  { name: "Infosys", color: "#a78bfa" },
+  { name: "Accenture", color: "#c084fc" },
+  { name: "Amazon", color: "#f472b6" },
+  { name: "Deloitte", color: "#34d399" },
+  { name: "Reliance", color: "#fbbf24" },
+  { name: "HDFC Bank", color: "#60a5fa" },
+  { name: "TCS", color: "#f97316" },
+  { name: "Google", color: "#22c55e" },
+  { name: "Microsoft", color: "#3b82f6" },
+  { name: "Flipkart", color: "#eab308" },
 ];
 
 export default function CompanyLogos() {
   return (
-    <section className="py-16 bg-white border-b border-gray-100">
+    <section className="py-16 bg-[#0a0a1a] border-y border-white/5 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-sm text-gray-500 mb-8 uppercase tracking-wider font-medium">
+        <p className="text-center text-sm text-gray-500 mb-10 uppercase tracking-wider font-medium">
           Powering Confident Hiring Decisions for Top Companies
         </p>
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
-          {companies.map((company) => (
+      </div>
+
+      {/* Marquee container */}
+      <div className="relative">
+        {/* Fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0a0a1a] to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0a0a1a] to-transparent z-10 pointer-events-none" />
+
+        {/* Scrolling track */}
+        <div className="flex animate-marquee">
+          {/* Duplicate for seamless loop */}
+          {[...companies, ...companies].map((company, i) => (
             <div
-              key={company.name}
-              className="text-2xl md:text-3xl font-bold opacity-40 hover:opacity-100 transition-opacity duration-300 cursor-pointer hover:scale-110 hover:-translate-y-1 transition-transform"
-              style={{ color: company.color, filter: "drop-shadow(0 0 0 transparent)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.filter = `drop-shadow(0 4px 16px ${company.color}55)`)}
-              onMouseLeave={(e) => (e.currentTarget.style.filter = "drop-shadow(0 0 0 transparent)")}
+              key={`${company.name}-${i}`}
+              className="flex-shrink-0 mx-6 md:mx-10"
             >
-              {company.name}
+              <div className="glass rounded-2xl px-8 py-4 flex items-center justify-center hover:bg-white/5 transition-all duration-300 cursor-pointer group min-w-[160px]">
+                <span
+                  className="text-xl md:text-2xl font-bold opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110"
+                  style={{ color: company.color }}
+                >
+                  {company.name}
+                </span>
+              </div>
             </div>
           ))}
         </div>

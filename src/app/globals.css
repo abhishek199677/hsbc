@@ -3,8 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #1a1a2e;
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
   --sidebar-bg: #1a1a2e;
   --sidebar-text: #ffffff;
 }
@@ -26,134 +26,128 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* ============================================
+   Dark theme base
+   ============================================ */
+body {
+  background: #0a0a1a;
+  color: #e2e8f0;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #0a0a1a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #4b5563;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #6b7280;
 }
 
-/* Step connector line */
-.step-connector {
-  height: 2px;
-  flex: 1;
-  background: #e5e7eb;
-  align-self: center;
-}
-.step-connector.active {
-  background: var(--primary);
+/* ============================================
+   Gradient text utility
+   ============================================ */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Calendar styles */
-.calendar-day:hover {
-  background: #f3f4f6;
+.gradient-text-warm {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #ffd86f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.calendar-day.selected {
-  background: var(--primary);
-  color: white;
+
+.gradient-text-cool {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.calendar-day.has-slots::after {
-  content: '';
+
+.gradient-text-green {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-sunset {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   Glass card effects
+   ============================================ */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15),
+              0 0 0 1px rgba(139, 92, 246, 0.2);
+}
+
+/* ============================================
+   Gradient border glow
+   ============================================ */
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: "";
   position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background: #22c55e;
-  border-radius: 50%;
-}
-.calendar-day.limited-slots::after {
-  background: #f59e0b;
-}
-
-/* Time slot styles */
-.time-slot {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 8px 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.time-slot:hover {
-  border-color: var(--primary);
-}
-.time-slot.selected {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-.time-slot.unavailable {
-  background: #f3f4f6;
-  color: #9ca3af;
-  cursor: not-allowed;
-}
-
-/* Drag and drop zone */
-.drop-zone {
-  border: 2px dashed #d1d5db;
-  border-radius: 12px;
-  padding: 40px;
-  text-align: center;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-.drop-zone:hover, .drop-zone.dragover {
-  border-color: var(--primary);
-  background: #f5f3ff;
-}
-
-/* Progress ring */
-.progress-ring-circle {
-  transition: stroke-dashoffset 0.5s;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
-}
-
-/* Confetti animation */
-.confetti-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
-.confetti-piece {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: var(--confetti-color, #4f46e5);
-  border-radius: 2px;
-  animation: confetti-fall 1.5s ease-out forwards;
-  animation-delay: var(--confetti-delay, 0s);
-}
-@keyframes confetti-fall {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--confetti-x, 50px), 150px)
-      rotate(var(--confetti-rotation, 720deg));
-    opacity: 0;
-  }
+
+.gradient-border:hover::before {
+  opacity: 1;
 }
 
 /* ============================================
    Glare & hover effects
    ============================================ */
-
-/* Diagonal shine sweep on hover (buttons & gradient elements) */
 .glare {
   position: relative;
   overflow: hidden;
@@ -181,7 +175,6 @@ body {
   left: 130%;
 }
 
-/* Stronger white sheen for dark/gradient surfaces */
 .glare-light::after {
   background: linear-gradient(
     90deg,
@@ -191,17 +184,7 @@ body {
   );
 }
 
-/* Indigo sheen for light/white surfaces */
-.glare-indigo::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(99, 102, 241, 0.18),
-    transparent
-  );
-}
-
-/* Card: lift + glow + mouse-following glare (uses --mx / --my) */
+/* Card: lift + glow + mouse-following glare */
 .card-glare {
   position: relative;
   overflow: hidden;
@@ -214,7 +197,7 @@ body {
   inset: 0;
   background: radial-gradient(
     500px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(129, 140, 248, 0.18),
+    rgba(139, 92, 246, 0.12),
     transparent 40%
   );
   opacity: 0;
@@ -242,7 +225,7 @@ body {
 }
 .card-glare:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(79, 70, 229, 0.18);
+  box-shadow: 0 20px 60px rgba(99, 102, 241, 0.2);
 }
 .card-glare:hover::after {
   left: 150%;
@@ -251,36 +234,98 @@ body {
   opacity: 1;
 }
 
-/* Simple glow on hover */
-.hover-glow {
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-.hover-glow:hover {
-  box-shadow: 0 0 32px rgba(129, 140, 248, 0.45);
-}
-
-/* Animated gradient border glow for emphasis cards */
-.border-glow {
-  position: relative;
-  transition: box-shadow 0.35s ease, border-color 0.35s ease;
-}
-.border-glow:hover {
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35),
-    0 12px 40px rgba(79, 70, 229, 0.22);
-}
-
-/* Gentle pulsing aura for hero decorative elements */
+/* ============================================
+   Animations
+   ============================================ */
 @keyframes pulse-aura {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.06);
-  }
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
 }
 .aura {
   animation: pulse-aura 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
+}
+.animate-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ============================================
+   Step connector line
+   ============================================ */
+.step-connector {
+  height: 2px;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  align-self: center;
+}
+.step-connector.active {
+  background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+/* ============================================
+   Confetti animation
+   ============================================ */
+.confetti-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--confetti-color, #6366f1);
+  border-radius: 2px;
+  animation: confetti-fall 1.5s ease-out forwards;
+  animation-delay: var(--confetti-delay, 0s);
+}
+@keyframes confetti-fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--confetti-x, 50px), 150px)
+      rotate(var(--confetti-rotation, 720deg));
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   Logo marquee animation
+   ============================================ */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
 }

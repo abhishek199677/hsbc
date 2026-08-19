@@ -48,6 +48,11 @@ model Organization {
   auditLogs             AuditLog[]
   webhooks              Webhook[]
   brandingConfiguration BrandingConfiguration?
+  clients               Client[]
+  jobRequisitions       JobRequisition[]
+  agencyCandidates      AgencyCandidate[]
+  candidateSubmissions  CandidateSubmission[]
+  placements            Placement[]
 }
 
 model User {
@@ -66,6 +71,7 @@ model User {
   updatedAt             DateTime           @updatedAt
   profile               Profile?
   interview             Interview?
+  interviewMetrics      InterviewMetrics[]
   verificationTokens    VerificationToken[]
   sessions              Session[]
   teamMemberships       TeamMember[]
@@ -198,7 +204,10 @@ model Interview {
   reminder1hSent  Boolean   @default(false)
   reminder15mSent Boolean   @default(false)
   reminderNowSent Boolean   @default(false)
-  
+
+  // ML training data
+  metrics         InterviewMetrics?
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -333,6 +342,144 @@ model LoginLog {
   @@index([createdAt])
   @@index([email])
   @@map("login_logs")
+}
+
+// ==================== RECRUITING AGENCY FEATURES ====================
+
+// Client companies you recruit for
+model Client {
+  id              String    @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  industry        String?
+  website         String?
+  contactName     String?
+  contactEmail    String?
+  contactPhone    String?
+  address         String?
+  notes           String?
+  status          String    @default("active") // active, inactive, archived
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  jobRequisitions JobRequisition[]
+  placements      Placement[]
+
+  @@index([organizationId])
+  @@map("clients")
+}
+
+// Job requirements from clients
+model JobRequisition {
+  id              String    @id @default(uuid())
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  requirements    String?   // Skills, experience, etc.
+  location        String?
+  jobType         String    @default("full-time") // full-time, part-time, contract, internship
+  salaryMin       Int?
+  salaryMax       Int?
+  experienceMin   Int?      // Min years of experience
+  experienceMax   Int?      // Max years of experience
+  status          String    @default("open") // open, on-hold, filled, cancelled
+  priority        String    @default("normal") // low, normal, high, urgent
+  openings        Int       @default(1)
+  filledCount     Int       @default(0)
+  deadline        DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidates      CandidateSubmission[]
+  placements      Placement[]
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@map("job_requisitions")
+}
+
+// Candidates sourced/recruited by your agency
+model AgencyCandidate {
+  id              String    @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  email           String?
+  phone           String?
+  source          String    @default("manual") // manual, naukri, linkedin, referral, website
+  naukriId        String?   // Naukri profile ID
+  linkedinUrl     String?
+  resumeUrl       String?
+  currentRole     String?
+  currentCompany  String?
+  totalExperience String?
+  skills          String?
+  location        String?
+  expectedSalary  Int?
+  noticePeriod    String?
+  status          String    @default("sourced") // sourced, screening, interviewed, offered, placed, rejected
+  notes           String?
+  rating          Int?      // 1-5 rating
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  submissions     CandidateSubmission[]
+  placements      Placement[]
+
+  @@index([organizationId])
+  @@index([naukriId])
+  @@map("agency_candidates")
+}
+
+// Links candidates to job requisitions
+model CandidateSubmission {
+  id              String    @id @default(uuid())
+  candidateId     String
+  candidate       AgencyCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobRequisitionId String
+  jobRequisition  JobRequisition @relation(fields: [jobRequisitionId], references: [id], onDelete: Cascade)
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status          String    @default("submitted") // submitted, reviewing, shortlisted, interview-scheduled, offered, rejected
+  feedback        String?
+  interviewDate   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([candidateId, jobRequisitionId])
+  @@index([organizationId])
+  @@map("candidate_submissions")
+}
+
+// Successful placements
+model Placement {
+  id              String    @id @default(uuid())
+  candidateId     String
+  candidate       AgencyCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  jobRequisitionId String?
+  jobRequisition  JobRequisition? @relation(fields: [jobRequisitionId], references: [id], onDelete: SetNull)
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  startDate       DateTime
+  endDate         DateTime?
+  salary          Int?
+  commissionRate  Float?    // Your commission percentage
+  commissionAmount Float?
+  status          String    @default("active") // active, completed, terminated
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@map("placements")
 }
 
 // ==================== ENTERPRISE FEATURES ====================
@@ -550,4 +697,48 @@ model BrandingConfiguration {
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+// ============================================
+// ML Training Data
+// ============================================
+model InterviewMetrics {
+  id              String   @id @default(uuid())
+  interviewId     String   @unique
+  userId          String
+
+  // Text features (extracted from transcript)
+  wordCount       Int      // Total words in candidate answers
+  avgResponseLen  Float    // Average words per answer
+  technicalTerms  Int      // Count of technical keywords
+  positiveSignals Int      // Count of positive signal phrases
+  negativeSignals Int      // Count of negative signal phrases
+  questionCount   Int      // Number of questions answered
+
+  // Candidate metadata
+  experienceLevel String   // "fresher" | "mid" | "senior"
+  role            String   // Job role
+  skills          String   // Comma-separated skills
+
+  // Interview context
+  difficulty      String   // Final difficulty level
+  codingPassRate  Float?   // Pass rate on coding challenges (0-1)
+
+  // Scores
+  performanceScores String  // JSON array of per-answer scores [0-10]
+  llmScore        Float    // LLM evaluation score (ground truth for training)
+  recommendation  String   // "Hire" | "Consider" | "Reject"
+
+  // Proctoring
+  proctorFlags    Int      @default(0)
+
+  createdAt       DateTime @default(now())
+
+  // Relations
+  interview       Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([experienceLevel])
+  @@index([llmScore])
 }

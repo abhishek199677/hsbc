@@ -1,0 +1,73 @@
+# Docker Compose — Local development
+# Usage: docker compose up
+#
+# For production, use Render (backend, evaluator, ML) + Koyeb (agent)
+
+services:
+  # ─── Backend (FastAPI) ───────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── LiveKit Agent ──────────────────────────────
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    env_file:
+      - .env
+    environment:
+      - NEXTJS_URL=http://host.docker.internal:3000
+      - LIVEKIT_URL=${LIVEKIT_URL}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ─── Code Evaluator ─────────────────────────────
+  evaluator:
+    build:
+      context: .
+      dockerfile: evaluator/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── ML Prediction Server ───────────────────────
+  ml-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    ports:
+      - "8004:8004"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

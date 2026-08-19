@@ -1,0 +1,52 @@
+# Render Blueprint — Free tier deployment
+# Docs: https://render.com/docs/blueprint-spec
+# Usage: Connect repo to Render → New Blueprint → select this file
+
+services:
+  # ─── Backend (FastAPI) ───────────────────────────
+  - type: web
+    name: hireright-backend
+    runtime: docker
+    dockerfilePath: Dockerfile.backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11"
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # ─── Code Evaluator ─────────────────────────────
+  - type: web
+    name: hireright-evaluator
+    runtime: docker
+    dockerfilePath: evaluator/Dockerfile
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # ─── ML Prediction Server ───────────────────────
+  - type: web
+    name: hireright-ml
+    runtime: docker
+    dockerfilePath: Dockerfile.ml
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # ─── PostgreSQL Database ─────────────────────────
+  - type: pgsql
+    name: hireright-db
+    plan: free
+    ipAllowList: []  # Only internal access

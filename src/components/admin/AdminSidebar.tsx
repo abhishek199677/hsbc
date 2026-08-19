@@ -16,6 +16,9 @@ import {
   ChevronLeft,
   ExternalLink,
   Building2,
+  Briefcase,
+  Activity,
+  ClipboardList,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -28,12 +31,16 @@ interface AdminSidebarProps {
 
 const navigation = [
   { id: "overview", name: "Overview", icon: LayoutDashboard },
+  { id: "agency", name: "Agency", icon: Briefcase },
   { id: "candidates", name: "Candidates", icon: Users },
   { id: "interviews", name: "Interviews", icon: Calendar },
+  { id: "login-logs", name: "Login Logs", icon: ClipboardList },
   { id: "analytics", name: "Analytics", icon: BarChart3 },
+  { id: "openai-metrics", name: "API Metrics", icon: Activity },
   { id: "feedback", name: "Feedback", icon: MessageSquare },
   { id: "team", name: "Team", icon: UserPlus },
   { id: "proctoring", name: "Proctoring", icon: Shield },
+  { id: "enterprise", name: "Enterprise", icon: Building2 },
   { id: "settings", name: "Settings", icon: Settings },
 ];
 

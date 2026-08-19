@@ -11,6 +11,7 @@ import TeamManagement from "@/components/admin/TeamManagement";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import OpenAIMetrics from "@/components/admin/OpenAIMetrics";
 import LoginLogsTab from "@/components/admin/LoginLogsTab";
+import AgencyDashboard from "@/components/admin/AgencyDashboard";
 import DataTable from "@/components/admin/DataTable";
 import EnterpriseSettings from "@/components/admin/EnterpriseSettings";
 import { Download } from "lucide-react";
@@ -184,6 +185,8 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case "overview":
         return <OverviewDashboard token={token} />;
+      case "agency":
+        return <AgencyDashboard token={token} />;
       case "candidates":
         return <CandidatePipeline token={token} />;
       case "interviews":

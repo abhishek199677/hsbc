@@ -1,0 +1,31 @@
+# Koyeb — Agent service (always-on, no sleep)
+# The LiveKit agent MUST stay running to maintain voice connections.
+# Koyeb free tier: 1 service, 512MB RAM, 0.1 vCPU, never sleeps.
+#
+# Deploy via Koyeb dashboard:
+# 1. Create new app → "hireright"
+# 2. New service → Docker
+# 3. Image: your-dockerhub-user/hireright-agent (or GitHub Container Registry)
+# 4. Dockerfile: Dockerfile.agent
+# 5. Plan: Free
+# 6. Set env vars below
+#
+# Or deploy via CLI:
+#   curl -fsSL https://koyeb.com/install.sh | sh
+#   koyeb service create agent --dockerfile Dockerfile.agent --docker-context .
+
+services:
+  - name: agent
+    dockerfile: Dockerfile.agent
+    docker_context: .
+    plan: free
+    ports:
+      - 8080
+    env:
+      NEXTJS_URL: ""  # Set to your Vercel frontend URL
+      LIVEKIT_URL: ""  # Set to your LiveKit Cloud URL
+      LIVEKIT_API_KEY: ""
+      LIVEKIT_API_SECRET: ""
+      DEEPGRAM_API_KEY: ""
+      OPENAI_API_KEY: ""
+    autoDeploy: true

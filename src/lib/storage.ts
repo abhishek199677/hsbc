@@ -4,6 +4,7 @@ import { readFile, writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
+const R2_ENDPOINT = process.env.R2_ENDPOINT;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
@@ -22,7 +23,7 @@ function getS3(): S3Client {
   if (!s3Client) {
     s3Client = new S3Client({
       region: "auto",
-      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      endpoint: R2_ENDPOINT || `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId: R2_ACCESS_KEY_ID as string,
         secretAccessKey: R2_SECRET_ACCESS_KEY as string,

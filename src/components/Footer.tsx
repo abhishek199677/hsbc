@@ -35,18 +35,18 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-white">
+    <footer className="bg-[#060613] border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center mb-4 w-fit">
-              <div className="bg-white rounded-lg p-1.5 shadow-lg">
+              <div className="glass rounded-lg p-1.5">
                 <img src="/logo.png" alt="HireRight" className="h-8 w-auto rounded" />
               </div>
             </Link>
-            <p className="text-gray-400 mb-6 max-w-sm">
-              AI-powered background screening platform trusted by top employers worldwide. 
+            <p className="text-gray-400 mb-6 max-w-sm leading-relaxed">
+              AI-powered background screening platform trusted by top employers worldwide.
               Right People. Right Decisions.
             </p>
             <div className="space-y-3">
@@ -83,24 +83,17 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-gray-800 mt-12 pt-8">
+        <div className="border-t border-white/5 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
               © 2026 HireRight. All rights reserved. Talent to Talent.
             </p>
-            <div className="flex items-center gap-4">
-              <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
-                <Globe className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
-                <MessageSquare className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
-                <Users className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
-                <Share2 className="w-5 h-5" />
-              </a>
+            <div className="flex items-center gap-3">
+              {[Globe, MessageSquare, Users, Share2].map((Icon, i) => (
+                <a key={i} href="#" className="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-white/10 transition-all text-gray-400 hover:text-white">
+                  <Icon className="w-5 h-5" />
+                </a>
+              ))}
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadFile, buildPlaybackUrl } from "@/lib/uploadFile";
@@ -15,8 +15,22 @@ import {
   Video, VideoOff, Mic, MicOff, Phone, MessageSquare, 
   Clock, CheckCircle, ArrowRight, Star, Loader, Send, Upload, Film,
   Captions, Keyboard, Download, X, ScrollText, ListChecks, Volume2,
-  AlertTriangle, ShieldCheck, ShieldAlert
+  AlertTriangle, ShieldCheck, ShieldAlert, Wifi, WifiOff, FileCode
 } from "lucide-react";
+import dynamic from "next/dynamic";
+import type { ChallengeQuestion, TestCaseResult, ProgrammingLanguage } from "@/lib/sandbox";
+
+// Dynamically import the LiveKit room component (no SSR — it needs browser APIs)
+const LiveKitInterviewRoom = dynamic(
+  () => import("@/components/LiveKitInterviewRoom"),
+  { ssr: false, loading: () => <Loader className="animate-spin w-8 h-8 text-indigo-400" /> }
+);
+
+// Dynamically import the CodingChallenge component (no SSR — Monaco needs browser APIs)
+const CodingChallenge = dynamic(
+  () => import("@/components/CodingChallenge"),
+  { ssr: false, loading: () => <Loader className="animate-spin w-8 h-8 text-indigo-400" /> }
+);
 
 const PROCTOR_MESSAGES: Record<string, string> = {
   look_away: "Malpractice alert: you looked away from the camera!",
@@ -125,6 +139,30 @@ export default function LiveInterviewContent() {
   const [proctorLoading, setProctorLoading] = useState(false);
   const [proctorWarnings, setProctorWarnings] = useState(0);
   const [proctorReport, setProctorReport] = useState<ProctoringReport | null>(null);
+  const [currentDifficulty, setCurrentDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+
+  // LiveKit state — determines whether to use the real-time WebRTC pipeline
+  // or fall back to browser Speech API
+  const [liveKitAvailable, setLiveKitAvailable] = useState<boolean | null>(null); // null = checking
+  const [liveKitConfig, setLiveKitConfig] = useState<{
+    roomName: string;
+    token: string;
+    url: string;
+  } | null>(null);
+  const [liveKitLoading, setLiveKitLoading] = useState(false);
+  const [liveKitError, setLiveKitError] = useState<string | null>(null);
+
+  // Coding challenge state
+  const [codingMode, setCodingMode] = useState(false);
+  const [currentChallenge, setCurrentChallenge] = useState<ChallengeQuestion | null>(null);
+  const [codingLoading, setCodingLoading] = useState(false);
+
+  // Adaptive interview state (70/30 split)
+  const [interviewPhase, setInterviewPhase] = useState<"warmup" | "skill" | "coding" | "followup" | "wrapup">("warmup");
+  const [codingCount, setCodingCount] = useState(0);
+  const [skillCount, setSkillCount] = useState(0);
+  const [performanceScores, setPerformanceScores] = useState<number[]>([]);
+  const [lastWasCoding, setLastWasCoding] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -154,6 +192,20 @@ export default function LiveInterviewContent() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, liveTranscript]);
+
+  // Check if LiveKit agent is available on mount
+  useEffect(() => {
+    async function checkLiveKit() {
+      try {
+        const res = await fetch("/api/ai-agent");
+        const data = await res.json();
+        setLiveKitAvailable(data.available === true);
+      } catch {
+        setLiveKitAvailable(false);
+      }
+    }
+    checkLiveKit();
+  }, []);
 
   useEffect(() => {
     startPreview();
@@ -371,7 +423,19 @@ export default function LiveInterviewContent() {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ action, ...extra }),
+      body: JSON.stringify({
+        action,
+        ...extra,
+        interviewState: {
+          messageCount: messages.length,
+          difficulty: currentDifficulty,
+          phase: interviewPhase,
+          codingCount,
+          skillCount,
+          performanceScores,
+          lastWasCoding,
+        },
+      }),
     });
     return response.json();
   };
@@ -482,13 +546,27 @@ export default function LiveInterviewContent() {
       setIsAiTyping(false);
 
       if (data.success) {
-        pushMessage("assistant", data.message);
-        if (data.isComplete) {
+        setCurrentDifficulty(data.difficulty || currentDifficulty);
+        setInterviewPhase(data.phase || interviewPhase);
+        if (data.codingCount !== undefined) setCodingCount(data.codingCount);
+        if (data.skillCount !== undefined) setSkillCount(data.skillCount);
+        if (data.performanceScores) setPerformanceScores(data.performanceScores);
+        if (data.lastWasCoding !== undefined) setLastWasCoding(data.lastWasCoding);
+
+        // If the API triggered a coding challenge, launch it
+        if (data.triggerCoding) {
           await speakText(data.message);
-          await finishInterview();
+          pushMessage("assistant", data.message);
+          startCodingChallenge();
         } else {
-          await speakText(data.message);
-          if (!endedRef.current && !useKeyboard) startListening();
+          pushMessage("assistant", data.message);
+          if (data.isComplete) {
+            await speakText(data.message);
+            await finishInterview();
+          } else {
+            await speakText(data.message);
+            if (!endedRef.current && !useKeyboard) startListening();
+          }
         }
       } else {
         setShowManualInput(true);
@@ -500,6 +578,175 @@ export default function LiveInterviewContent() {
       setShowManualInput(true);
     }
   };
+
+  /**
+   * Start the interview using the LiveKit real-time audio pipeline.
+   * Calls the ai-agent API to create a room and dispatch the Python agent.
+   */
+  const startLiveKitInterview = async () => {
+    if (liveKitLoading) return;
+    setLiveKitLoading(true);
+    setLiveKitError(null);
+    try {
+      // Get the interview ID from the URL or session
+      const interviewId = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("id") || sessionStorage.getItem("tcInterviewId")
+        : null;
+
+      const res = await fetch("/api/ai-agent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ interviewId }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to create interview room");
+      }
+
+      // Store the LiveKit config — this will render the LiveKitInterviewRoom component
+      setLiveKitConfig({
+        roomName: data.roomName,
+        token: data.token,
+        url: data.url,
+      });
+      setInterviewStarted(true);
+    } catch (error) {
+      console.error("Failed to start LiveKit interview:", error);
+      setLiveKitError(
+        error instanceof Error
+          ? error.message
+          : "Failed to connect to the AI interviewer. Falling back to browser mode."
+      );
+      // Fall back to browser Speech API
+      setLiveKitAvailable(false);
+    } finally {
+      setLiveKitLoading(false);
+    }
+  };
+
+  /**
+   * Handle LiveKit room disconnection — trigger evaluation and show results.
+   */
+  const handleLiveKitDisconnect = useCallback(async () => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    setSaving(true);
+    setSavingStatus("Evaluating your interview...");
+
+    // For LiveKit mode, we evaluate using the conversation history from the agent
+    // The agent handles the actual interview — we just need to get the evaluation
+    try {
+      const storedRole = typeof window !== "undefined" ? sessionStorage.getItem("tcRole") : null;
+      const data = await callAI("evaluate", {
+        profile: {
+          name: user?.name || "Candidate",
+          currentRole: storedRole || "Software Engineer",
+        },
+        conversationHistory: [], // The agent tracked the conversation server-side
+      });
+      if (data.success) {
+        let parsedEvaluation: Evaluation | null = null;
+        try {
+          parsedEvaluation = JSON.parse(data.evaluation);
+        } catch {
+          parsedEvaluation = { raw: data.evaluation };
+        }
+        setEvaluation(parsedEvaluation);
+      }
+    } catch (error) {
+      console.error("Evaluation failed:", error);
+    }
+
+    setSaving(false);
+    setInterviewEnded(true);
+  }, [user, token]);
+
+  /**
+   * Request a coding challenge from the AI interviewer.
+   */
+  const startCodingChallenge = useCallback(async () => {
+    if (codingLoading) return;
+    setCodingLoading(true);
+    try {
+      const data = await callAI("coding_challenge", {
+        difficulty: currentDifficulty,
+      });
+      if (data.success && data.challenge) {
+        setCurrentChallenge(data.challenge);
+        setCodingMode(true);
+        setCodingCount(data.codingCount || codingCount + 1);
+        pushMessage("assistant", `Let's try a coding challenge: ${data.challenge.title}`);
+      }
+    } catch (error) {
+      console.error("Failed to get coding challenge:", error);
+    } finally {
+      setCodingLoading(false);
+    }
+  }, [codingLoading, currentDifficulty, codingCount]);
+
+  /**
+   * Handle code submission from the CodingChallenge component.
+   * Sends the code and results to the AI for evaluation.
+   */
+  const handleCodeSubmit = useCallback(async (
+    code: string,
+    results: TestCaseResult[],
+    allPassed: boolean
+  ) => {
+    try {
+      // Send code submission to AI for feedback
+      const data = await callAI("submit_code", {
+        challenge: currentChallenge,
+        codeResults: results,
+        code,
+      });
+
+      if (data.success) {
+        // Track coding performance (score 0-10 based on pass rate)
+        const codingScore = data.totalCount > 0 ? Math.round((data.passedCount / data.totalCount) * 10) : 5;
+        setPerformanceScores((prev) => [...prev, codingScore]);
+        setLastWasCoding(true);
+
+        // Add the coding feedback to conversation
+        const feedback = data.feedback || "Good effort on the coding challenge!";
+        pushMessage("assistant", feedback);
+
+        // If all tests passed, AI is impressed; otherwise, provide guidance
+        if (allPassed) {
+          pushMessage("assistant", "Excellent! All test cases passed. Let me ask you a follow-up question.");
+        } else {
+          pushMessage("assistant", `You passed ${data.passedCount}/${data.totalCount} test cases. Let's continue with the next question.`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to submit code:", error);
+    }
+
+    // Exit coding mode
+    setCodingMode(false);
+    setCurrentChallenge(null);
+
+    // Continue the interview with voice questions
+    if (!endedRef.current && !useKeyboard) {
+      startListening();
+    }
+  }, [currentChallenge, useKeyboard]);
+
+  /**
+   * Skip the coding challenge and return to voice questions.
+   */
+  const skipCodingChallenge = useCallback(() => {
+    setCodingMode(false);
+    setCurrentChallenge(null);
+    pushMessage("assistant", "No problem, let's continue with the next question.");
+    if (!endedRef.current && !useKeyboard) {
+      startListening();
+    }
+  }, [useKeyboard]);
 
   const startInterview = async () => {
     if (loading) return;
@@ -528,6 +775,7 @@ export default function LiveInterviewContent() {
 
       if (data.success) {
         setInterviewStarted(true);
+        setCurrentDifficulty(data.difficulty || "medium");
         pushMessage("assistant", data.message);
         await speakText(data.message);
         if (!endedRef.current) startListening();
@@ -713,6 +961,75 @@ export default function LiveInterviewContent() {
     setUseKeyboard(true);
     setShowManualInput(true);
   };
+
+  // ──────────────────────────────────────────────────────────────────
+  // Coding challenge mode — render the Monaco editor + problem panel
+  // ──────────────────────────────────────────────────────────────────
+  if (codingMode && currentChallenge && !interviewEnded) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col">
+        {/* Header */}
+        <header className="bg-gray-800 border-b border-gray-700 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-1.5">
+                <img src="/logo.png" alt="HireRight" className="h-6 w-auto rounded drop-shadow-md" />
+              </div>
+              <span className="px-2 py-0.5 bg-indigo-600 text-white text-xs rounded">Coding Challenge</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-gray-300">
+                <Clock className="w-4 h-4" />
+                <span className="font-mono">{formatTime(elapsedTime)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-300">
+                <FileCode className="w-4 h-4" />
+                <span className="text-sm">{messages.length} messages</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Coding challenge */}
+        <div className="flex-1 min-h-0">
+          <CodingChallenge
+            challenge={currentChallenge}
+            onSubmit={handleCodeSubmit}
+            onSkip={skipCodingChallenge}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // LiveKit real-time mode — render the WebRTC interview room
+  // ──────────────────────────────────────────────────────────────────
+  if (liveKitConfig && !interviewEnded) {
+    return (
+      <LiveKitInterviewRoom
+        serverUrl={liveKitConfig.url}
+        token={liveKitConfig.token}
+        videoEnabled={videoEnabled}
+        audioEnabled={audioEnabled}
+        onDisconnected={handleLiveKitDisconnect}
+      />
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Loading / checking LiveKit availability
+  // ──────────────────────────────────────────────────────────────────
+  if (liveKitAvailable === null) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-400">Checking interview connection...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading) {
     return (
@@ -1125,6 +1442,15 @@ export default function LiveInterviewContent() {
                 {questionNumber > 0 && (
                   <p className="text-white/80 text-xs mt-2 font-medium">Q{questionNumber}/5</p>
                 )}
+                {interviewStarted && (
+                  <span className={`inline-block mt-2 px-2 py-1 rounded-full text-[10px] font-bold ${
+                    currentDifficulty === "easy" ? "bg-green-500/30 text-green-300 border border-green-500/50" :
+                    currentDifficulty === "medium" ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/50" :
+                    "bg-red-500/30 text-red-300 border border-red-500/50"
+                  }`}>
+                    {currentDifficulty.toUpperCase()}
+                  </span>
+                )}
               </div>
             </div>
             {isAiSpeaking && (
@@ -1168,6 +1494,19 @@ export default function LiveInterviewContent() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${useKeyboard ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
               >
                 <Keyboard className="w-3.5 h-3.5" /> Keyboard
+              </button>
+            )}
+            {interviewStarted && !codingMode && (
+              <button
+                onClick={startCodingChallenge}
+                disabled={codingLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors bg-gray-700 text-gray-300 hover:bg-gray-600 disabled:opacity-50"
+              >
+                {codingLoading ? (
+                  <Loader className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <FileCode className="w-3.5 h-3.5" />
+                )} Code Challenge
               </button>
             )}
           </div>
@@ -1216,14 +1555,55 @@ export default function LiveInterviewContent() {
                         {startError}
                       </div>
                     )}
-                    <button onClick={startInterview} disabled={loading} className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 mx-auto">
+                    {liveKitError && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm rounded-lg p-3 mb-4 flex items-start gap-2">
+                        <WifiOff className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>{liveKitError}</span>
+                      </div>
+                    )}
+
+                    {/* LiveKit mode: Real-time voice with AI agent */}
+                    {liveKitAvailable && (
+                      <div className="space-y-3">
+                        <button
+                          onClick={startLiveKitInterview}
+                          disabled={liveKitLoading}
+                          className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {liveKitLoading ? (
+                            <><Loader className="animate-spin w-4 h-4" /> Connecting to AI agent...</>
+                          ) : (
+                            <><Wifi className="w-4 h-4" /> Start Voice Interview <ArrowRight className="w-4 h-4" /></>
+                          )}
+                        </button>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 justify-center">
+                          <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                          Real-time voice with AI interviewer
+                        </div>
+                        <div className="relative my-2">
+                          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-700" /></div>
+                          <div className="relative flex justify-center text-xs"><span className="bg-gray-900 px-2 text-gray-500">or</span></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Browser fallback mode */}
+                    <button
+                      onClick={startInterview}
+                      disabled={loading}
+                      className={`px-6 py-3 rounded-lg font-medium disabled:opacity-50 flex items-center gap-2 mx-auto ${
+                        liveKitAvailable
+                          ? "bg-gray-700 text-gray-300 hover:bg-gray-600 text-sm"
+                          : "bg-indigo-600 text-white hover:bg-indigo-700"
+                      }`}
+                    >
                       {loading ? (
                         <><Loader className="animate-spin w-4 h-4" /> Connecting...</>
                       ) : (
-                        <>Start Interview <ArrowRight className="w-4 h-4" /></>
+                        <>Start Browser Interview <ArrowRight className="w-4 h-4" /></>
                       )}
                     </button>
-                    {!supportsSpeech && (
+                    {!liveKitAvailable && !supportsSpeech && (
                       <p className="text-yellow-500 text-sm mt-4">
                         Voice input is not supported in this browser. You can type your answers instead.
                       </p>
