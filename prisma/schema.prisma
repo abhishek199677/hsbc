@@ -11,33 +11,33 @@ datasource db {
 // Enable via: CREATE EXTENSION IF NOT EXISTS vector;
 
 model Organization {
-  id                    String    @id @default(uuid())
-  name                  String
-  slug                  String    @unique
-  logoUrl               String?
-  primaryColor          String    @default("#4f46e5")
-  accentColor           String    @default("#7c3aed")
-  isGovernment          Boolean   @default(false)
-  plan                  String    @default("starter") // starter, pro, enterprise
-  planStatus            String? // trialing, active, past_due, canceled, unpaid
-  trialEndsAt           DateTime?
-  stripeCustomerId      String?   @unique
-  stripeSubscriptionId  String?   @unique
-  stripePriceId         String?
-  status                String    @default("active") // active, suspended
-  onboardingCompleted   Boolean   @default(false)
-  onboardingStep        Int       @default(0)
-  
+  id                   String    @id @default(uuid())
+  name                 String
+  slug                 String    @unique
+  logoUrl              String?
+  primaryColor         String    @default("#4f46e5")
+  accentColor          String    @default("#7c3aed")
+  isGovernment         Boolean   @default(false)
+  plan                 String    @default("starter") // starter, pro, enterprise
+  planStatus           String? // trialing, active, past_due, canceled, unpaid
+  trialEndsAt          DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  status               String    @default("active") // active, suspended
+  onboardingCompleted  Boolean   @default(false)
+  onboardingStep       Int       @default(0)
+
   // Enterprise Settings
-  ssoEnabled            Boolean   @default(false)
-  enforceSso            Boolean   @default(false)
-  ipWhitelist           String?   // JSON array of allowed IPs/CIDRs
-  sessionTimeoutMinutes Int       @default(480) // 8 hours default
+  ssoEnabled            Boolean @default(false)
+  enforceSso            Boolean @default(false)
+  ipWhitelist           String? // JSON array of allowed IPs/CIDRs
+  sessionTimeoutMinutes Int     @default(480) // 8 hours default
   maxUsers              Int?
-  dataRegion            String?   @default("us") // us, eu, ap
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  dataRegion            String? @default("us") // us, eu, ap
+
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   users                 User[]
   teamMembers           TeamMember[]
   jobs                  Job[]
@@ -56,96 +56,96 @@ model Organization {
 }
 
 model User {
-  id                    String             @id @default(uuid())
-  email                 String             @unique
-  password              String
-  name                  String?
-  phone                 String?
-  role                  String             @default("jobseeker") // jobseeker, employer, admin
-  emailVerifiedAt       DateTime?
-  twoFactorEnabled      Boolean            @default(false)
-  twoFactorSecret       String?
-  organizationId        String
-  organization          Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-  profile               Profile?
-  interview             Interview?
-  interviewMetrics      InterviewMetrics[]
-  verificationTokens    VerificationToken[]
-  sessions              Session[]
-  teamMemberships       TeamMember[]
-  openaiUsageLogs       OpenAIUsageLog[]
-  auditLogs             AuditLog[]
-  loginLogs             LoginLog[]
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  password           String
+  name               String?
+  phone              String?
+  role               String              @default("jobseeker") // jobseeker, employer, admin
+  emailVerifiedAt    DateTime?
+  twoFactorEnabled   Boolean             @default(false)
+  twoFactorSecret    String?
+  organizationId     String
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  profile            Profile?
+  interview          Interview?
+  interviewMetrics   InterviewMetrics[]
+  verificationTokens VerificationToken[]
+  sessions           Session[]
+  teamMemberships    TeamMember[]
+  openaiUsageLogs    OpenAIUsageLog[]
+  auditLogs          AuditLog[]
+  loginLogs          LoginLog[]
 }
 
 model TeamMember {
-  id             String       @id @default(uuid())
-  userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  role           String       @default("member") // owner, admin, interviewer, member, viewer
-  inviteToken    String?
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role            String       @default("member") // owner, admin, interviewer, member, viewer
+  inviteToken     String?
   inviteExpiresAt DateTime?
-  invitedAt      DateTime     @default(now())
-  acceptedAt     DateTime?
-  createdAt      DateTime     @default(now())
+  invitedAt       DateTime     @default(now())
+  acceptedAt      DateTime?
+  createdAt       DateTime     @default(now())
 
   @@unique([userId, organizationId])
 }
 
 model Profile {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Resume
-  resumeUrl       String?
-  resumeFileName  String?
-  
+  resumeUrl      String?
+  resumeFileName String?
+
   // About You
-  aboutYou        String?
-  whatDrivesYou   String?
-  strengths       String?
-  
+  aboutYou      String?
+  whatDrivesYou String?
+  strengths     String?
+
   // Current Snapshot
   currentRole     String?
   totalExperience String?
   currentLocation String?
   noticePeriod    String?
-  
+
   // Skills
-  skills          String?
-  currentCompany  String?
-  education       String?
+  skills         String?
+  currentCompany String?
+  education      String?
 
   // Extended Resume Data
   linkedinUrl     String?
-  workExperience  String?   // JSON: [{company, role, startDate, endDate, description}]
-  projects        String?   // JSON: [{name, description, url?, technologies?}]
-  keyAchievements String?   // JSON: ["achievement1", "achievement2"]
-  certifications  String?   // JSON: ["cert1", "cert2"]
-  languages       String?   // JSON: ["English - Fluent", "Hindi - Native"]
+  workExperience  String? // JSON: [{company, role, startDate, endDate, description}]
+  projects        String? // JSON: [{name, description, url?, technologies?}]
+  keyAchievements String? // JSON: ["achievement1", "achievement2"]
+  certifications  String? // JSON: ["cert1", "cert2"]
+  languages       String? // JSON: ["English - Fluent", "Hindi - Native"]
 
   // Preferences
-  jobType         String?
-  salaryRange     String?
+  jobType           String?
+  salaryRange       String?
   preferredLocation String?
-  workMode        String?
-  
+  workMode          String?
+
   // Interview Preferences
-  preferredDate   String?
+  preferredDate     String?
   preferredTimeSlot String?
-  timezone        String    @default("Asia/Kolkata")
-  
+  timezone          String  @default("Asia/Kolkata")
+
   // Status
-  step            Int       @default(1)
-  isComplete      Boolean   @default(false)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  step       Int     @default(1)
+  isComplete Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
@@ -171,18 +171,18 @@ model Session {
 }
 
 model Interview {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  date            String
-  time            String
-  timezone        String    @default("Asia/Kolkata")
-  mode            String    @default("AI Video Interview")
-  type            String    @default("Technical + Behavioral Assessment")
-  duration        Int       @default(15)
-  
-  status          String    @default("scheduled") // scheduled, in_progress, completed, cancelled
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date     String
+  time     String
+  timezone String @default("Asia/Kolkata")
+  mode     String @default("AI Video Interview")
+  type     String @default("Technical + Behavioral Assessment")
+  duration Int    @default(15)
+
+  status String @default("scheduled") // scheduled, in_progress, completed, cancelled
 
   // Video recording & evaluation
   videoUrl        String?
@@ -192,52 +192,56 @@ model Interview {
   evaluationScore Float?
 
   // Proctoring (anti-cheating)
-  proctoringReport  String? // JSON ProctoringReport
-  proctoringFlags   Int     @default(0)
-  proctoringStatus  String? // pass, review, fail, off
-  
+  proctoringReport String? // JSON ProctoringReport
+  proctoringFlags  Int     @default(0)
+  proctoringStatus String? // pass, review, fail, off
+
   // LiveKit integration
-  livekitRoomName  String?
-  livekitToken     String?
-  
+  livekitRoomName String?
+  livekitToken    String?
+
   // Deepgram transcription
-  deepgramJobId   String?
-  audioUrl        String?
-  
-  emailSent       Boolean   @default(false)
-  whatsappSent    Boolean   @default(false)
-  
+  deepgramJobId String?
+  audioUrl      String?
+
+  emailSent    Boolean @default(false)
+  whatsappSent Boolean @default(false)
+
   // Reminder tracking
-  reminder24hSent Boolean   @default(false)
-  reminder1hSent  Boolean   @default(false)
-  reminder15mSent Boolean   @default(false)
-  reminderNowSent Boolean   @default(false)
+  reminder24hSent Boolean @default(false)
+  reminder1hSent  Boolean @default(false)
+  reminder15mSent Boolean @default(false)
+  reminderNowSent Boolean @default(false)
+
+  // Results unlock (paywall)
+  resultsUnlocked  Boolean @default(false)
+  resultsPaymentId String? // PayPal order ID for audit
 
   // ML training data
-  metrics         InterviewMetrics?
+  metrics InterviewMetrics?
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Feedback {
-  id        String   @id @default(uuid())
-  type      String
-  message   String
-  email     String?
-  userId    String?
+  id             String        @id @default(uuid())
+  type           String
+  message        String
+  email          String?
+  userId         String?
   organizationId String?
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  page      String?
-  status    String   @default("open")
-  createdAt DateTime @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  page           String?
+  status         String        @default("open")
+  createdAt      DateTime      @default(now())
 }
 
 model Job {
-  id              String    @id @default(uuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   title           String
   description     String
   department      String?
@@ -246,104 +250,104 @@ model Job {
   experienceLevel String? // junior, mid, senior, lead, executive
   salaryMin       Int?
   salaryMax       Int?
-  currency        String   @default("INR")
-  
+  currency        String  @default("INR")
+
   // Required skills (comma-separated or JSON)
   requiredSkills  String?
   preferredSkills String?
-  
-  status          String    @default("active") // active, paused, closed, draft
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  matches         CandidateMatch[]
+
+  status String @default("active") // active, paused, closed, draft
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches CandidateMatch[]
 }
 
 model CandidateMatch {
-  id              String    @id @default(uuid())
-  jobId           String
-  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  userId          String    // references User but no FK constraint to allow cross-tenant matching
-  
+  id     String @id @default(uuid())
+  jobId  String
+  job    Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId String // references User but no FK constraint to allow cross-tenant matching
+
   // Similarity scores
-  semanticScore   Float     // cosine similarity from embeddings
-  skillsScore     Float     // skills overlap score
-  experienceScore Float     // experience level match
-  overallScore    Float     // weighted combination
-  
+  semanticScore   Float // cosine similarity from embeddings
+  skillsScore     Float // skills overlap score
+  experienceScore Float // experience level match
+  overallScore    Float // weighted combination
+
   // Match details
-  matchedSkills   String?   // JSON array of matched skill strings
-  missingSkills   String?   // JSON array of missing skill strings
-  explanation     String?   // AI-generated explanation of match quality
-  
-  status          String    @default("suggested") // suggested, reviewed, shortlisted, rejected
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  matchedSkills String? // JSON array of matched skill strings
+  missingSkills String? // JSON array of missing skill strings
+  explanation   String? // AI-generated explanation of match quality
+
+  status String @default("suggested") // suggested, reviewed, shortlisted, rejected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([jobId, userId])
 }
 
 model TranscriptSegment {
-  id              String    @id @default(uuid())
-  interviewId     String
-  
-  speaker         String    // "candidate" | "ai_interviewer"
-  text            String
-  startMs         Int
-  endMs           Int
-  
-  createdAt       DateTime  @default(now())
+  id          String @id @default(uuid())
+  interviewId String
+
+  speaker String // "candidate" | "ai_interviewer"
+  text    String
+  startMs Int
+  endMs   Int
+
+  createdAt DateTime @default(now())
 }
 
 model OpenAIUsageLog {
-  id              String    @id @default(uuid())
-  organizationId  String?
-  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  
+  id             String        @id @default(uuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
   // Model info
-  model           String    // gpt-5-nano, gpt-3.5-turbo, text-embedding-3-small
-  endpoint        String    // ai-interview/start, ai-interview/respond, ai-interview/evaluate, chat, embeddings
-  
+  model    String // gpt-5-nano, gpt-3.5-turbo, text-embedding-3-small
+  endpoint String // ai-interview/start, ai-interview/respond, ai-interview/evaluate, chat, embeddings
+
   // Token usage
-  promptTokens    Int       @default(0)
-  completionTokens Int      @default(0)
-  totalTokens     Int       @default(0)
-  
+  promptTokens     Int @default(0)
+  completionTokens Int @default(0)
+  totalTokens      Int @default(0)
+
   // Cost tracking (in USD)
-  cost            Float     @default(0)
-  
+  cost Float @default(0)
+
   // Request metadata
-  latencyMs       Int       @default(0)
-  success         Boolean   @default(true)
-  errorMessage    String?
-  
+  latencyMs    Int     @default(0)
+  success      Boolean @default(true)
+  errorMessage String?
+
   // Context
-  interviewId     String?
-  
-  createdAt       DateTime  @default(now())
+  interviewId String?
+
+  createdAt DateTime @default(now())
 
   @@map("openai_usage_logs")
 }
 
 model LoginLog {
-  id              String    @id @default(uuid())
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  organizationId  String
-  email           String
-  success         Boolean   @default(true)
-  failureReason   String?
-  ipAddress       String?
-  userAgent       String?
-  device          String?
+  id             String   @id @default(uuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organizationId String
+  email          String
+  success        Boolean  @default(true)
+  failureReason  String?
+  ipAddress      String?
+  userAgent      String?
+  device         String?
   browser        String?
   os             String?
   location       String?
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime @default(now())
 
   @@index([userId])
   @@index([organizationId])
@@ -356,20 +360,20 @@ model LoginLog {
 
 // Client companies you recruit for
 model Client {
-  id              String    @id @default(uuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name            String
-  industry        String?
-  website         String?
-  contactName     String?
-  contactEmail    String?
-  contactPhone    String?
-  address         String?
-  notes           String?
-  status          String    @default("active") // active, inactive, archived
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  industry       String?
+  website        String?
+  contactName    String?
+  contactEmail   String?
+  contactPhone   String?
+  address        String?
+  notes          String?
+  status         String       @default("active") // active, inactive, archived
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   jobRequisitions JobRequisition[]
   placements      Placement[]
@@ -380,31 +384,31 @@ model Client {
 
 // Job requirements from clients
 model JobRequisition {
-  id              String    @id @default(uuid())
-  clientId        String
-  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  title           String
-  description     String?
-  requirements    String?   // Skills, experience, etc.
-  location        String?
-  jobType         String    @default("full-time") // full-time, part-time, contract, internship
-  salaryMin       Int?
-  salaryMax       Int?
-  experienceMin   Int?      // Min years of experience
-  experienceMax   Int?      // Max years of experience
-  status          String    @default("open") // open, on-hold, filled, cancelled
-  priority        String    @default("normal") // low, normal, high, urgent
-  openings        Int       @default(1)
-  filledCount     Int       @default(0)
-  deadline        DateTime?
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String       @id @default(uuid())
+  clientId       String
+  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  requirements   String? // Skills, experience, etc.
+  location       String?
+  jobType        String       @default("full-time") // full-time, part-time, contract, internship
+  salaryMin      Int?
+  salaryMax      Int?
+  experienceMin  Int? // Min years of experience
+  experienceMax  Int? // Max years of experience
+  status         String       @default("open") // open, on-hold, filled, cancelled
+  priority       String       @default("normal") // low, normal, high, urgent
+  openings       Int          @default(1)
+  filledCount    Int          @default(0)
+  deadline       DateTime?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  candidates      CandidateSubmission[]
-  placements      Placement[]
+  candidates CandidateSubmission[]
+  placements Placement[]
 
   @@index([organizationId])
   @@index([clientId])
@@ -413,14 +417,14 @@ model JobRequisition {
 
 // Candidates sourced/recruited by your agency
 model AgencyCandidate {
-  id              String    @id @default(uuid())
+  id              String       @id @default(uuid())
   organizationId  String
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name            String
   email           String?
   phone           String?
-  source          String    @default("manual") // manual, naukri, linkedin, referral, website
-  naukriId        String?   // Naukri profile ID
+  source          String       @default("manual") // manual, naukri, linkedin, referral, website
+  naukriId        String? // Naukri profile ID
   linkedinUrl     String?
   resumeUrl       String?
   currentRole     String?
@@ -430,14 +434,14 @@ model AgencyCandidate {
   location        String?
   expectedSalary  Int?
   noticePeriod    String?
-  status          String    @default("sourced") // sourced, screening, interviewed, offered, placed, rejected
+  status          String       @default("sourced") // sourced, screening, interviewed, offered, placed, rejected
   notes           String?
-  rating          Int?      // 1-5 rating
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  rating          Int? // 1-5 rating
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  submissions     CandidateSubmission[]
-  placements      Placement[]
+  submissions CandidateSubmission[]
+  placements  Placement[]
 
   @@index([organizationId])
   @@index([naukriId])
@@ -446,18 +450,18 @@ model AgencyCandidate {
 
 // Links candidates to job requisitions
 model CandidateSubmission {
-  id              String    @id @default(uuid())
-  candidateId     String
-  candidate       AgencyCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  id               String          @id @default(uuid())
+  candidateId      String
+  candidate        AgencyCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobRequisitionId String
-  jobRequisition  JobRequisition @relation(fields: [jobRequisitionId], references: [id], onDelete: Cascade)
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  status          String    @default("submitted") // submitted, reviewing, shortlisted, interview-scheduled, offered, rejected
-  feedback        String?
-  interviewDate   DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  jobRequisition   JobRequisition  @relation(fields: [jobRequisitionId], references: [id], onDelete: Cascade)
+  organizationId   String
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status           String          @default("submitted") // submitted, reviewing, shortlisted, interview-scheduled, offered, rejected
+  feedback         String?
+  interviewDate    DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@unique([candidateId, jobRequisitionId])
   @@index([organizationId])
@@ -466,24 +470,24 @@ model CandidateSubmission {
 
 // Successful placements
 model Placement {
-  id              String    @id @default(uuid())
-  candidateId     String
-  candidate       AgencyCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  clientId        String
-  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id               String          @id @default(uuid())
+  candidateId      String
+  candidate        AgencyCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  clientId         String
+  client           Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
   jobRequisitionId String?
-  jobRequisition  JobRequisition? @relation(fields: [jobRequisitionId], references: [id], onDelete: SetNull)
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  startDate       DateTime
-  endDate         DateTime?
-  salary          Int?
-  commissionRate  Float?    // Your commission percentage
+  jobRequisition   JobRequisition? @relation(fields: [jobRequisitionId], references: [id], onDelete: SetNull)
+  organizationId   String
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  startDate        DateTime
+  endDate          DateTime?
+  salary           Int?
+  commissionRate   Float? // Your commission percentage
   commissionAmount Float?
-  status          String    @default("active") // active, completed, terminated
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  status           String          @default("active") // active, completed, terminated
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([organizationId])
   @@index([clientId])
@@ -494,113 +498,113 @@ model Placement {
 
 // SSO/SAML Configuration per organization
 model SSOConfiguration {
-  id              String    @id @default(uuid())
-  organizationId  String    @unique
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   // SSO Provider Info
-  provider        String    // okta, azure_ad, onelogin, google_workspace, custom_saml
-  providerName    String?   // Display name for the provider
-  
+  provider     String // okta, azure_ad, onelogin, google_workspace, custom_saml
+  providerName String? // Display name for the provider
+
   // SAML Configuration
-  samlMetadataUrl String?   // URL to download SAML metadata XML
-  samlEntityId    String?   // SAML Entity ID
-  samlSsoUrl      String?   // SAML SSO Login URL
-  samlSloUrl      String?   // SAML SLO Logout URL
-  samlCertificate String?   // X.509 Certificate for SAML
-  samlSignatureAlg String?  @default("RSA-SHA256")
-  samlDigestAlg   String?   @default("SHA256")
-  
+  samlMetadataUrl  String? // URL to download SAML metadata XML
+  samlEntityId     String? // SAML Entity ID
+  samlSsoUrl       String? // SAML SSO Login URL
+  samlSloUrl       String? // SAML SLO Logout URL
+  samlCertificate  String? // X.509 Certificate for SAML
+  samlSignatureAlg String? @default("RSA-SHA256")
+  samlDigestAlg    String? @default("SHA256")
+
   // OIDC Configuration (alternative)
-  oidcClientId    String?
+  oidcClientId     String?
   oidcClientSecret String?
-  oidcIssuerUrl   String?
-  oidcAuthUrl     String?
-  oidcTokenUrl    String?
-  oidcUserInfoUrl String?
-  oidcScopes      String?   @default("openid,email,profile")
-  
+  oidcIssuerUrl    String?
+  oidcAuthUrl      String?
+  oidcTokenUrl     String?
+  oidcUserInfoUrl  String?
+  oidcScopes       String? @default("openid,email,profile")
+
   // Settings
-  enabled         Boolean   @default(false)
-  enforceSso      Boolean   @default(false) // If true, password login is disabled
-  defaultRole     String    @default("member") // Default role for SSO users
-  
+  enabled     Boolean @default(false)
+  enforceSso  Boolean @default(false) // If true, password login is disabled
+  defaultRole String  @default("member") // Default role for SSO users
+
   // Attribute Mapping
-  emailAttribute  String    @default("email")
-  nameAttribute   String    @default("name")
+  emailAttribute  String  @default("email")
+  nameAttribute   String  @default("name")
   roleAttribute   String?
   groupsAttribute String?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // API Keys for enterprise integrations
 model ApiKey {
-  id              String    @id @default(uuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  name            String    // Display name (e.g., "Production API", "Staging")
-  keyHash         String    @unique // SHA-256 hash of the API key
-  keyPrefix       String    // First 8 chars for display (e.g., "tc_live_...")
-  
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name      String // Display name (e.g., "Production API", "Staging")
+  keyHash   String @unique // SHA-256 hash of the API key
+  keyPrefix String // First 8 chars for display (e.g., "tc_live_...")
+
   // Permissions
-  permissions     String[]  // ["interviews:read", "interviews:write", "candidates:read", etc.]
-  
+  permissions String[] // ["interviews:read", "interviews:write", "candidates:read", etc.]
+
   // Rate Limiting
-  rateLimitPerMin Int       @default(60)
-  rateLimitPerDay Int       @default(10000)
-  
+  rateLimitPerMin Int @default(60)
+  rateLimitPerDay Int @default(10000)
+
   // IP Whitelisting
   allowedIpAddresses String? // JSON array of allowed IPs/CIDRs
-  
+
   // Usage Tracking
-  lastUsedAt      DateTime?
-  totalRequests   BigInt    @default(0)
-  
+  lastUsedAt    DateTime?
+  totalRequests BigInt    @default(0)
+
   // Status
-  enabled         Boolean   @default(true)
-  expiresAt       DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  enabled   Boolean   @default(true)
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Audit Log for compliance
 model AuditLog {
-  id              String    @id @default(uuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   // Actor
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  actorEmail      String?   // Stored separately for when user is deleted
-  actorRole       String?
-  
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actorEmail String? // Stored separately for when user is deleted
+  actorRole  String?
+
   // Action
-  action          String    // "user.login", "user.create", "interview.complete", "settings.update", etc.
-  category        String    // "auth", "user", "interview", "settings", "billing", "data"
-  
+  action   String // "user.login", "user.create", "interview.complete", "settings.update", etc.
+  category String // "auth", "user", "interview", "settings", "billing", "data"
+
   // Resource
-  resourceType    String?   // "user", "interview", "organization", "api_key", etc.
-  resourceId      String?
-  
+  resourceType String? // "user", "interview", "organization", "api_key", etc.
+  resourceId   String?
+
   // Details
-  description     String?   // Human-readable description
-  metadata        String?   // JSON with additional context
-  changes         String?   // JSON with before/after values for updates
-  
+  description String? // Human-readable description
+  metadata    String? // JSON with additional context
+  changes     String? // JSON with before/after values for updates
+
   // Request Info
-  ipAddress       String?
-  userAgent       String?
-  
+  ipAddress String?
+  userAgent String?
+
   // Compliance
-  severity        String    @default("info") // info, warning, critical
-  
-  createdAt       DateTime  @default(now())
-  
+  severity String @default("info") // info, warning, critical
+
+  createdAt DateTime @default(now())
+
   @@index([organizationId, createdAt])
   @@index([userId, createdAt])
   @@index([action, createdAt])
@@ -608,143 +612,143 @@ model AuditLog {
 
 // Webhooks for enterprise integrations
 model Webhook {
-  id              String    @id @default(uuid())
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  url             String    // Webhook endpoint URL
-  secret          String    // HMAC secret for signature verification
-  
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  url    String // Webhook endpoint URL
+  secret String // HMAC secret for signature verification
+
   // Events to subscribe to
-  events          String[]  // ["interview.completed", "candidate.matched", "user.created", etc.]
-  
+  events String[] // ["interview.completed", "candidate.matched", "user.created", etc.]
+
   // Settings
-  enabled         Boolean   @default(true)
-  contentType     String    @default("application/json")
-  
+  enabled     Boolean @default(true)
+  contentType String  @default("application/json")
+
   // Retry Settings
-  maxRetries      Int       @default(3)
-  retryDelayMs    Int       @default(5000)
-  
+  maxRetries   Int @default(3)
+  retryDelayMs Int @default(5000)
+
   // Usage Tracking
   lastTriggeredAt DateTime?
-  lastStatus      String?   // "success", "failed", "pending"
+  lastStatus      String? // "success", "failed", "pending"
   failureCount    Int       @default(0)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deliveries     WebhookDelivery[]
+
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  deliveries WebhookDelivery[]
 }
 
 // Webhook delivery logs
 model WebhookDelivery {
-  id              String    @id @default(uuid())
-  webhookId       String
-  webhook         Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
-  
-  event           String    // The event that triggered this delivery
-  payload         String    // JSON payload sent
-  
+  id        String  @id @default(uuid())
+  webhookId String
+  webhook   Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  event   String // The event that triggered this delivery
+  payload String // JSON payload sent
+
   // Delivery Status
-  status          String    @default("pending") // pending, success, failed
-  statusCode      Int?      // HTTP response code
-  responseBody    String?   // Response from the webhook endpoint
-  errorMessage    String?   // Error if delivery failed
-  
+  status       String  @default("pending") // pending, success, failed
+  statusCode   Int? // HTTP response code
+  responseBody String? // Response from the webhook endpoint
+  errorMessage String? // Error if delivery failed
+
   // Retry tracking
-  attempt         Int       @default(1)
-  nextRetryAt     DateTime?
-  
-  createdAt       DateTime  @default(now())
-  deliveredAt     DateTime?
-  
+  attempt     Int       @default(1)
+  nextRetryAt DateTime?
+
+  createdAt   DateTime  @default(now())
+  deliveredAt DateTime?
+
   @@index([webhookId, createdAt])
 }
 
 // Custom branding configuration
 model BrandingConfiguration {
-  id              String    @id @default(uuid())
-  organizationId  String    @unique
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   // Logo
-  logoUrl         String?   // Custom logo URL
-  logoDarkUrl     String?   // Logo for dark backgrounds
-  faviconUrl      String?   // Custom favicon
-  
+  logoUrl     String? // Custom logo URL
+  logoDarkUrl String? // Logo for dark backgrounds
+  faviconUrl  String? // Custom favicon
+
   // Colors
-  primaryColor    String    @default("#4f46e5")
-  secondaryColor  String    @default("#7c3aed")
-  accentColor     String    @default("#06b6d4")
-  backgroundColor String    @default("#ffffff")
-  surfaceColor    String    @default("#f9fafb")
-  textColor       String    @default("#111827")
-  
+  primaryColor    String @default("#4f46e5")
+  secondaryColor  String @default("#7c3aed")
+  accentColor     String @default("#06b6d4")
+  backgroundColor String @default("#ffffff")
+  surfaceColor    String @default("#f9fafb")
+  textColor       String @default("#111827")
+
   // Typography
-  fontFamily      String?   // Custom font family
-  headingFont     String?   // Custom heading font
-  
+  fontFamily  String? // Custom font family
+  headingFont String? // Custom heading font
+
   // Custom Domain
-  customDomain    String?   @unique // e.g., "careers.yourcompany.com"
-  domainVerified  Boolean   @default(false)
-  sslEnabled      Boolean   @default(true)
-  
+  customDomain   String? @unique // e.g., "careers.yourcompany.com"
+  domainVerified Boolean @default(false)
+  sslEnabled     Boolean @default(true)
+
   // White Label Settings
   hideTechcittaBranding Boolean @default(false)
-  customFooterText String?  // Replace "Powered by Techcitta"
-  customLoginMessage String? // Custom message on login page
-  
+  customFooterText      String? // Replace "Powered by Techcitta"
+  customLoginMessage    String? // Custom message on login page
+
   // Email Branding
-  emailFromName   String?   // Custom "From" name for emails
-  emailFromAddress String?  // Custom "From" email
-  emailTemplateId String?   // Custom email template ID
-  
+  emailFromName    String? // Custom "From" name for emails
+  emailFromAddress String? // Custom "From" email
+  emailTemplateId  String? // Custom email template ID
+
   // Legal Pages
-  customTermsUrl  String?   // Link to custom Terms of Service
-  customPrivacyUrl String?  // Link to custom Privacy Policy
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  customTermsUrl   String? // Link to custom Terms of Service
+  customPrivacyUrl String? // Link to custom Privacy Policy
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================
 // ML Training Data
 // ============================================
 model InterviewMetrics {
-  id              String   @id @default(uuid())
-  interviewId     String   @unique
-  userId          String
+  id          String @id @default(uuid())
+  interviewId String @unique
+  userId      String
 
   // Text features (extracted from transcript)
-  wordCount       Int      // Total words in candidate answers
-  avgResponseLen  Float    // Average words per answer
-  technicalTerms  Int      // Count of technical keywords
-  positiveSignals Int      // Count of positive signal phrases
-  negativeSignals Int      // Count of negative signal phrases
-  questionCount   Int      // Number of questions answered
+  wordCount       Int // Total words in candidate answers
+  avgResponseLen  Float // Average words per answer
+  technicalTerms  Int // Count of technical keywords
+  positiveSignals Int // Count of positive signal phrases
+  negativeSignals Int // Count of negative signal phrases
+  questionCount   Int // Number of questions answered
 
   // Candidate metadata
-  experienceLevel String   // "fresher" | "mid" | "senior"
-  role            String   // Job role
-  skills          String   // Comma-separated skills
+  experienceLevel String // "fresher" | "mid" | "senior"
+  role            String // Job role
+  skills          String // Comma-separated skills
 
   // Interview context
-  difficulty      String   // Final difficulty level
-  codingPassRate  Float?   // Pass rate on coding challenges (0-1)
+  difficulty     String // Final difficulty level
+  codingPassRate Float? // Pass rate on coding challenges (0-1)
 
   // Scores
-  performanceScores String  // JSON array of per-answer scores [0-10]
-  llmScore        Float    // LLM evaluation score (ground truth for training)
-  recommendation  String   // "Hire" | "Consider" | "Reject"
+  performanceScores String // JSON array of per-answer scores [0-10]
+  llmScore          Float // LLM evaluation score (ground truth for training)
+  recommendation    String // "Hire" | "Consider" | "Reject"
 
   // Proctoring
-  proctorFlags    Int      @default(0)
+  proctorFlags Int @default(0)
 
-  createdAt       DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  interview       Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([experienceLevel])

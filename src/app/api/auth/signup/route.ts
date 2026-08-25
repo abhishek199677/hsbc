@@ -93,14 +93,14 @@ export async function POST(request: Request) {
         profile: { create: {} },
         ...(accountRole === "employer"
           ? {
-              teamMemberships: {
-                create: {
-                  organizationId: organization.id,
-                  role: "owner",
-                  acceptedAt: new Date(),
-                },
+            teamMemberships: {
+              create: {
+                organizationId: organization.id,
+                role: "owner",
+                acceptedAt: new Date(),
               },
-            }
+            },
+          }
           : {}),
       },
     });

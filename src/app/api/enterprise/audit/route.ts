@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { queryAuditLogs, exportAuditLogs, getAuditStats } from "@/lib/audit";
+import type { AuditCategory, AuditSeverity } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,8 +77,8 @@ export async function GET(request: NextRequest) {
       ? new Date(searchParams.get("endDate")!)
       : undefined;
     const userId = searchParams.get("userId") || undefined;
-    const category = searchParams.get("category") as any || undefined;
-    const severity = searchParams.get("severity") as any || undefined;
+    const category = searchParams.get("category") as AuditCategory | undefined;
+    const severity = searchParams.get("severity") as AuditSeverity | undefined;
     const resourceType = searchParams.get("resourceType") || undefined;
     const resourceId = searchParams.get("resourceId") || undefined;
     const limit = parseInt(searchParams.get("limit") || "100");

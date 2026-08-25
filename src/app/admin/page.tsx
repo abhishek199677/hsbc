@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import OverviewDashboard from "@/components/admin/OverviewDashboard";
+import VirtusaDashboard from "@/components/admin/VirtusaDashboard";
+import JobSeekersTab from "@/components/admin/JobSeekersTab";
+import JobRequestsTab from "@/components/admin/JobRequestsTab";
 import CandidatePipeline from "@/components/admin/CandidatePipeline";
 import ProctoringDashboard from "@/components/admin/ProctoringDashboard";
 import TeamManagement from "@/components/admin/TeamManagement";
@@ -14,7 +16,6 @@ import LoginLogsTab from "@/components/admin/LoginLogsTab";
 import AgencyDashboard from "@/components/admin/AgencyDashboard";
 import DataTable from "@/components/admin/DataTable";
 import EnterpriseSettings from "@/components/admin/EnterpriseSettings";
-import { Download } from "lucide-react";
 
 interface Feedback {
   id: string;
@@ -123,22 +124,6 @@ export default function AdminDashboard() {
     return () => { cancelled = true; };
   }, [token, router]);
 
-  const exportUsers = useCallback(() => {
-    const rows = users.map((u) => ({
-      Name: u.name || "",
-      Email: u.email,
-      Phone: u.phone || "",
-      Role: u.profile?.currentRole || "",
-      Experience: u.profile?.totalExperience || "",
-      Location: u.profile?.currentLocation || "",
-      "Profile Complete": u.profile?.isComplete ? "Yes" : "No",
-      "Interview Status": u.interview?.status || "None",
-      "Interview Score": u.interview?.evaluationScore ?? "",
-      "Joined": new Date(u.createdAt).toLocaleDateString(),
-    }));
-    downloadCSV(rows, "users-export.csv");
-  }, [users]);
-
   const exportInterviews = useCallback(() => {
     const rows = users.filter((u) => u.interview).map((u) => ({
       Name: u.name || "",
@@ -175,7 +160,7 @@ export default function AdminDashboard() {
         onTabChange={() => {}}
       >
         <div className="flex items-center justify-center py-32">
-          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
         </div>
       </AdminSidebar>
     );
@@ -184,7 +169,11 @@ export default function AdminDashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return <OverviewDashboard token={token} />;
+        return <VirtusaDashboard token={token} />;
+      case "job-seekers":
+        return <JobSeekersTab token={token} />;
+      case "job-requests":
+        return <JobRequestsTab token={token} />;
       case "agency":
         return <AgencyDashboard token={token} />;
       case "candidates":
@@ -208,7 +197,7 @@ export default function AdminDashboard() {
       case "settings":
         return <SettingsTab organization={organization} />;
       default:
-        return <OverviewDashboard token={token} />;
+        return <VirtusaDashboard token={token} />;
     }
   };
 
@@ -225,7 +214,6 @@ export default function AdminDashboard() {
 }
 
 function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loading: boolean; onExport: () => void }) {
-  const { token } = useAuth();
   const interviews = users.filter((u) => u.interview);
 
   const columns = [
@@ -334,7 +322,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
               href={`/interview/live?userId=${user.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
               Watch
             </a>
@@ -343,7 +331,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
               href={`/interview/live?userId=${user.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
               Start
             </a>
@@ -362,7 +350,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
       </div>
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
         </div>
       ) : (
         <DataTable
@@ -461,7 +449,7 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
       </div>
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
         </div>
       ) : (
         <DataTable
@@ -487,7 +475,7 @@ function SettingsTab({ organization }: { organization: { name: string | null; pl
         <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
         <p className="text-sm text-gray-500 mt-1">Manage your organization details and preferences</p>
       </div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -85,8 +85,8 @@ export default function TeamManagement({ token }: TeamManagementProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const headers: HeadersInit = useMemo<HeadersInit>(
-    () => (token ? { Authorization: `Bearer ${token}` } : {}),
+  const headers = useMemo(
+    () => (token ? { Authorization: `Bearer ${token}` } : {}) as Record<string, string>,
     [token]
   );
 
@@ -101,7 +101,7 @@ export default function TeamManagement({ token }: TeamManagementProps) {
       const res = await fetch("/api/admin/team", { headers });
       if (!res.ok) throw new Error("Failed to load team members");
       const data = await res.json();
-      setMembers(Array.isArray(data) ? data : data.members ?? []);
+      setMembers(Array.isArray(data) ? data : data.teamMembers ?? []);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to load team members";
@@ -140,7 +140,7 @@ export default function TeamManagement({ token }: TeamManagementProps) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.message ?? "Failed to send invite");
+        throw new Error(data?.error ?? "Failed to send invite");
       }
       showToast("success", "Invitation sent successfully");
       setInviteModalOpen(false);

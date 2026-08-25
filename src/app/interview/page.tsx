@@ -139,6 +139,9 @@ export default function InterviewSchedulePage() {
         }),
       });
       const data = await response.json();
+      if (data.success && data.interview?.id) {
+        sessionStorage.setItem("tcInterviewId", data.interview.id);
+      }
       return data.success;
     } catch (error) {
       console.error("Failed to save interview:", error);

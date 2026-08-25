@@ -4,6 +4,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 
 export type AuditAction =
   // Auth events
@@ -59,8 +60,8 @@ export interface AuditLogEntry {
   resourceType?: string;
   resourceId?: string;
   description?: string;
-  metadata?: Record<string, any>;
-  changes?: { before: any; after: any };
+  metadata?: Record<string, unknown>;
+  changes?: { before: unknown; after: unknown };
   ipAddress?: string;
   userAgent?: string;
   severity?: AuditSeverity;
@@ -106,7 +107,7 @@ export async function logAuthEvent(
     email?: string;
     ipAddress?: string;
     userAgent?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }
 ): Promise<void> {
   const severity = action.includes("failed") ? "warning" : "info";
@@ -134,7 +135,7 @@ export async function logInterviewEvent(
   data: {
     userId: string;
     interviewId: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }
 ): Promise<void> {
   await logAuditEvent({
@@ -159,7 +160,7 @@ export async function logDataEvent(
     userId: string;
     resourceType?: string;
     resourceId?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     ipAddress?: string;
   }
 ): Promise<void> {
@@ -185,8 +186,8 @@ export async function logSettingsEvent(
   action: "settings.organization_updated" | "settings.sso_configured" | "settings.branding_updated" | "settings.api_key_created" | "settings.api_key_deleted",
   data: {
     userId: string;
-    changes?: { before: any; after: any };
-    metadata?: Record<string, any>;
+    changes?: { before: unknown; after: unknown };
+    metadata?: Record<string, unknown>;
   }
 ): Promise<void> {
   await logAuditEvent({
@@ -209,7 +210,7 @@ export async function logAdminEvent(
   data: {
     userId: string;
     targetUserId?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }
 ): Promise<void> {
   await logAuditEvent({
@@ -255,7 +256,7 @@ export async function queryAuditLogs(params: {
     offset = 0,
   } = params;
 
-  const where: any = { organizationId };
+  const where: Prisma.AuditLogWhereInput = { organizationId };
 
   if (startDate || endDate) {
     where.createdAt = {};
@@ -385,7 +386,7 @@ export async function getAuditStats(
   startDate?: Date,
   endDate?: Date
 ) {
-  const where: any = { organizationId };
+  const where: Prisma.AuditLogWhereInput = { organizationId };
 
   if (startDate || endDate) {
     where.createdAt = {};

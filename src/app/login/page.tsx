@@ -38,9 +38,7 @@ export default function LoginPage() {
 
       login(data.token, data.user, data.organization);
 
-      if (data.user.role === "employer") {
-        router.push("/employer");
-      } else if (data.user.role === "admin") {
+      if (data.user.role === "employer" || data.user.role === "admin") {
         router.push("/admin");
       } else {
         router.push("/profile");

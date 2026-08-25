@@ -6,7 +6,6 @@ import ToastProvider from "@/components/ToastProvider";
 import CrispChat from "@/components/CrispChat";
 import FeedbackWidget from "@/components/FeedbackWidget";
 import Branding from "@/components/Branding";
-import ReminderChecker from "@/components/ReminderChecker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,20 +38,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">
+      <body className="min-h-full" suppressHydrationWarning>
         <Providers>
           <ToastProvider />
           <CrispChat />
           <Branding />
           {children}
-          <ReminderChecker />
           <FeedbackWidget />
         </Providers>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js'); }); }`,
-          }}
-        />
       </body>
     </html>
   );

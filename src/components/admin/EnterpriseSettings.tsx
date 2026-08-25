@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Shield,
   Key,
@@ -21,6 +21,45 @@ import {
   Download,
   AlertTriangle,
 } from "lucide-react";
+
+interface ApiKeySummary {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  enabled: boolean;
+  permissions: string[];
+  rateLimitPerMin: number;
+  lastUsedAt: string | null;
+}
+
+interface WebhookSummary {
+  id: string;
+  url: string;
+  events: string[];
+  enabled: boolean;
+}
+
+interface AuditLogSummary {
+  id: string;
+  createdAt: string;
+  action: string;
+  actorEmail?: string | null;
+  severity: string;
+  user?: { email: string } | null;
+}
+
+interface AuditStatsSummary {
+  total: number;
+  bySeverity?: Record<string, number>;
+}
+
+interface BrandingSettings {
+  primaryColor?: string;
+  logoUrl?: string;
+  customDomain?: string;
+  hideTechcittaBranding?: boolean;
+  customFooterText?: string;
+}
 
 interface EnterpriseSettingsProps {
   token: string | null;
@@ -135,7 +174,7 @@ function SSOTab({
   headers: HeadersInit;
   showToast: (type: "success" | "error", message: string) => void;
 }) {
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -153,11 +192,7 @@ function SSOTab({
     nameAttribute: "name",
   });
 
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     try {
       const res = await fetch("/api/enterprise/sso", { headers });
       if (res.ok) {
@@ -178,12 +213,16 @@ function SSOTab({
           nameAttribute: data.nameAttribute || "name",
         });
       }
-    } catch (error) {
+    } catch {
       showToast("error", "Failed to load SSO configuration");
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, showToast]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchConfig);
+  }, [fetchConfig]);
 
   const handleSave = async () => {
     try {
@@ -384,7 +423,7 @@ function ApiKeysTab({
   headers: HeadersInit;
   showToast: (type: "success" | "error", message: string) => void;
 }) {
-  const [keys, setKeys] = useState<any[]>([]);
+  const [keys, setKeys] = useState<ApiKeySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKey, setNewKey] = useState<{ name: string; key: string } | null>(null);
@@ -395,23 +434,23 @@ function ApiKeysTab({
     rateLimitPerDay: 10000,
   });
 
-  useEffect(() => {
-    fetchKeys();
-  }, []);
-
-  const fetchKeys = async () => {
+  const fetchKeys = useCallback(async () => {
     try {
       const res = await fetch("/api/enterprise/api-keys", { headers });
       if (res.ok) {
         const data = await res.json();
         setKeys(data.apiKeys || []);
       }
-    } catch (error) {
+    } catch {
       showToast("error", "Failed to load API keys");
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, showToast]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchKeys);
+  }, [fetchKeys]);
 
   const handleCreate = async () => {
     try {
@@ -626,26 +665,26 @@ function WebhooksTab({
   headers: HeadersInit;
   showToast: (type: "success" | "error", message: string) => void;
 }) {
-  const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [webhooks, setWebhooks] = useState<WebhookSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchWebhooks();
-  }, []);
-
-  const fetchWebhooks = async () => {
+  const fetchWebhooks = useCallback(async () => {
     try {
       const res = await fetch("/api/enterprise/webhooks", { headers });
       if (res.ok) {
         const data = await res.json();
         setWebhooks(data.webhooks || []);
       }
-    } catch (error) {
+    } catch {
       showToast("error", "Failed to load webhooks");
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, showToast]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchWebhooks);
+  }, [fetchWebhooks]);
 
   if (loading) {
     return (
@@ -713,27 +752,27 @@ function BrandingTab({
   headers: HeadersInit;
   showToast: (type: "success" | "error", message: string) => void;
 }) {
-  const [branding, setBranding] = useState<any>(null);
+  const [branding, setBranding] = useState<BrandingSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchBranding();
-  }, []);
-
-  const fetchBranding = async () => {
+  const fetchBranding = useCallback(async () => {
     try {
       const res = await fetch("/api/enterprise/branding", { headers });
       if (res.ok) {
         const data = await res.json();
         setBranding(data.branding);
       }
-    } catch (error) {
+    } catch {
       showToast("error", "Failed to load branding configuration");
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, showToast]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchBranding);
+  }, [fetchBranding]);
 
   const handleSave = async () => {
     try {
@@ -901,15 +940,11 @@ function AuditTab({
   headers: HeadersInit;
   showToast: (type: "success" | "error", message: string) => void;
 }) {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AuditLogSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<AuditStatsSummary | null>(null);
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       const [logsRes, statsRes] = await Promise.all([
         fetch("/api/enterprise/audit?limit=50", { headers }),
@@ -923,12 +958,16 @@ function AuditTab({
         const data = await statsRes.json();
         setStats(data.stats);
       }
-    } catch (error) {
+    } catch {
       showToast("error", "Failed to load audit logs");
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, showToast]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchLogs);
+  }, [fetchLogs]);
 
   const handleExport = async (format: "csv" | "json") => {
     try {

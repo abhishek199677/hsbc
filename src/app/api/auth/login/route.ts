@@ -231,8 +231,8 @@ export async function POST(request: Request) {
       maxAge: 12 * 60 * 60,
     });
     return response;
-  } catch {
-    console.error("Login failed due to an internal error");
+  } catch (error) {
+    console.error("Login failed:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

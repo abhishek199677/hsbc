@@ -58,6 +58,9 @@ export default function ConfirmationPage() {
         if (cancelled) return;
         if (interviewData.success && interviewData.interview) {
           setInterview(interviewData.interview as InterviewData);
+          if (interviewData.interview.id) {
+            sessionStorage.setItem("tcInterviewId", interviewData.interview.id);
+          }
         }
         if (profileData.success && profileData.profile) {
           setProfile(profileData.profile as ProfileData);

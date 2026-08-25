@@ -93,7 +93,7 @@ const tips = [
 
 export default function InterviewRoomPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const [cameraStatus, setCameraStatus] = useState<DeviceStatus>("idle");
   const [micStatus, setMicStatus] = useState<DeviceStatus>("idle");
@@ -331,9 +331,31 @@ export default function InterviewRoomPage() {
       sessionStorage.setItem("tcRole", selectedRole || "");
       sessionStorage.setItem("tcLevel", selectedLevel || "");
       sessionStorage.setItem("tcNoCamera", continueWithoutCamera ? "1" : "0");
+      // tcInterviewId should already be in sessionStorage from the scheduling step;
+      // if not, we'll try to fetch it below.
     } catch {}
     router.push("/interview/live");
   };
+
+  // Ensure tcInterviewId is in sessionStorage for the live interview page
+  useEffect(() => {
+    if (sessionStorage.getItem("tcInterviewId") || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/interview", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!cancelled && data.success && data.interview?.id) {
+          sessionStorage.setItem("tcInterviewId", data.interview.id);
+        }
+      } catch {
+        // Interview may not exist yet; the live page will handle this gracefully
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token]);
 
   const ringRadius = 34;
   const ringCircumference = 2 * Math.PI * ringRadius;

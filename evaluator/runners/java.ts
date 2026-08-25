@@ -105,10 +105,11 @@ class Main {
           `java -cp "${tmpDir}" ${className} ${inputArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`,
           { cwd: tmpDir, timeout: timeoutMs, maxBuffer: 1024 * 1024 },
           (error, stdout, stderr) => {
+            const killed = typeof error === "object" && error !== null && "killed" in error && error.killed === true;
             resolve({
               stdout: stdout || "",
               stderr: stderr || "",
-              killed: (error as any)?.killed || false,
+              killed,
             });
           }
         );

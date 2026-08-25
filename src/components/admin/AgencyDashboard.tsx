@@ -125,10 +125,6 @@ export default function AgencyDashboard({ token }: { token: string | null }) {
   const [placements, setPlacements] = useState<PlacementRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
   const fetchDashboardData = async () => {
     setLoading(true);
 
@@ -170,6 +166,10 @@ export default function AgencyDashboard({ token }: { token: string | null }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchDashboardData);
+  }, []);
 
   const tabs = [
     { id: "overview", label: "Overview", icon: TrendingUp },
@@ -1931,17 +1931,13 @@ function ScreeningTab({ token, candidates }: { token: string | null; candidates:
   const [search, setSearch] = useState("");
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchJdOptions();
-  }, []);
-
   const fetchJdOptions = async () => {
     setJdLoading(true);
     try {
       const res = await fetch("/api/agency/client-jds", { credentials: "same-origin" });
       const data = await res.json();
       if (data.success) {
-        setJdOptions(data.jds?.map((jd: any) => ({
+        setJdOptions(data.jds?.map((jd: { id: string; clientName: string; jobTitle: string }) => ({
           key: jd.id,
           client: jd.clientName,
           job_title: jd.jobTitle,
@@ -1953,6 +1949,10 @@ function ScreeningTab({ token, candidates }: { token: string | null; candidates:
       setJdLoading(false);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchJdOptions);
+  }, []);
 
   const toggleCandidate = (id: string) => {
     setSelectedCandidates((prev) => {
@@ -2232,7 +2232,7 @@ function ScreeningTab({ token, candidates }: { token: string | null; candidates:
                   <div>
                     <h5 className="text-xs font-semibold text-gray-500 uppercase mb-2">Must-Have Skills</h5>
                     <div className="flex flex-wrap gap-2">
-                      {(Array.isArray(r.mustHaveBreakdown) ? r.mustHaveBreakdown : []).map((item: any) => (
+                      {(Array.isArray(r.mustHaveBreakdown) ? r.mustHaveBreakdown : []).map((item: { skill: string; found: string }) => (
                         <span
                           key={item.skill}
                           className={`text-xs px-2 py-1 rounded-full border ${
@@ -2254,7 +2254,7 @@ function ScreeningTab({ token, candidates }: { token: string | null; candidates:
                     <div>
                       <h5 className="text-xs font-semibold text-gray-500 uppercase mb-2">Nice-to-Have Skills</h5>
                       <div className="flex flex-wrap gap-2">
-                        {(Array.isArray(r.niceToHaveBreakdown) ? r.niceToHaveBreakdown : []).map((item: any) => (
+                        {(Array.isArray(r.niceToHaveBreakdown) ? r.niceToHaveBreakdown : []).map((item: { skill: string; found: string }) => (
                           <span
                             key={item.skill}
                             className={`text-xs px-2 py-1 rounded-full border ${
@@ -2352,10 +2352,6 @@ function ClientJDsTab({ token, clients, onRefresh }: { token: string | null; cli
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchJds();
-  }, []);
-
   const fetchJds = async () => {
     setLoading(true);
     try {
@@ -2370,6 +2366,10 @@ function ClientJDsTab({ token, clients, onRefresh }: { token: string | null; cli
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchJds);
+  }, []);
 
   const handleDelete = async (jd: ClientJD) => {
     if (!confirm(`Delete "${jd.jobTitle}"?`)) return;
@@ -2732,10 +2732,6 @@ function InterviewsTab({ token, candidates }: { token: string | null; candidates
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetchInterviews();
-  }, []);
-
   const fetchInterviews = async () => {
     setLoading(true);
     setError("");
@@ -2754,6 +2750,10 @@ function InterviewsTab({ token, candidates }: { token: string | null; candidates
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchInterviews);
+  }, []);
 
   const filteredInterviews = interviews.filter((i) => {
     const q = search.toLowerCase();

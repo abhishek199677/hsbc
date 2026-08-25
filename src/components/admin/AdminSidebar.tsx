@@ -19,6 +19,7 @@ import {
   Briefcase,
   Activity,
   ClipboardList,
+  FileText,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -29,13 +30,18 @@ interface AdminSidebarProps {
   children: React.ReactNode;
 }
 
-const navigation = [
-  { id: "overview", name: "Overview", icon: LayoutDashboard },
-  { id: "agency", name: "Agency", icon: Briefcase },
-  { id: "candidates", name: "Candidates", icon: Users },
+const mainNavigation = [
+  { id: "overview", name: "Dashboard", icon: LayoutDashboard },
+  { id: "job-seekers", name: "Job Seekers", icon: Users },
+  { id: "job-requests", name: "Job Requests", icon: FileText },
   { id: "interviews", name: "Interviews", icon: Calendar },
-  { id: "login-logs", name: "Login Logs", icon: ClipboardList },
+  { id: "agency", name: "Agency", icon: Briefcase },
+];
+
+const secondaryNavigation = [
+  { id: "candidates", name: "Candidates", icon: Users },
   { id: "analytics", name: "Analytics", icon: BarChart3 },
+  { id: "login-logs", name: "Login Logs", icon: ClipboardList },
   { id: "openai-metrics", name: "API Metrics", icon: Activity },
   { id: "feedback", name: "Feedback", icon: MessageSquare },
   { id: "team", name: "Team", icon: UserPlus },
@@ -48,8 +54,8 @@ function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-const SIDEBAR_WIDTH = 256;
-const SIDEBAR_COLLAPSED_WIDTH = 68;
+const SIDEBAR_WIDTH = 240;
+const SIDEBAR_COLLAPSED_WIDTH = 64;
 
 export default function AdminSidebar({
   user,
@@ -72,7 +78,7 @@ export default function AdminSidebar({
 
   useEffect(() => {
     if (isDesktop) {
-      setMobileOpen(false);
+      void Promise.resolve().then(() => setMobileOpen(false));
     }
   }, [isDesktop]);
 
@@ -112,21 +118,9 @@ export default function AdminSidebar({
         .slice(0, 2)
     : "AD";
 
-  const planColors: Record<string, string> = {
-    free: "bg-gray-500/20 text-gray-300",
-    starter: "bg-blue-500/20 text-blue-300",
-    pro: "bg-indigo-500/20 text-indigo-300",
-    enterprise: "bg-amber-500/20 text-amber-300",
-  };
-
-  const planLabel = organization?.plan
-    ? organization.plan.charAt(0).toUpperCase() + organization.plan.slice(1)
-    : "Free";
-
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-slate-900 text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-white/10">
+    <div className="flex flex-col h-full bg-white border-r border-gray-200">
+      <div className="flex items-center justify-between px-4 h-16 border-b border-gray-100">
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
           {organization?.logoUrl ? (
             <img
@@ -135,19 +129,19 @@ export default function AdminSidebar({
               className="h-8 w-auto flex-shrink-0"
             />
           ) : (
-            <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0 text-sm font-bold">
+            <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0 text-sm font-bold text-white">
               {organization?.name?.[0] || "H"}
             </div>
           )}
           {!collapsed && (
-            <span className="text-sm font-semibold truncate">
+            <span className="text-sm font-semibold text-gray-900 truncate">
               {organization?.name || "Admin"}
             </span>
           )}
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
           style={{ display: isDesktop ? "flex" : "none" }}
           aria-label="Toggle sidebar"
         >
@@ -160,7 +154,7 @@ export default function AdminSidebar({
         </button>
         <button
           onClick={() => setMobileOpen(false)}
-          className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
           style={{ display: isDesktop ? "none" : "flex" }}
           aria-label="Close menu"
         >
@@ -168,71 +162,110 @@ export default function AdminSidebar({
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleNav(item.id)}
-              className={cn(
-                "w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150",
-                collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
-                isActive
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-              title={collapsed ? item.name : undefined}
-            >
-              <item.icon
+        <div className="mb-2">
+          {!collapsed && (
+            <p className="px-3 mb-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Main
+            </p>
+          )}
+          {mainNavigation.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNav(item.id)}
                 className={cn(
-                  "w-5 h-5 flex-shrink-0",
-                  isActive ? "text-white" : "text-gray-400"
+                  "w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150",
+                  collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
+                  isActive
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 )}
-              />
-              {!collapsed && <span>{item.name}</span>}
-            </button>
-          );
-        })}
+                title={collapsed ? item.name : undefined}
+              >
+                <item.icon
+                  className={cn(
+                    "w-5 h-5 flex-shrink-0",
+                    isActive ? "text-blue-600" : "text-gray-400"
+                  )}
+                />
+                {!collapsed && <span>{item.name}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="border-t border-gray-100 my-3" />
+
+        <div>
+          {!collapsed && (
+            <p className="px-3 mb-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Management
+            </p>
+          )}
+          {secondaryNavigation.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNav(item.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150",
+                  collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
+                  isActive
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                )}
+                title={collapsed ? item.name : undefined}
+              >
+                <item.icon
+                  className={cn(
+                    "w-5 h-5 flex-shrink-0",
+                    isActive ? "text-blue-600" : "text-gray-400"
+                  )}
+                />
+                {!collapsed && <span>{item.name}</span>}
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
-      {/* Bottom section */}
-      <div className="border-t border-white/10 px-3 py-4 space-y-3">
+      <div className="border-t border-gray-100 px-3 py-4 space-y-3">
         {!collapsed && (
           <Link
             href="/"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <ExternalLink className="w-4 h-4 flex-shrink-0" />
             <span>Back to Site</span>
           </Link>
         )}
 
-        {/* User info */}
         <div
           className={cn(
-            "flex items-center gap-3 rounded-lg p-2 bg-white/5",
+            "flex items-center gap-3 rounded-lg p-2 bg-gray-50",
             collapsed && "justify-center"
           )}
         >
-          <div className="h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
+          <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-semibold text-white">
             {initials}
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">
+              <p className="text-sm font-medium text-gray-900 truncate">
                 {user?.name || "Admin User"}
               </p>
-              <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {user?.role && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/20 text-indigo-300 capitalize">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 capitalize">
                     {user.role}
                   </span>
                 )}
                 {organization?.name && organization.name.toLowerCase() !== (user?.email || "").toLowerCase() && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/10 text-gray-300 min-w-0 max-w-full">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 min-w-0 max-w-full">
                     <Building2 className="w-2.5 h-2.5 flex-shrink-0" />
                     <span className="truncate">{organization.name}</span>
                   </span>
@@ -241,20 +274,6 @@ export default function AdminSidebar({
             </div>
           )}
         </div>
-
-        {/* Plan badge */}
-        {!collapsed && organization?.plan && (
-          <div className="px-3">
-            <span
-              className={cn(
-                "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium",
-                planColors[organization.plan] || planColors.free
-              )}
-            >
-              {planLabel} Plan
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -263,7 +282,6 @@ export default function AdminSidebar({
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#f9fafb" }}>
-      {/* Desktop sidebar - fixed position */}
       <div
         style={{
           display: isDesktop ? "block" : "none",
@@ -280,7 +298,6 @@ export default function AdminSidebar({
         {sidebarContent}
       </div>
 
-      {/* Mobile backdrop */}
       {mobileOpen && (
         <div
           style={{
@@ -294,7 +311,6 @@ export default function AdminSidebar({
         />
       )}
 
-      {/* Mobile sidebar */}
       <div
         ref={sidebarRef}
         style={{
@@ -302,7 +318,7 @@ export default function AdminSidebar({
           top: 0,
           left: 0,
           bottom: 0,
-          width: 256,
+          width: SIDEBAR_WIDTH,
           zIndex: 50,
           transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 200ms ease-in-out",
@@ -311,7 +327,6 @@ export default function AdminSidebar({
         {sidebarContent}
       </div>
 
-      {/* Main content area - offset by sidebar width on desktop */}
       <div
         style={{
           display: "flex",
@@ -323,7 +338,6 @@ export default function AdminSidebar({
           transition: "margin-left 300ms ease-in-out",
         }}
       >
-        {/* Mobile top bar */}
         {!isDesktop && (
           <div
             style={{
@@ -365,7 +379,7 @@ export default function AdminSidebar({
                     height: 28,
                     width: 28,
                     borderRadius: 6,
-                    background: "#4f46e5",
+                    background: "#2563eb",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -385,7 +399,6 @@ export default function AdminSidebar({
           </div>
         )}
 
-        {/* Page content */}
         <main style={{ flex: 1, overflowY: "auto" }}>
           <div style={{ padding: isDesktop ? 32 : 24 }}>
             {children}

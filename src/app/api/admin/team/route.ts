@@ -63,8 +63,8 @@ export async function POST(request: Request) {
       select: { id: true, organizationId: true },
     });
 
-    if (existingUser && existingUser.organizationId === requester.organizationId) {
-      // Check if already a team member
+    if (existingUser) {
+      // Check if already a team member in THIS org
       const existingMember = await prisma.teamMember.findUnique({
         where: { userId_organizationId: { userId: existingUser.id, organizationId: requester.organizationId } },
       });
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "User is already a team member" }, { status: 409 });
       }
 
-      // Add existing user as team member
+      // Allow cross-org: add existing user (from another org) as team member in this org
       const teamMember = await prisma.teamMember.create({
         data: {
           userId: existingUser.id,
@@ -85,9 +85,6 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json({ success: true, teamMember });
-    }
-    if (existingUser) {
-      return NextResponse.json({ error: "This account belongs to another organization" }, { status: 409 });
     }
 
     // Generate invite token for new users

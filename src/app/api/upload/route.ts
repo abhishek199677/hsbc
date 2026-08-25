@@ -134,6 +134,7 @@ export async function POST(request: Request) {
     if (!isVideo && !isCaption) {
       try {
         parsedResume = await parseResume(Buffer.from(bytes), file.name);
+        console.log("Resume parsed successfully:", JSON.stringify(parsedResume, null, 2));
         
         // Save parsed resume data to the user's profile
         if (parsedResume) {

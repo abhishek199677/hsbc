@@ -22,10 +22,6 @@ export default function InterviewSetupPage({ params }: { params: Promise<{ id: s
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
-    fetchCandidate();
-  }, []);
-
   const fetchCandidate = async () => {
     try {
       const res = await fetch(`/api/agency/candidates`, { credentials: "same-origin" });
@@ -40,6 +36,10 @@ export default function InterviewSetupPage({ params }: { params: Promise<{ id: s
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchCandidate);
+  }, []);
 
   const handleStart = async () => {
     setStarting(true);

@@ -169,10 +169,10 @@ async function convertPDFToImages(buffer: Buffer): Promise<string[]> {
     height: 1600,
   };
 
-  const convert = fromPath(pdfPath, options);
   const images: string[] = [];
 
   try {
+    const convert = fromPath(pdfPath, options);
     const numPages = 3;
     for (let i = 1; i <= numPages; i++) {
       try {
@@ -185,8 +185,10 @@ async function convertPDFToImages(buffer: Buffer): Promise<string[]> {
         break;
       }
     }
+  } catch (error) {
+    console.error("pdf2pic conversion failed (graphicsmagick/imagemagick may not be installed):", error instanceof Error ? error.message : error);
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
   }
 
   return images;
@@ -194,6 +196,7 @@ async function convertPDFToImages(buffer: Buffer): Promise<string[]> {
 
 async function parseImageWithVision(base64Images: string[]): Promise<ParsedResume> {
   try {
+    console.log(`[resume-parser] Sending ${base64Images.length} images to GPT-4o Vision...`);
     const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
       { type: "text", text: RESUME_PARSING_PROMPT },
     ];
@@ -214,25 +217,30 @@ async function parseImageWithVision(base64Images: string[]): Promise<ParsedResum
     });
 
     const contentText = response.choices[0]?.message?.content;
+    console.log("[resume-parser] Vision API response received");
     if (!contentText) {
+      console.error("[resume-parser] Vision API returned empty response");
       return getDefaultParsedResume();
     }
 
     const jsonMatch = contentText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error("[resume-parser] No JSON found in Vision response");
       return getDefaultParsedResume();
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+    console.log("[resume-parser] Vision parsing successful:", JSON.stringify(parsed, null, 2).slice(0, 500));
     return mapParsedResponse(parsed);
   } catch (error) {
-    console.error("Vision parsing failed:", error);
+    console.error("[resume-parser] Vision parsing failed:", error instanceof Error ? error.message : error);
     return getDefaultParsedResume();
   }
 }
 
 async function parseTextWithAI(text: string): Promise<ParsedResume> {
   try {
+    console.log(`[resume-parser] Sending ${text.length} chars to GPT-4o-mini...`);
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -245,15 +253,23 @@ async function parseTextWithAI(text: string): Promise<ParsedResume> {
     });
 
     const content = response.choices[0]?.message?.content;
-    if (!content) return getDefaultParsedResume();
+    console.log("[resume-parser] Text AI response received");
+    if (!content) {
+      console.error("[resume-parser] Text AI returned empty response");
+      return getDefaultParsedResume();
+    }
 
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return getDefaultParsedResume();
+    if (!jsonMatch) {
+      console.error("[resume-parser] No JSON found in text AI response");
+      return getDefaultParsedResume();
+    }
 
     const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+    console.log("[resume-parser] Text AI parsing successful:", JSON.stringify(parsed, null, 2).slice(0, 500));
     return mapParsedResponse(parsed);
   } catch (error) {
-    console.error("Text AI parsing failed:", error);
+    console.error("[resume-parser] Text AI parsing failed:", error instanceof Error ? error.message : error);
     return getDefaultParsedResume();
   }
 }
@@ -295,31 +311,42 @@ export async function parseResume(
   filename: string
 ): Promise<ParsedResume> {
   const ext = filename.toLowerCase().split(".").pop() || "";
+  console.log(`[resume-parser] Parsing file: ${filename} (type: ${ext}, size: ${buffer.length} bytes)`);
 
   if (ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp") {
+    console.log("[resume-parser] Image file detected, using Vision API");
     const base64 = buffer.toString("base64");
     return parseImageWithVision([base64]);
   }
 
   if (ext === "pdf") {
+    console.log("[resume-parser] PDF detected, extracting text...");
     const text = await extractTextFromPDF(buffer);
+    console.log(`[resume-parser] Extracted ${text.length} chars of text`);
 
     if (text.trim().length < 200) {
+      console.log("[resume-parser] Text too short, trying image conversion...");
       const images = await convertPDFToImages(buffer);
       if (images.length > 0) {
+        console.log(`[resume-parser] Converted ${images.length} pages to images, using Vision API`);
         return parseImageWithVision(images);
       }
+      console.log("[resume-parser] Image conversion failed or produced no images");
     }
 
+    console.log("[resume-parser] Using text AI parsing");
     const fallback = parseResumeFallback(text);
     const ai = await parseTextWithAI(text);
     return mergeParsedResults(ai, fallback);
   }
 
   if (ext === "docx" || ext === "doc") {
+    console.log("[resume-parser] DOC/DOCX detected, extracting text...");
     const text = await extractTextFromDOCX(buffer);
+    console.log(`[resume-parser] Extracted ${text.length} chars of text`);
 
     if (text.trim().length < 100) {
+      console.log("[resume-parser] Text too short, returning defaults");
       return getDefaultParsedResume();
     }
 
@@ -328,6 +355,7 @@ export async function parseResume(
     return mergeParsedResults(ai, fallback);
   }
 
+  console.log("[resume-parser] Unknown file type, trying text AI parsing");
   const text = buffer.toString("utf-8");
   return parseTextWithAI(text);
 }

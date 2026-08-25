@@ -2,7 +2,9 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { Brain, CheckCircle, AlertTriangle, XCircle, Clock, ArrowLeft, MessageSquare } from "lucide-react";
+import { Brain, CheckCircle, AlertTriangle, XCircle, Clock, ArrowLeft, MessageSquare, Lock, FileDown, Star, Loader } from "lucide-react";
+import PayPalUnlockButton from "@/components/PayPalUnlockButton";
+import { generateReportPdf } from "@/lib/generateReportPdf";
 
 interface InterviewData {
   id: string;
@@ -15,6 +17,7 @@ interface InterviewData {
   overallScore: number;
   aiSummary: string | null;
   aiRecommendation: string | null;
+  resultsUnlocked?: boolean;
 }
 
 interface QuestionData {
@@ -28,6 +31,13 @@ interface QuestionData {
   aiFeedback: string | null;
 }
 
+interface InterviewSummary {
+  summary?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  interviewPrediction?: string;
+}
+
 export default function InterviewResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -35,10 +45,10 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedQ, setExpandedQ] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetchInterview();
-  }, []);
+  const [resultsUnlocked, setResultsUnlocked] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("unlocked") === "success";
+  });
 
   const fetchInterview = async () => {
     try {
@@ -47,6 +57,7 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
       if (data.success) {
         setInterview(data.interview);
         setQuestions(data.questions);
+        setResultsUnlocked((prev) => prev || (data.interview.resultsUnlocked ?? false));
       }
     } catch (err) {
       console.error("Failed to fetch interview:", err);
@@ -54,6 +65,17 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchInterview);
+    // Clean up URL if unlock was successful
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("unlocked") === "success") {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, []);
 
   const formatDuration = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -94,9 +116,22 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
     }
   };
 
-  let summary: any = {};
+  const downloadReport = async () => {
+    if (!resultsUnlocked) return;
+    try {
+      const res = await fetch(`/api/interview/${id}/report`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (data.success && data.report) {
+        generateReportPdf(data.report);
+      }
+    } catch (err) {
+      console.error("Failed to download report:", err);
+    }
+  };
+
+  let summary: InterviewSummary = {};
   try {
-    summary = interview?.aiSummary ? JSON.parse(interview.aiSummary) : {};
+    summary = interview?.aiSummary ? JSON.parse(interview.aiSummary) as InterviewSummary : {};
   } catch {}
 
   if (loading) {
@@ -160,110 +195,151 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
+        {/* Download button (when unlocked) */}
+        {resultsUnlocked && (
+          <button
+            onClick={downloadReport}
+            className="w-full mb-6 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700"
+          >
+            <FileDown className="w-5 h-5" />
+            Download Evaluation Report (PDF)
+          </button>
+        )}
+
         {/* Recommendation */}
         {interview.aiRecommendation && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              {getRecommendationIcon(interview.aiRecommendation)}
-              <h2 className="text-lg font-semibold text-gray-900">
-                {interview.aiRecommendation}
-              </h2>
-            </div>
-            {summary.summary && (
-              <p className="text-gray-700 text-sm">{summary.summary}</p>
+          <div className="relative bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            {!resultsUnlocked && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl backdrop-blur-[2px] z-10">
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-sm w-full text-center">
+                  <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Lock className="w-7 h-7 text-indigo-600" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 mb-2">Unlock Your Results</h4>
+                  <p className="text-sm text-gray-500 mb-1">View your recommendation, strengths, weaknesses, and detailed feedback.</p>
+                  <p className="text-2xl font-bold text-indigo-600 mb-4">$5.99</p>
+                  <PayPalUnlockButton
+                    interviewId={id}
+                    priceUsd={5.99}
+                    onUnlockSuccess={() => {
+                      setResultsUnlocked(true);
+                      fetchInterview();
+                    }}
+                  />
+                  <p className="text-xs text-gray-400 mt-3">One-time payment. Results available forever after unlock.</p>
+                </div>
+              </div>
             )}
+            <div className={!resultsUnlocked ? "blur-sm pointer-events-none select-none opacity-60" : ""}>
+              <div className="flex items-center gap-3 mb-4">
+                {getRecommendationIcon(interview.aiRecommendation)}
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {interview.aiRecommendation}
+                </h2>
+              </div>
+              {summary.summary && (
+                <p className="text-gray-700 text-sm">{summary.summary}</p>
+              )}
+            </div>
           </div>
         )}
 
         {/* Strengths & Weaknesses */}
-        {summary.strengths && summary.strengths.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3 text-emerald-600">Strengths</h3>
-            <ul className="space-y-2">
-              {summary.strengths.map((s: string, i: number) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <div className="relative">
+          {!resultsUnlocked && interview.aiRecommendation && (
+            <div className="absolute inset-0 z-10" />
+          )}
+          <div className={!resultsUnlocked && interview.aiRecommendation ? "blur-sm pointer-events-none select-none opacity-60" : ""}>
+            {summary.strengths && summary.strengths.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3 text-emerald-600">Strengths</h3>
+                <ul className="space-y-2">
+                  {summary.strengths.map((s: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                      <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-        {summary.weaknesses && summary.weaknesses.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3 text-red-600">Areas for Improvement</h3>
-            <ul className="space-y-2">
-              {summary.weaknesses.map((w: string, i: number) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                  <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  {w}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+            {summary.weaknesses && summary.weaknesses.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3 text-red-600">Areas for Improvement</h3>
+                <ul className="space-y-2">
+                  {summary.weaknesses.map((w: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                      <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-        {/* Interview Prediction */}
-        {summary.interviewPrediction && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3">Interview Prediction</h3>
-            <p className="text-sm text-gray-700">{summary.interviewPrediction}</p>
-          </div>
-        )}
+            {/* Interview Prediction */}
+            {summary.interviewPrediction && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Interview Prediction</h3>
+                <p className="text-sm text-gray-700">{summary.interviewPrediction}</p>
+              </div>
+            )}
 
-        {/* Q&A Details */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Question & Answer Details</h3>
-          <div className="space-y-3">
-            {questions.map((q) => (
-              <div
-                key={q.id}
-                className="border border-gray-100 rounded-lg overflow-hidden"
-              >
-                <button
-                  onClick={() => setExpandedQ(expandedQ === q.questionNumber ? null : q.questionNumber)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-3 text-left">
-                    <span className="text-sm font-medium text-gray-500">Q{q.questionNumber}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${getCategoryColor(q.category)}`}>
-                      {q.category.replace("_", " ")}
-                    </span>
-                    <span className="text-sm text-gray-700 truncate max-w-md">{q.question}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-sm font-medium px-2 py-0.5 rounded ${
-                      q.score >= 7 ? "bg-emerald-100 text-emerald-700" :
-                      q.score >= 5 ? "bg-yellow-100 text-yellow-700" :
-                      "bg-red-100 text-red-700"
-                    }`}>
-                      {q.score}/10
-                    </span>
-                  </div>
-                </button>
-                {expandedQ === q.questionNumber && (
-                  <div className="px-4 pb-4 border-t border-gray-100">
-                    <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-500 mb-1">Question</p>
-                      <p className="text-sm text-gray-900">{q.question}</p>
-                    </div>
-                    <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-500 mb-1">Answer</p>
-                      <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                        {q.answer || "No answer provided"}
-                      </p>
-                    </div>
-                    {q.aiFeedback && (
-                      <div className="mt-3">
-                        <p className="text-sm font-medium text-gray-500 mb-1">AI Feedback</p>
-                        <p className="text-sm text-gray-700">{q.aiFeedback}</p>
+            {/* Q&A Details */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Question & Answer Details</h3>
+              <div className="space-y-3">
+                {questions.map((q) => (
+                  <div
+                    key={q.id}
+                    className="border border-gray-100 rounded-lg overflow-hidden"
+                  >
+                    <button
+                      onClick={() => setExpandedQ(expandedQ === q.questionNumber ? null : q.questionNumber)}
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <span className="text-sm font-medium text-gray-500">Q{q.questionNumber}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${getCategoryColor(q.category)}`}>
+                          {q.category.replace("_", " ")}
+                        </span>
+                        <span className="text-sm text-gray-700 truncate max-w-md">{q.question}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-sm font-medium px-2 py-0.5 rounded ${
+                          q.score >= 7 ? "bg-emerald-100 text-emerald-700" :
+                          q.score >= 5 ? "bg-yellow-100 text-yellow-700" :
+                          "bg-red-100 text-red-700"
+                        }`}>
+                          {q.score}/10
+                        </span>
+                      </div>
+                    </button>
+                    {expandedQ === q.questionNumber && (
+                      <div className="px-4 pb-4 border-t border-gray-100">
+                        <div className="mt-3">
+                          <p className="text-sm font-medium text-gray-500 mb-1">Question</p>
+                          <p className="text-sm text-gray-900">{q.question}</p>
+                        </div>
+                        <div className="mt-3">
+                          <p className="text-sm font-medium text-gray-500 mb-1">Answer</p>
+                          <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                            {q.answer || "No answer provided"}
+                          </p>
+                        </div>
+                        {q.aiFeedback && (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-gray-500 mb-1">AI Feedback</p>
+                            <p className="text-sm text-gray-700">{q.aiFeedback}</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>

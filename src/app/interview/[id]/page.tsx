@@ -38,23 +38,8 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    fetchNextQuestion();
-  }, []);
-
-  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  useEffect(() => {
-    if (timeRemaining <= 0 && !completed) {
-      handleEndInterview();
-      return;
-    }
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeRemaining, completed]);
 
   const fetchNextQuestion = async () => {
     try {
@@ -166,6 +151,21 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
       console.error("Failed to end interview:", err);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchNextQuestion);
+  }, []);
+
+  useEffect(() => {
+    if (timeRemaining <= 0 && !completed) {
+      void Promise.resolve().then(handleEndInterview);
+      return;
+    }
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeRemaining, completed]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
