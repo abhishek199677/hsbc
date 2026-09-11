@@ -15,6 +15,10 @@ const ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
 ];
 const VIDEO_TYPES = ["video/webm", "video/mp4", "video/quicktime"];
 const CAPTION_TYPES = ["text/vtt"];
@@ -31,6 +35,10 @@ function extensionForType(type: string): string | null {
     "application/pdf": "pdf",
     "application/msword": "doc",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/webp": "webp",
     "video/webm": "webm",
     "video/mp4": "mp4",
     "video/quicktime": "mov",

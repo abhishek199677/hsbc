@@ -59,34 +59,98 @@ async def store_job_embedding(db: AsyncSession, job_id: str, embedding: list[flo
     )
 
 
+from services.rerank import rerank_documents
+
+
 async def find_matching_jobs(db: AsyncSession, user_id: str, org_id: str, limit: int = 10):
+    initial_limit = max(limit, 50) if os.getenv("COHERE_API_KEY") else limit
     result = await db.execute(
         text(
-            """SELECT je.job_id, 1 - (je.embedding <=> (SELECT embedding FROM profile_embeddings WHERE user_id = :user_id)) as similarity
+            """SELECT je.job_id, j.title, j.description, 1 - (je.embedding <=> (SELECT embedding FROM profile_embeddings WHERE user_id = :user_id)) as similarity
             FROM job_embeddings je
             JOIN jobs j ON j.id = je.job_id
             WHERE j.organization_id = :org_id AND j.status = 'active'
             ORDER BY je.embedding <=> (SELECT embedding FROM profile_embeddings WHERE user_id = :user_id)
             LIMIT :limit"""
         ),
-        {"user_id": user_id, "org_id": org_id, "limit": limit},
+        {"user_id": user_id, "org_id": org_id, "limit": initial_limit},
     )
-    return [{"jobId": row[0], "similarity": float(row[1])} for row in result.fetchall()]
+    rows = result.fetchall()
+    base_matches = [
+        {
+            "jobId": row[0],
+            "similarity": float(row[3]),
+            "text": f"Title: {row[1] or ''}. Description: {row[2] or ''}",
+        }
+        for row in rows
+    ]
+
+    if os.getenv("COHERE_API_KEY") and base_matches:
+        prof_res = await db.execute(
+            text('SELECT "currentRole", skills, "aboutYou" FROM "Profile" WHERE "userId" = :user_id'),
+            {"user_id": user_id},
+        )
+        prof_row = prof_res.fetchone()
+        if prof_row:
+            query = f"Role: {prof_row[0] or ''}. Skills: {prof_row[1] or ''}. About: {prof_row[2] or ''}"
+            reranked = await rerank_documents(query, [m["text"] for m in base_matches], top_n=limit)
+            if reranked:
+                return [
+                    {
+                        "jobId": base_matches[item["index"]]["jobId"],
+                        "similarity": base_matches[item["index"]]["similarity"],
+                        "rerankScore": item["relevanceScore"],
+                    }
+                    for item in reranked
+                ]
+
+    return [{"jobId": m["jobId"], "similarity": m["similarity"]} for m in base_matches[:limit]]
 
 
 async def find_matching_candidates(db: AsyncSession, job_id: str, org_id: str, limit: int = 10):
+    initial_limit = max(limit, 50) if os.getenv("COHERE_API_KEY") else limit
     result = await db.execute(
         text(
-            """SELECT pe.user_id, 1 - (pe.embedding <=> (SELECT embedding FROM job_embeddings WHERE job_id = :job_id)) as similarity
+            """SELECT pe.user_id, p."currentRole", p.skills, p."aboutYou", 1 - (pe.embedding <=> (SELECT embedding FROM job_embeddings WHERE job_id = :job_id)) as similarity
             FROM profile_embeddings pe
-            JOIN users u ON u.id = pe.user_id
-            WHERE u.organization_id = :org_id
+            JOIN "User" u ON u.id = pe.user_id
+            LEFT JOIN "Profile" p ON p."userId" = pe.user_id
+            WHERE u."organizationId" = :org_id
             ORDER BY pe.embedding <=> (SELECT embedding FROM job_embeddings WHERE job_id = :job_id)
             LIMIT :limit"""
         ),
-        {"job_id": job_id, "org_id": org_id, "limit": limit},
+        {"job_id": job_id, "org_id": org_id, "limit": initial_limit},
     )
-    return [{"userId": row[0], "similarity": float(row[1])} for row in result.fetchall()]
+    rows = result.fetchall()
+    base_matches = [
+        {
+            "userId": row[0],
+            "similarity": float(row[4]),
+            "text": f"Role: {row[1] or ''}. Skills: {row[2] or ''}. About: {row[3] or ''}",
+        }
+        for row in rows
+    ]
+
+    if os.getenv("COHERE_API_KEY") and base_matches:
+        job_res = await db.execute(
+            text('SELECT title, description, requirements FROM "JobRequisition" WHERE id = :job_id'),
+            {"job_id": job_id},
+        )
+        job_row = job_res.fetchone()
+        if job_row:
+            query = f"Title: {job_row[0] or ''}. Description: {job_row[1] or ''}. Requirements: {job_row[2] or ''}"
+            reranked = await rerank_documents(query, [m["text"] for m in base_matches], top_n=limit)
+            if reranked:
+                return [
+                    {
+                        "userId": base_matches[item["index"]]["userId"],
+                        "similarity": base_matches[item["index"]]["similarity"],
+                        "rerankScore": item["relevanceScore"],
+                    }
+                    for item in reranked
+                ]
+
+    return [{"userId": m["userId"], "similarity": m["similarity"]} for m in base_matches[:limit]]
 
 
 def profile_to_text(profile: dict) -> str:

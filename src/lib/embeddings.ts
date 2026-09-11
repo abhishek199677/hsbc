@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { prisma } from "./prisma";
 import { trackedEmbedding } from "./openai-usage";
+import { rerankDocuments } from "./rerank";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -128,21 +129,27 @@ export function jobToText(job: {
 }
 
 /**
- * Find the top N most similar active jobs for a user using cosine similarity.
+ * Find the top N most similar active jobs for a user using two-stage retrieval (pgvector + Cohere Cross-Encoder reranking).
  * Tenant-scoped: only returns jobs belonging to the user's organization.
  */
 export async function findMatchingJobs(
   userId: string,
   organizationId: string,
   limit: number = 10
-): Promise<{ jobId: string; similarity: number }[]> {
+): Promise<{ jobId: string; similarity: number; rerankScore?: number }[]> {
   interface JobMatchResult {
     job_id: string;
     similarity: number;
+    title?: string;
+    description?: string;
   }
+
+  const initialLimit = process.env.COHERE_API_KEY ? Math.max(limit, 50) : limit;
 
   const results: JobMatchResult[] = await prisma.$queryRawUnsafe(
     `SELECT j.id as job_id,
+            j.title,
+            j.description,
             1 - (pe.embedding <=> (SELECT embedding FROM profile_embeddings WHERE user_id = $1)) as similarity
      FROM "Job" j
      JOIN job_embeddings je ON je.job_id = j.id
@@ -152,28 +159,57 @@ export async function findMatchingJobs(
      LIMIT $3`,
     userId,
     organizationId,
-    limit
+    initialLimit
   );
 
-  return results.map((r) => ({ jobId: r.job_id, similarity: Number(r.similarity) }));
+  const baseMatches = results.map((r) => ({
+    jobId: r.job_id,
+    similarity: Number(r.similarity),
+    text: `Title: ${r.title || ""}. Description: ${r.description || ""}`,
+  }));
+
+  if (process.env.COHERE_API_KEY && baseMatches.length > 0) {
+    const profile = await prisma.profile.findUnique({ where: { userId } });
+    if (profile) {
+      const userQuery = profileToText(profile);
+      const reranked = await rerankDocuments(userQuery, baseMatches.map((m) => m.text), limit);
+      if (reranked && reranked.length > 0) {
+        return reranked.map((item) => ({
+          jobId: baseMatches[item.index].jobId,
+          similarity: baseMatches[item.index].similarity,
+          rerankScore: item.relevanceScore,
+        }));
+      }
+    }
+  }
+
+  return baseMatches.slice(0, limit).map((m) => ({ jobId: m.jobId, similarity: m.similarity }));
 }
 
 /**
- * Find the top N most similar candidates for a job.
+ * Find the top N most similar candidates for a job using two-stage retrieval (pgvector + Cohere Cross-Encoder reranking).
  * Tenant-scoped: only returns users belonging to the job's organization.
  */
 export async function findMatchingCandidates(
   jobId: string,
   organizationId: string,
   limit: number = 10
-): Promise<{ userId: string; similarity: number }[]> {
+): Promise<{ userId: string; similarity: number; rerankScore?: number }[]> {
   interface CandidateMatchResult {
     user_id: string;
     similarity: number;
+    current_role?: string;
+    skills?: string;
+    about_you?: string;
   }
+
+  const initialLimit = process.env.COHERE_API_KEY ? Math.max(limit, 50) : limit;
 
   const results: CandidateMatchResult[] = await prisma.$queryRawUnsafe(
     `SELECT pe.user_id,
+            p."currentRole" as current_role,
+            p.skills,
+            p."aboutYou" as about_you,
             1 - (je.embedding <=> pe.embedding) as similarity
      FROM profile_embeddings pe
      JOIN job_embeddings je ON je.job_id = $1
@@ -184,10 +220,35 @@ export async function findMatchingCandidates(
      LIMIT $3`,
     jobId,
     organizationId,
-    limit
+    initialLimit
   );
 
-  return results.map((r) => ({ userId: r.user_id, similarity: Number(r.similarity) }));
+  const baseMatches = results.map((r) => ({
+    userId: r.user_id,
+    similarity: Number(r.similarity),
+    text: `Role: ${r.current_role || ""}. Skills: ${r.skills || ""}. About: ${r.about_you || ""}`,
+  }));
+
+  if (process.env.COHERE_API_KEY && baseMatches.length > 0) {
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    if (job) {
+      const jobQuery = jobToText({
+        title: job.title,
+        description: job.description,
+        requiredSkills: job.requiredSkills,
+      });
+      const reranked = await rerankDocuments(jobQuery, baseMatches.map((m) => m.text), limit);
+      if (reranked && reranked.length > 0) {
+        return reranked.map((item) => ({
+          userId: baseMatches[item.index].userId,
+          similarity: baseMatches[item.index].similarity,
+          rerankScore: item.relevanceScore,
+        }));
+      }
+    }
+  }
+
+  return baseMatches.slice(0, limit).map((m) => ({ userId: m.userId, similarity: m.similarity }));
 }
 
 /**

@@ -55,3 +55,6 @@ Thumbs.db
 *.tsbuildinfo
 *.ipynb
 next-env.d.ts
+
+# local data
+.data/

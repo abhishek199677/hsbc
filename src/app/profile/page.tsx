@@ -5,21 +5,25 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
-import { Upload, FileText, CheckCircle, ChevronLeft, ChevronRight, ArrowRight, Shield, Lock, Eye, Clock } from "lucide-react";
+import {
+  Upload, FileText, CheckCircle, ChevronLeft, ArrowRight, Shield, Lock, Eye, Clock,
+  Plus, Trash2, Briefcase, Code, Award, GraduationCap, Sparkles, ExternalLink, Tag
+} from "lucide-react";
 import AIChatbot from "@/components/AIChatbot";
+import type { ParsedWorkExperience, ParsedProject } from "@/types/resume";
 
 const steps = [
   { number: 1, label: "Profile", sublabel: "Tell us who you are" },
   { number: 2, label: "Resume", sublabel: "Your expertise" },
-  { number: 3, label: "About You", sublabel: "What you're looking for" },
-  { number: 4, label: "Availability", sublabel: "Let's get you ready" },
-  { number: 5, label: "AI Interview", sublabel: "Let's get you ready" },
+  { number: 3, label: "Skills & Projects", sublabel: "Your experience & tech stacks" },
+  { number: 4, label: "Preferences", sublabel: "What you're looking for" },
+  { number: 5, label: "AI Interview", sublabel: "Schedule assessment" },
   { number: 6, label: "All Set!", sublabel: "You're all set!" },
 ];
 
 const roles = [
-  "Software Engineer", "Product Manager", "Data Scientist", "UX Designer",
-  "Marketing Manager", "Sales Executive", "Business Analyst", "DevOps Engineer"
+  "Software Engineer", "Full Stack Developer", "Frontend Engineer", "Backend Engineer",
+  "Product Manager", "Data Scientist", "UX Designer", "DevOps Engineer", "Business Analyst"
 ];
 
 const experiences = [
@@ -43,6 +47,8 @@ export default function ProfilePage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [resumeParsed, setResumeParsed] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<string[]>([]);
+  const [newSkill, setNewSkill] = useState("");
+
   const [formData, setFormData] = useState({
     resume: null as File | null,
     resumeUrl: "",
@@ -71,12 +77,45 @@ export default function ProfilePage() {
     preferredTimeSlot: "",
   });
 
+  // Parsed structured lists for interactive form cards
+  const [workExpList, setWorkExpList] = useState<ParsedWorkExperience[]>([]);
+  const [projectsList, setProjectsList] = useState<ParsedProject[]>([]);
+  const [skillsList, setSkillsList] = useState<string[]>([]);
+  const [certificationsList, setCertificationsList] = useState<string[]>([]);
+  const [achievementsList, setAchievementsList] = useState<string[]>([]);
+
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
     if (validationError) setValidationError(null);
   };
 
   const progress = Math.round((currentStep / steps.length) * 100);
+
+  // Sync state helpers
+  const updateWorkExperienceList = (newList: ParsedWorkExperience[]) => {
+    setWorkExpList(newList);
+    updateFormData({ workExperience: JSON.stringify(newList) });
+  };
+
+  const updateProjectsList = (newList: ParsedProject[]) => {
+    setProjectsList(newList);
+    updateFormData({ projects: JSON.stringify(newList) });
+  };
+
+  const updateSkillsList = (newList: string[]) => {
+    setSkillsList(newList);
+    updateFormData({ skills: newList.join(", ") });
+  };
+
+  const updateCertificationsList = (newList: string[]) => {
+    setCertificationsList(newList);
+    updateFormData({ certifications: JSON.stringify(newList) });
+  };
+
+  const updateAchievementsList = (newList: string[]) => {
+    setAchievementsList(newList);
+    updateFormData({ keyAchievements: JSON.stringify(newList) });
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -98,34 +137,53 @@ export default function ProfilePage() {
         const data = await response.json();
         if (cancelled) return;
         if (data.success && data.profile) {
+          const p = data.profile;
           setFormData((prev) => ({
             ...prev,
-            resumeUrl: data.profile.resumeUrl || "",
-            resumeFileName: data.profile.resumeFileName || "",
-            aboutYou: data.profile.aboutYou || "",
-            whatDrivesYou: data.profile.whatDrivesYou || "",
-            strengths: data.profile.strengths || "",
-            currentRole: data.profile.currentRole || "",
-            totalExperience: data.profile.totalExperience || "",
-            currentLocation: data.profile.currentLocation || "",
-            noticePeriod: data.profile.noticePeriod || "",
-            skills: data.profile.skills || "",
-            currentCompany: data.profile.currentCompany || "",
-            education: data.profile.education || "",
-            linkedinUrl: data.profile.linkedinUrl || "",
-            workExperience: data.profile.workExperience || "",
-            projects: data.profile.projects || "",
-            keyAchievements: data.profile.keyAchievements || "",
-            certifications: data.profile.certifications || "",
-            languages: data.profile.languages || "",
-            jobType: data.profile.jobType || "",
-            salaryRange: data.profile.salaryRange || "",
-            preferredLocation: data.profile.preferredLocation || "",
-            workMode: data.profile.workMode || "",
-            preferredDate: data.profile.preferredDate || "",
-            preferredTimeSlot: data.profile.preferredTimeSlot || "",
+            resumeUrl: p.resumeUrl || "",
+            resumeFileName: p.resumeFileName || "",
+            aboutYou: p.aboutYou || "",
+            whatDrivesYou: p.whatDrivesYou || "",
+            strengths: p.strengths || "",
+            currentRole: p.currentRole || "",
+            totalExperience: p.totalExperience || "",
+            currentLocation: p.currentLocation || "",
+            noticePeriod: p.noticePeriod || "",
+            skills: p.skills || "",
+            currentCompany: p.currentCompany || "",
+            education: p.education || "",
+            linkedinUrl: p.linkedinUrl || "",
+            workExperience: p.workExperience || "",
+            projects: p.projects || "",
+            keyAchievements: p.keyAchievements || "",
+            certifications: p.certifications || "",
+            languages: p.languages || "",
+            jobType: p.jobType || "",
+            salaryRange: p.salaryRange || "",
+            preferredLocation: p.preferredLocation || "",
+            workMode: p.workMode || "",
+            preferredDate: p.preferredDate || "",
+            preferredTimeSlot: p.preferredTimeSlot || "",
           }));
-          setCurrentStep(data.profile.step || 1);
+
+          // Parse JSON strings into interactive lists
+          if (p.skills) {
+            setSkillsList(p.skills.split(",").map((s: string) => s.trim()).filter(Boolean));
+          }
+          if (p.workExperience) {
+            try { setWorkExpList(JSON.parse(p.workExperience)); } catch {}
+          }
+          if (p.projects) {
+            try { setProjectsList(JSON.parse(p.projects)); } catch {}
+          }
+          if (p.certifications) {
+            try { setCertificationsList(JSON.parse(p.certifications)); } catch {}
+          }
+          if (p.keyAchievements) {
+            try { setAchievementsList(JSON.parse(p.keyAchievements)); } catch {}
+          }
+
+          setCurrentStep(p.step || 1);
         }
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -169,7 +227,7 @@ export default function ProfilePage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !token) return;
-    
+
     const file = e.target.files[0];
     setUploading(true);
 
@@ -192,15 +250,18 @@ export default function ProfilePage() {
           resumeFileName: data.file.filename,
         }));
 
-        // Auto-fill profile fields from parsed resume
+        // Auto-fill all profile fields from parsed resume
         if (data.parsedResume) {
           const parsed = data.parsedResume;
           const filled: string[] = [];
-          
+
           setFormData((prev) => {
             const updated = { ...prev };
-            
-            // Auto-fill all fields with parsed data
+
+            if (parsed.summary) {
+              updated.aboutYou = parsed.summary;
+              filled.push("Professional Summary");
+            }
             if (parsed.currentRole) {
               updated.currentRole = parsed.currentRole;
               filled.push("Current Role");
@@ -215,19 +276,16 @@ export default function ProfilePage() {
             }
             if (parsed.skills?.length > 0) {
               updated.skills = parsed.skills.join(", ");
-              filled.push("Skills");
+              setSkillsList(parsed.skills);
+              filled.push(`${parsed.skills.length} Technical Skills`);
             }
             if (parsed.currentCompany) {
               updated.currentCompany = parsed.currentCompany;
-              filled.push("Company");
+              filled.push("Current Company");
             }
             if (parsed.education) {
               updated.education = parsed.education;
               filled.push("Education");
-            }
-            if (parsed.summary) {
-              updated.aboutYou = parsed.summary;
-              filled.push("About You");
             }
             if (parsed.strengths) {
               updated.strengths = parsed.strengths;
@@ -239,25 +297,25 @@ export default function ProfilePage() {
             }
             if (parsed.workExperience?.length > 0) {
               updated.workExperience = JSON.stringify(parsed.workExperience);
-              filled.push("Work Experience");
+              setWorkExpList(parsed.workExperience);
+              filled.push(`${parsed.workExperience.length} Work Experience Cards`);
             }
             if (parsed.projects?.length > 0) {
               updated.projects = JSON.stringify(parsed.projects);
-              filled.push("Projects");
+              setProjectsList(parsed.projects);
+              filled.push(`${parsed.projects.length} Project & Tech Stack Cards`);
             }
             if (parsed.keyAchievements?.length > 0) {
               updated.keyAchievements = JSON.stringify(parsed.keyAchievements);
-              filled.push("Key Achievements");
+              setAchievementsList(parsed.keyAchievements);
+              filled.push("Highlights & Achievements");
             }
             if (parsed.certifications?.length > 0) {
               updated.certifications = JSON.stringify(parsed.certifications);
-              filled.push("Certifications");
+              setCertificationsList(parsed.certifications);
+              filled.push(`${parsed.certifications.length} Certifications`);
             }
-            if (parsed.languages?.length > 0) {
-              updated.languages = JSON.stringify(parsed.languages);
-              filled.push("Languages");
-            }
-            
+
             return {
               ...updated,
               resume: file,
@@ -269,7 +327,6 @@ export default function ProfilePage() {
           if (filled.length > 0) {
             setResumeParsed(true);
             setAutoFilledFields(filled);
-            setTimeout(() => setResumeParsed(false), 8000);
           }
         }
       }
@@ -303,15 +360,11 @@ export default function ProfilePage() {
   const validateStep = (): string | null => {
     switch (currentStep) {
       case 1:
-        if (!formData.aboutYou.trim()) return "Please tell us about yourself";
-        if (!formData.whatDrivesYou.trim()) return "Please share what drives you";
-        if (!formData.currentRole) return "Please select your current role";
-        if (!formData.totalExperience) return "Please select your experience";
-        if (!formData.currentLocation) return "Please select your location";
-        if (!formData.noticePeriod) return "Please select your notice period";
+        if (!formData.aboutYou.trim()) return "Please tell us about yourself or upload a resume to auto-fill.";
+        if (!formData.currentRole) return "Please enter your current role";
         return null;
       case 3:
-        if (!formData.skills.trim()) return "Please enter your primary skills";
+        if (!formData.skills.trim() && skillsList.length === 0) return "Please enter your technical skills & tech stacks";
         return null;
       case 4:
         if (!formData.jobType) return "Please select a job type";
@@ -328,8 +381,7 @@ export default function ProfilePage() {
       return;
     }
     setValidationError(null);
-    
-    // If on the last step, complete and redirect
+
     if (currentStep === steps.length) {
       const saved = await saveProfile(currentStep);
       if (saved) {
@@ -337,7 +389,7 @@ export default function ProfilePage() {
       }
       return;
     }
-    
+
     const saved = await saveProfile(currentStep + 1);
     if (saved) {
       setCurrentStep(Math.min(steps.length, currentStep + 1));
@@ -352,6 +404,20 @@ export default function ProfilePage() {
     }
   };
 
+  const addSkillTag = () => {
+    const trimmed = newSkill.trim();
+    if (trimmed && !skillsList.includes(trimmed)) {
+      const updated = [...skillsList, trimmed];
+      updateSkillsList(updated);
+      setNewSkill("");
+    }
+  };
+
+  const removeSkillTag = (skillToRemove: string) => {
+    const updated = skillsList.filter((s) => s !== skillToRemove);
+    updateSkillsList(updated);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -360,238 +426,161 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const renderStep1 = () => (
     <div className="space-y-8">
-      {/* Upload Resume */}
-      <div className="bg-white rounded-xl border p-6">
+      {/* Upload Resume Box */}
+      <div className="bg-white rounded-xl border p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">1. Upload Your Resume</h3>
-          <button className="text-sm text-gray-500 flex items-center gap-1 hover:text-gray-700">
-            Why upload? <Eye className="w-4 h-4" />
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-600" />
+            1. Upload Resume for Instant AI Auto-Fill
+          </h3>
+          <button className="text-sm text-indigo-600 flex items-center gap-1 hover:text-indigo-800 font-medium">
+            <Eye className="w-4 h-4" /> AI Resume Parsing Active
           </button>
         </div>
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-32 h-40 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <FileText className="w-16 h-16 text-indigo-300" />
+          <div className="w-32 h-40 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-indigo-100">
+            <FileText className="w-16 h-16 text-indigo-400" />
           </div>
           <div className="flex-1">
-            <h4 className="font-medium text-gray-900 mb-2">Upload your latest resume to get started</h4>
-            <p className="text-sm text-gray-500 mb-4">We&apos;ll use it to understand your background and make the process easier.</p>
+            <h4 className="font-medium text-gray-900 mb-2">Upload your resume (PDF, DOCX, or Image)</h4>
+            <p className="text-sm text-gray-500 mb-4">
+              All your skills, professional summary, work history, tech stacks, projects, and certifications will be auto-parsed into your profile without manual entry!
+            </p>
             <div
-              className="drop-zone"
+              className="drop-zone border-2 border-dashed border-indigo-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-indigo-50/50"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => document.getElementById("resume-upload")?.click()}
             >
               {uploading ? (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center py-4">
                   <svg className="animate-spin h-8 w-8 text-indigo-600 mb-2" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <p className="text-sm text-gray-600">Uploading...</p>
+                  <p className="text-sm font-medium text-indigo-900">AI Parsing your resume...</p>
+                  <p className="text-xs text-indigo-600 mt-1">Extracting technical skills, projects, and work experience</p>
                 </div>
               ) : (
                 <>
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm font-medium text-gray-700">Drag & drop your resume here</p>
-                  <p className="text-xs text-gray-500 my-1">or</p>
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-                    Browse Files
-                  </button>
-                  <p className="text-xs text-gray-500 mt-2">Supports PDF, DOC, DOCX (Max 5MB)</p>
+                  <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-gray-800">Drag & drop your resume here</p>
+                  <p className="text-xs text-gray-500 my-1">or click to browse files</p>
+                  <span className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors mt-2 shadow-sm">
+                    Browse Resume File
+                  </span>
+                  <p className="text-xs text-gray-500 mt-2">Supports PDF, DOC, DOCX, PNG, JPG (Max 5MB)</p>
                 </>
               )}
             </div>
             <input
               type="file"
               id="resume-upload"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
               className="hidden"
               onChange={handleFileUpload}
             />
+
             {formData.resumeFileName && (
-              <div className="mt-3 flex items-center gap-2 text-green-600">
-                <CheckCircle className="w-4 h-4" />
-                <span className="text-sm">{formData.resumeFileName}</span>
+              <div className="mt-3 flex items-center gap-2 text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200">
+                <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm font-medium">{formData.resumeFileName}</span>
               </div>
             )}
+
             {resumeParsed && autoFilledFields.length > 0 && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm font-medium text-blue-800">
-                  ✨ Resume parsed successfully!
+              <div className="mt-4 p-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-700 text-white rounded-2xl shadow-lg border border-indigo-400">
+                <div className="flex items-center gap-2 font-bold text-base mb-1">
+                  <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+                  ✨ Resume Auto-Parsed & Fields Highlighted!
+                </div>
+                <p className="text-xs text-indigo-100 mb-3 font-medium">
+                  The following sections were extracted from your resume and automatically populated with high-contrast emphasis into form boxes below:
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Auto-filled: {autoFilledFields.join(", ")}
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  {autoFilledFields.map((field) => (
+                    <span key={field} className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full font-bold border border-white/40 shadow-xs">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-300" /> {field}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
-            <p className="text-xs text-green-600 mt-3 flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
-              Your resume is secure and only visible to you.
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Tell Us About Yourself */}
-      <div className="bg-white rounded-xl border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">2. Tell Us About Yourself</h3>
-        <p className="text-sm text-gray-500 mb-6">Help us know you better in a few words.</p>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Who are you?</label>
-            <p className="text-xs text-gray-500 mb-2">Introduce yourself in a few lines.</p>
-            <textarea
-              className="w-full border rounded-lg p-3 text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              rows={4}
-              placeholder="E.g. I'm a passionate software engineer with 3+ years of experience in building scalable web applications..."
-              value={formData.aboutYou}
-              onChange={(e) => updateFormData({ aboutYou: e.target.value })}
-              maxLength={300}
-            />
-            <p className="text-xs text-gray-400 text-right">{formData.aboutYou.length}/300</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">What drives you?</label>
-            <p className="text-xs text-gray-500 mb-2">What motivates you in your career?</p>
-            <textarea
-              className="w-full border rounded-lg p-3 text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              rows={4}
-              placeholder="E.g. I love solving complex problems, learning new technologies and creating impact through my work..."
-              value={formData.whatDrivesYou}
-              onChange={(e) => updateFormData({ whatDrivesYou: e.target.value })}
-              maxLength={300}
-            />
-            <p className="text-xs text-gray-400 text-right">{formData.whatDrivesYou.length}/300</p>
-          </div>
+      {/* Professional Summary Box */}
+      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${formData.aboutYou ? "border-indigo-400 ring-4 ring-indigo-500/15 bg-gradient-to-b from-indigo-50/30 to-white" : "border-gray-200"}`}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            2. Professional Summary
+          </h3>
+          {formData.aboutYou && (
+            <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-300" /> ✨ Highlighted Auto-Fill
+            </span>
+          )}
         </div>
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">What are your key strengths?</label>
-          <p className="text-xs text-gray-500 mb-2">Share your top 3-5 strengths.</p>
-          <textarea
-            className="w-full border rounded-lg p-3 text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            rows={3}
-            placeholder="E.g. Problem solving, Team collaboration, Attention to detail, Adaptability..."
-            value={formData.strengths}
-            onChange={(e) => updateFormData({ strengths: e.target.value })}
-            maxLength={250}
-          />
-          <p className="text-xs text-gray-400 text-right">{formData.strengths.length}/250</p>
+        <p className="text-sm text-gray-600 mb-4 font-medium">Auto-extracted from your resume. Feel free to edit or refine it.</p>
+        <textarea
+          className="w-full border-2 border-indigo-200 rounded-xl p-4 text-sm font-bold text-gray-900 resize-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white leading-relaxed shadow-xs placeholder-gray-400"
+          rows={5}
+          placeholder="Professional summary will be automatically filled when you upload your resume..."
+          value={formData.aboutYou}
+          onChange={(e) => updateFormData({ aboutYou: e.target.value })}
+        />
+        <div className="flex justify-between items-center mt-2 text-xs font-semibold text-indigo-800">
+          <span>✨ Editable box • Synced with AI interviewer</span>
+          <span>{formData.aboutYou.length} characters</span>
         </div>
       </div>
 
-      {/* Current Snapshot */}
-      <div className="bg-white rounded-xl border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">3. Your Current Snapshot</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Current Role Snapshot */}
+      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${formData.currentRole ? "border-indigo-400 ring-4 ring-indigo-500/15 bg-gradient-to-b from-indigo-50/30 to-white" : "border-gray-200"}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">3. Role Snapshot & Overview</h3>
+          {(formData.currentRole || formData.totalExperience || formData.currentLocation) && (
+            <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-300" /> ✨ Auto-Filled
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current Role</label>
-            <select
-              className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Current / Target Role</label>
+            <input
+              type="text"
+              className="w-full border-2 border-indigo-300 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-indigo-50/40 shadow-2xs"
+              placeholder="e.g. Senior AI Engineer"
               value={formData.currentRole}
-                onChange={(e) => updateFormData({ currentRole: e.target.value })}
-            >
-              <option value="">Select your role</option>
-              {roles.map((role) => (
-                <option key={role} value={role}>{role}</option>
-              ))}
-            </select>
+              onChange={(e) => updateFormData({ currentRole: e.target.value })}
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Total Experience</label>
-            <select
-              className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Total Experience</label>
+            <input
+              type="text"
+              className="w-full border-2 border-indigo-300 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-indigo-50/40 shadow-2xs"
+              placeholder="e.g. 10+ years"
               value={formData.totalExperience}
-                onChange={(e) => updateFormData({ totalExperience: e.target.value })}
-            >
-              <option value="">Select experience</option>
-              {experiences.map((exp) => (
-                <option key={exp} value={exp}>{exp}</option>
-              ))}
-            </select>
+              onChange={(e) => updateFormData({ totalExperience: e.target.value })}
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current Location</label>
-            <select
-              className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Current Location</label>
+            <input
+              type="text"
+              className="w-full border-2 border-indigo-300 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-indigo-50/40 shadow-2xs"
+              placeholder="e.g. Bangalore, India"
               value={formData.currentLocation}
-                onChange={(e) => updateFormData({ currentLocation: e.target.value })}
-            >
-              <option value="">Select location</option>
-              {locations.map((loc) => (
-                <option key={loc} value={loc}>{loc}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notice Period</label>
-            <select
-              className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={formData.noticePeriod}
-                onChange={(e) => updateFormData({ noticePeriod: e.target.value })}
-            >
-              <option value="">Select notice period</option>
-              {noticePeriods.map((period) => (
-                <option key={period} value={period}>{period}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Privacy Notice */}
-      <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Shield className="w-8 h-8 text-indigo-600" />
-          <div>
-            <p className="text-sm font-semibold text-gray-900">We respect your privacy</p>
-            <p className="text-xs text-gray-500">Your information is protected with industry-leading security. We never share your data without your consent.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 text-xs text-gray-600">
-          <span className="flex items-center gap-1"><Lock className="w-3 h-3" /> Encrypted</span>
-          <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Private</span>
-          <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> Secure</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep2 = () => (
-    <div className="bg-white rounded-xl border p-6 space-y-6">
-      <div className="text-center py-12">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-10 h-10 text-green-600" />
-        </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Great! Your resume is uploaded successfully! 🎉</h3>
-        <p className="text-gray-500">Let&apos;s book your 15-minute AI interview. Choose a time that works best for you.</p>
-      </div>
-      <div className="bg-indigo-50 rounded-xl p-6 flex items-center gap-4">
-        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-2xl">✨</span>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-indigo-900">Just 15 minutes to open doors to endless opportunities.</p>
-          <p className="text-xs text-indigo-700 mt-1">Our AI interview is designed to understand you better and match you with roles where you can shine.</p>
-        </div>
-        <div className="flex gap-4 ml-auto">
-          <div className="text-center">
-            <Clock className="w-6 h-6 text-indigo-600 mx-auto" />
-            <p className="text-[10px] text-gray-600 mt-1">15 Min<br/>Interview</p>
-          </div>
-          <div className="text-center">
-            <span className="text-2xl">🧠</span>
-            <p className="text-[10px] text-gray-600 mt-1">AI-Powered<br/>Assessment</p>
-          </div>
-          <div className="text-center">
-            <Lock className="w-6 h-6 text-indigo-600 mx-auto" />
-            <p className="text-[10px] text-gray-600 mt-1">Secure &<br/>Private</p>
+              onChange={(e) => updateFormData({ currentLocation: e.target.value })}
+            />
           </div>
         </div>
       </div>
@@ -599,65 +588,382 @@ export default function ProfilePage() {
   );
 
   const renderStep3 = () => (
-    <div className="bg-white rounded-xl border p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills & Experience</h3>
-      <p className="text-sm text-gray-500 mb-6">Tell us about your professional background.</p>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Primary Skills</label>
-          <input 
-            type="text" 
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500" 
-            placeholder="e.g. JavaScript, React, Node.js"
-            value={formData.skills}
-            onChange={(e) => updateFormData({ skills: e.target.value })}
-          />
+    <div className="space-y-8">
+      {/* Technical Skills & Tech Stacks Box */}
+      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${skillsList.length > 0 ? "border-indigo-400 ring-4 ring-indigo-500/15" : "border-gray-200"}`}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Code className="w-5 h-5 text-indigo-600" />
+            Technical Skills & Tech Stacks
+          </h3>
+          <span className="text-xs bg-indigo-600 text-white px-3 py-1 rounded-full font-bold shadow-2xs flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-amber-300" /> {skillsList.length} Skills Extracted
+          </span>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
-          <select 
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
-            value={formData.totalExperience}
-            onChange={(e) => updateFormData({ totalExperience: e.target.value })}
+        <p className="text-sm text-gray-600 font-medium mb-4">
+          All programming languages, frameworks, databases, and tools parsed from your resume.
+        </p>
+
+        {/* Skill Tag Chips */}
+        <div className="flex flex-wrap gap-2 mb-4 p-4 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 rounded-2xl border-2 border-indigo-200 min-h-[70px] items-center">
+          {skillsList.length === 0 ? (
+            <p className="text-sm text-gray-500 font-medium italic">No skills extracted yet. Upload a resume or add skills below.</p>
+          ) : (
+            skillsList.map((skill) => (
+              <span
+                key={skill}
+                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-xs hover:scale-105 transition-all group"
+              >
+                <Tag className="w-3.5 h-3.5 text-indigo-200" />
+                {skill}
+                <button
+                  onClick={() => removeSkillTag(skill)}
+                  className="hover:text-red-300 transition-colors ml-1 font-bold text-sm"
+                  title="Remove skill"
+                >
+                  ×
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+
+        {/* Add Skill Input */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="flex-1 border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white"
+            placeholder="Add another skill or tech stack (e.g. Docker, Next.js, PyTorch)"
+            value={newSkill}
+            onChange={(e) => setNewSkill(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addSkillTag();
+              }
+            }}
+          />
+          <button
+            onClick={addSkillTag}
+            type="button"
+            className="bg-indigo-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-1.5 shadow-sm"
           >
-            <option>Select experience</option>
-            {experiences.map((exp) => (
-              <option key={exp} value={exp}>{exp}</option>
+            <Plus className="w-4 h-4" /> Add Skill
+          </button>
+        </div>
+      </div>
+
+      {/* Work Experience Cards */}
+      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${workExpList.length > 0 ? "border-indigo-400 ring-4 ring-indigo-500/15" : "border-gray-200"}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-indigo-600" />
+              Work Experience History
+            </h3>
+            <p className="text-sm text-gray-600 font-medium mt-1">Auto-extracted job titles, companies, durations, and responsibilities.</p>
+          </div>
+          <button
+            onClick={() => {
+              const updated = [
+                ...workExpList,
+                { company: "New Company", role: "Job Title", startDate: "2022", endDate: "Present", description: "Key achievements and duties..." },
+              ];
+              updateWorkExperienceList(updated);
+            }}
+            type="button"
+            className="text-xs bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-3.5 py-2 rounded-xl shadow-xs flex items-center gap-1 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Experience
+          </button>
+        </div>
+
+        {workExpList.length === 0 ? (
+          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50/50">
+            <Briefcase className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm font-bold text-gray-700">No work experience entries yet</p>
+            <p className="text-xs text-gray-500 mt-1">Upload your resume to automatically fill this section.</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {workExpList.map((exp, idx) => (
+              <div key={idx} className="border-2 border-indigo-300 rounded-2xl p-5 bg-gradient-to-br from-indigo-50/40 to-purple-50/20 shadow-xs hover:border-indigo-500 transition-all space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-amber-300" /> Experience #{idx + 1} • Auto-Filled
+                  </span>
+                  <button
+                    onClick={() => {
+                      const updated = workExpList.filter((_, i) => i !== idx);
+                      updateWorkExperienceList(updated);
+                    }}
+                    className="text-red-500 hover:text-red-700 bg-white p-1.5 rounded-lg border border-red-200 transition-colors shadow-2xs"
+                    title="Delete entry"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Company</label>
+                    <input
+                      type="text"
+                      className="w-full border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 bg-white shadow-2xs focus:ring-2 focus:ring-indigo-600"
+                      value={exp.company}
+                      onChange={(e) => {
+                        const updated = [...workExpList];
+                        updated[idx].company = e.target.value;
+                        updateWorkExperienceList(updated);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Role / Job Title</label>
+                    <input
+                      type="text"
+                      className="w-full border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 bg-white shadow-2xs focus:ring-2 focus:ring-indigo-600"
+                      value={exp.role}
+                      onChange={(e) => {
+                        const updated = [...workExpList];
+                        updated[idx].role = e.target.value;
+                        updateWorkExperienceList(updated);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Start Date</label>
+                    <input
+                      type="text"
+                      className="w-full border-2 border-gray-300 rounded-xl p-2.5 text-xs font-bold text-gray-900 bg-white"
+                      value={exp.startDate}
+                      onChange={(e) => {
+                        const updated = [...workExpList];
+                        updated[idx].startDate = e.target.value;
+                        updateWorkExperienceList(updated);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">End Date</label>
+                    <input
+                      type="text"
+                      className="w-full border-2 border-gray-300 rounded-xl p-2.5 text-xs font-bold text-gray-900 bg-white"
+                      value={exp.endDate}
+                      onChange={(e) => {
+                        const updated = [...workExpList];
+                        updated[idx].endDate = e.target.value;
+                        updateWorkExperienceList(updated);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Responsibilities & Achievements</label>
+                  <textarea
+                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-xs font-semibold text-gray-900 bg-white leading-relaxed resize-none shadow-2xs"
+                    rows={3}
+                    value={exp.description}
+                    onChange={(e) => {
+                      const updated = [...workExpList];
+                      updated[idx].description = e.target.value;
+                      updateWorkExperienceList(updated);
+                    }}
+                  />
+                </div>
+              </div>
             ))}
-          </select>
+          </div>
+        )}
+      </div>
+
+      {/* Projects & Tech Stacks Cards */}
+      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${projectsList.length > 0 ? "border-indigo-400 ring-4 ring-indigo-500/15" : "border-gray-200"}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Code className="w-5 h-5 text-indigo-600" />
+              Projects & Tech Stacks
+            </h3>
+            <p className="text-sm text-gray-600 font-medium mt-1">Key projects and technologies extracted from your resume.</p>
+          </div>
+          <button
+            onClick={() => {
+              const updated = [
+                ...projectsList,
+                { name: "New Project", description: "Brief description of the project...", technologies: ["React", "TypeScript"] },
+              ];
+              updateProjectsList(updated);
+            }}
+            type="button"
+            className="text-xs bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-3.5 py-2 rounded-xl shadow-xs flex items-center gap-1 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Project
+          </button>
         </div>
+
+        {projectsList.length === 0 ? (
+          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50/50">
+            <Code className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm font-bold text-gray-700">No project entries yet</p>
+            <p className="text-xs text-gray-500 mt-1">Upload your resume to automatically fill this section.</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {projectsList.map((proj, idx) => (
+              <div key={idx} className="border-2 border-indigo-300 rounded-2xl p-5 bg-gradient-to-br from-indigo-50/40 to-purple-50/20 shadow-xs hover:border-indigo-500 transition-all space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-amber-300" /> Project #{idx + 1} • Auto-Filled
+                  </span>
+                  <button
+                    onClick={() => {
+                      const updated = projectsList.filter((_, i) => i !== idx);
+                      updateProjectsList(updated);
+                    }}
+                    className="text-red-500 hover:text-red-700 bg-white p-1.5 rounded-lg border border-red-200 transition-colors shadow-2xs"
+                    title="Delete project"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Project Title</label>
+                  <input
+                    type="text"
+                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 bg-white shadow-2xs focus:ring-2 focus:ring-indigo-600"
+                    value={proj.name}
+                    onChange={(e) => {
+                      const updated = [...projectsList];
+                      updated[idx].name = e.target.value;
+                      updateProjectsList(updated);
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Description</label>
+                  <textarea
+                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-xs font-semibold text-gray-900 bg-white leading-relaxed resize-none shadow-2xs"
+                    rows={2}
+                    value={proj.description}
+                    onChange={(e) => {
+                      const updated = [...projectsList];
+                      updated[idx].description = e.target.value;
+                      updateProjectsList(updated);
+                    }}
+                  />
+                </div>
+
+                {/* Tech Stack Tags for Project */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Tech Stack Used</label>
+                  <input
+                    type="text"
+                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-xs font-bold text-indigo-900 bg-indigo-50/30"
+                    placeholder="Comma-separated tech stack (e.g. Next.js, Tailwind, PostgreSQL)"
+                    value={proj.technologies ? proj.technologies.join(", ") : ""}
+                    onChange={(e) => {
+                      const updated = [...projectsList];
+                      updated[idx].technologies = e.target.value.split(",").map((t) => t.trim()).filter(Boolean);
+                      updateProjectsList(updated);
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Education & Certifications Box */}
+      <div className="bg-white rounded-2xl border-2 border-indigo-300 p-6 shadow-sm space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Current Company</label>
-          <input 
-            type="text" 
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500" 
-            placeholder="e.g. Tech Corp"
-            value={formData.currentCompany}
-            onChange={(e) => updateFormData({ currentCompany: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Education</label>
-          <input 
-            type="text" 
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500" 
-            placeholder="e.g. B.Tech in Computer Science"
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-indigo-600" />
+              Education & Qualification
+            </h3>
+            {formData.education && (
+              <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-300" /> Auto-Filled
+              </span>
+            )}
+          </div>
+          <input
+            type="text"
+            className="w-full border-2 border-indigo-300 rounded-xl p-3.5 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 bg-indigo-50/40 shadow-2xs"
+            placeholder="e.g. B.Tech in Computer Science, IIT Delhi, 2020"
             value={formData.education}
             onChange={(e) => updateFormData({ education: e.target.value })}
           />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <Award className="w-4 h-4 text-indigo-600" />
+              Certifications & Credentials
+            </h4>
+            <button
+              onClick={() => {
+                const updated = [...certificationsList, "AWS Certified Solutions Architect"];
+                updateCertificationsList(updated);
+              }}
+              type="button"
+              className="text-xs bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Certification
+            </button>
+          </div>
+
+          <div className="space-y-2.5">
+            {certificationsList.length === 0 ? (
+              <p className="text-xs text-gray-500 font-medium italic">No certifications extracted yet.</p>
+            ) : (
+              certificationsList.map((cert, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    className="flex-1 border-2 border-indigo-300 rounded-xl p-3 text-xs font-bold text-gray-900 bg-indigo-50/30 shadow-2xs"
+                    value={cert}
+                    onChange={(e) => {
+                      const updated = [...certificationsList];
+                      updated[idx] = e.target.value;
+                      updateCertificationsList(updated);
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      const updated = certificationsList.filter((_, i) => i !== idx);
+                      updateCertificationsList(updated);
+                    }}
+                    className="text-red-500 hover:text-red-700 bg-white p-2.5 rounded-xl border border-red-200 shadow-2xs transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 
   const renderStep4 = () => (
-    <div className="bg-white rounded-xl border p-6">
+    <div className="bg-white rounded-xl border p-6 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Preferences</h3>
       <p className="text-sm text-gray-500 mb-6">What kind of opportunities are you looking for?</p>
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Job Type</label>
-          <select 
+          <select
             className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
             value={formData.jobType}
             onChange={(e) => updateFormData({ jobType: e.target.value })}
@@ -671,9 +977,9 @@ export default function ProfilePage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Expected Salary Range</label>
-          <input 
-            type="text" 
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500" 
+          <input
+            type="text"
+            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
             placeholder="e.g. ₹15-20 LPA"
             value={formData.salaryRange}
             onChange={(e) => updateFormData({ salaryRange: e.target.value })}
@@ -681,7 +987,7 @@ export default function ProfilePage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Location</label>
-          <select 
+          <select
             className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
             value={formData.preferredLocation}
             onChange={(e) => updateFormData({ preferredLocation: e.target.value })}
@@ -697,9 +1003,9 @@ export default function ProfilePage() {
           <div className="flex gap-4 mt-2">
             {["Remote", "Hybrid", "On-site"].map((mode) => (
               <label key={mode} className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="workMode" 
+                <input
+                  type="radio"
+                  name="workMode"
                   className="w-4 h-4 text-indigo-600"
                   checked={formData.workMode === mode}
                   onChange={() => updateFormData({ workMode: mode })}
@@ -714,22 +1020,22 @@ export default function ProfilePage() {
   );
 
   const renderStep5 = () => (
-    <div className="bg-white rounded-xl border p-6">
+    <div className="bg-white rounded-xl border p-6 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Interview Preparation</h3>
       <p className="text-sm text-gray-500 mb-6">Get ready for your 15-minute AI-powered interview.</p>
       <div className="space-y-4">
         <div className="bg-indigo-50 rounded-xl p-4">
           <h4 className="font-medium text-indigo-900 mb-2">What to expect:</h4>
           <ul className="space-y-2 text-sm text-indigo-800">
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Technical questions based on your resume</li>
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Technical questions based on your resume & tech stacks</li>
             <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Behavioral assessment</li>
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Problem-solving scenarios</li>
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Live coding challenge in WebRTC room</li>
           </ul>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Interview Date</label>
-          <input 
-            type="date" 
+          <input
+            type="date"
             className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
             value={formData.preferredDate}
             onChange={(e) => updateFormData({ preferredDate: e.target.value })}
@@ -737,7 +1043,7 @@ export default function ProfilePage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Time Slot</label>
-          <select 
+          <select
             className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
             value={formData.preferredTimeSlot}
             onChange={(e) => updateFormData({ preferredTimeSlot: e.target.value })}
@@ -753,7 +1059,7 @@ export default function ProfilePage() {
   );
 
   const renderStep6 = () => (
-    <div className="bg-white rounded-xl border p-6 text-center py-12">
+    <div className="bg-white rounded-xl border p-6 text-center py-12 shadow-sm">
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <CheckCircle className="w-10 h-10 text-green-600" />
       </div>
@@ -768,7 +1074,18 @@ export default function ProfilePage() {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1: return renderStep1();
-      case 2: return renderStep2();
+      case 2:
+        return (
+          <div className="bg-white rounded-xl border p-6 space-y-6 shadow-sm">
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Great! Your resume is uploaded and parsed! 🎉</h3>
+              <p className="text-gray-500">All your tech stacks, projects, skills, and work experience have been auto-filled.</p>
+            </div>
+          </div>
+        );
       case 3: return renderStep3();
       case 4: return renderStep4();
       case 5: return renderStep5();
@@ -781,13 +1098,13 @@ export default function ProfilePage() {
     <div className="min-h-screen flex flex-col lg:flex-row">
       <Sidebar currentStep={currentStep} progress={progress} />
       <main className="flex-1 bg-gray-50 overflow-auto">
-        <div className="p-4 bg-white border-b flex items-center justify-between">
+        <div className="p-4 bg-white border-b flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Shield className="w-4 h-4 text-green-600" />
             Your data is safe with us
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-flex items-center justify-center">
+            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
               <span className="text-sm font-medium text-indigo-600">{user?.name?.charAt(0) || "U"}</span>
             </div>
             <span className="text-sm font-medium">Hi, {user?.name || "User"} 👋</span>
@@ -797,19 +1114,22 @@ export default function ProfilePage() {
         <div className="max-w-4xl mx-auto px-4 pb-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Let&apos;s Build Your Profile 👋</h2>
-            <p className="text-gray-500 mt-1">The more we know about you, the better we can match you with the right opportunities.</p>
+            <p className="text-gray-500 mt-1">Upload your resume to auto-fill all skills, projects, and work experience!</p>
           </div>
+
           {renderCurrentStep()}
+
           {validationError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mt-4">
               {validationError}
             </div>
           )}
+
           <div className="flex justify-between mt-8">
             <button
               onClick={handlePrev}
               disabled={currentStep === 1}
-              className="flex items-center gap-2 px-6 py-3 border rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 border rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
             >
               <ChevronLeft className="w-4 h-4" />
               Save & Exit
@@ -819,7 +1139,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleNext}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm"
               >
                 {saving ? "Completing..." : currentStep === steps.length ? "Complete" : "Save & Continue"}
                 <ArrowRight className="w-4 h-4" />

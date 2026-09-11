@@ -10,7 +10,12 @@ const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
 export const isR2Enabled = Boolean(
-  R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET_NAME
+  R2_ACCOUNT_ID &&
+  R2_ACCESS_KEY_ID &&
+  R2_SECRET_ACCESS_KEY &&
+  R2_BUCKET_NAME &&
+  !R2_ACCOUNT_ID.toLowerCase().includes("your-") &&
+  !R2_ACCESS_KEY_ID.toLowerCase().includes("your-")
 );
 
 export const STORAGE_MODE = isR2Enabled ? "r2" : "local";
