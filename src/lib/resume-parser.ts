@@ -130,6 +130,132 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
   };
 }
 
+function extractWorkExperienceFromText(text: string, defaultRole: string, defaultSummary: string): ParsedWorkExperience[] {
+  const result: ParsedWorkExperience[] = [];
+  const dateRegex = /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|[A-Z][a-z]{2,8})?\s*(\d{4})\s*(?:-|–|to)\s*(Present|Current|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|[A-Z][a-z]{2,8})?\s*\d{4})/gi;
+  
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  let currentCompany = "";
+  let currentRole = "";
+  let startDate = "";
+  let endDate = "";
+  let descriptionLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    dateRegex.lastIndex = 0;
+    const dateMatch = dateRegex.exec(line);
+
+    if (dateMatch) {
+      if (currentCompany || currentRole) {
+        result.push({
+          company: currentCompany || "Enterprise Systems",
+          role: currentRole || defaultRole,
+          startDate: startDate || "2020",
+          endDate: endDate || "Present",
+          description: descriptionLines.join(" ").trim() || defaultSummary,
+        });
+        descriptionLines = [];
+      }
+
+      startDate = dateMatch[1];
+      endDate = dateMatch[2];
+
+      const lineWithoutDate = line.replace(dateRegex, "").replace(/[()|•-]/g, " ").trim();
+      if (lineWithoutDate.length > 3) {
+        if (/Engineer|Developer|Manager|Architect|Analyst|Scientist|Lead|Consultant/i.test(lineWithoutDate)) {
+          currentRole = lineWithoutDate;
+          currentCompany = lines[i - 1] && !lines[i - 1].includes("@") && lines[i - 1].length < 60 ? lines[i - 1] : "Enterprise AI Systems";
+        } else {
+          currentCompany = lineWithoutDate;
+          currentRole = lines[i + 1] && /Engineer|Developer|Manager|Architect|Analyst|Scientist|Lead|Consultant/i.test(lines[i + 1]) ? lines[i + 1] : defaultRole;
+        }
+      }
+    } else if (currentCompany || currentRole) {
+      if (line.length > 5 && !/^(EDUCATION|SKILLS|PROJECTS|CERTIFICATIONS|SUMMARY)/i.test(line)) {
+        descriptionLines.push(line);
+      }
+    }
+  }
+
+  if (currentCompany || currentRole) {
+    result.push({
+      company: currentCompany || "Enterprise AI Systems",
+      role: currentRole || defaultRole,
+      startDate: startDate || "2020",
+      endDate: endDate || "Present",
+      description: descriptionLines.join(" ").trim() || defaultSummary,
+    });
+  }
+
+  if (result.length === 0) {
+    result.push({
+      company: "Enterprise AI & Financial Systems",
+      role: defaultRole || "AI Engineer",
+      startDate: "2016",
+      endDate: "Present",
+      description: defaultSummary || "Leading end-to-end AI products across banking, insurance, logistics, and financial domains using multi-agent orchestration, RAG pipelines, and LLM fine-tuning.",
+    });
+  }
+
+  return result.slice(0, 4);
+}
+
+function extractProjectsFromText(text: string, skills: string[], defaultSummary: string): ParsedProject[] {
+  const result: ParsedProject[] = [];
+  const projectSectionMatch = text.match(/(?:##\s*)?(?:PROJECTS|KEY\s+PROJECTS|FEATURED\s+PROJECTS|TECHNICAL\s+PROJECTS|PERSONAL\s+PROJECTS)[:\s]*\n+([\s\S]{20,2000}?)(?=\n\s*(?:##|[A-Z\s]{4,}:|\n[A-Z][a-z]+|\r?\n\r?\n|$))/i);
+
+  if (projectSectionMatch && projectSectionMatch[1]) {
+    const rawBlock = projectSectionMatch[1];
+    const projectLines = rawBlock.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    let curName = "";
+    let curDesc: string[] = [];
+
+    for (const line of projectLines) {
+      if (line.startsWith("•") || line.startsWith("-") || line.startsWith("*")) {
+        curDesc.push(line.replace(/^[•\-*]\s*/, ""));
+      } else if (line.length > 3 && line.length < 70 && !line.includes("http")) {
+        if (curName) {
+          result.push({
+            name: curName,
+            description: curDesc.join(" ").trim() || defaultSummary,
+            technologies: skills.slice(0, 5),
+          });
+          curDesc = [];
+        }
+        curName = line.replace(/^#+\s*/, "").replace(/[:\-]/, "").trim();
+      } else {
+        curDesc.push(line);
+      }
+    }
+
+    if (curName) {
+      result.push({
+        name: curName,
+        description: curDesc.join(" ").trim() || defaultSummary,
+        technologies: skills.slice(0, 5),
+      });
+    }
+  }
+
+  if (result.length === 0) {
+    result.push(
+      {
+        name: "Agentic AI Systems & Production RAG Pipeline Engine",
+        description: "Designed scalable, cost-efficient AI architecture using multi-agent orchestration, LLM fine-tuning, and vector search systems across banking, logistics, and financial domains.",
+        technologies: skills.slice(0, 5),
+      },
+      {
+        name: "Intelligent Enterprise Workflow Automation Platform",
+        description: "Built end-to-end AI products across cloud and open-source ecosystems — reducing manual effort, improving accuracy, and deploying production-grade LLM workflows.",
+        technologies: skills.slice(5, 10),
+      }
+    );
+  }
+
+  return result.slice(0, 4);
+}
+
 function parseResumeFallback(text: string): ParsedResume {
   const lines = text
     .split(/\r?\n/)
@@ -213,7 +339,6 @@ function parseResumeFallback(text: string): ParsedResume {
     }
   }
 
-  // Also check explicit Skills section
   const skillsSection = text.match(/(?:##\s*)?(?:TECHNICAL\s+SKILLS|SKILLS|TECH\s+STACK|TECHNOLOGIES|TOOLING)[:\s]*\n+([\s\S]{10,800}?)(?=\n\s*(?:##|[A-Z\s]{4,}:|\n[A-Z][a-z]+|\r?\n\r?\n|$))/i);
   if (skillsSection && skillsSection[1]) {
     const items = skillsSection[1].split(/[,•|\n\t]+/).map((s) => s.trim()).filter((s) => s.length > 1 && s.length < 40);
@@ -240,48 +365,11 @@ function parseResumeFallback(text: string): ParsedResume {
     education = "B.Tech in Computer Science & AI Systems";
   }
 
-  // 7. Extract Work Experience Cards matching resume text
-  const workExperience: ParsedWorkExperience[] = [];
-  const expBlocks = text.matchAll(/(?:##\s*|###\s*)?(?:Senior|Lead|Principal|Staff)?\s*([A-Z][A-Za-z0-9\s/]+(?:Engineer|Developer|Manager|Architect|Analyst|Scientist|Consultant|Specialist))\s*(?:at|@|-|\|)?\s*([A-Z0-9\s.,]+)?\s*\(?(\d{4}\s*-\s*(?:Present|\d{4})|\d{4})?\)?/gi);
+  // 7. Dynamic Work Experience & Projects Extraction
+  const workExperience = extractWorkExperienceFromText(text, currentRole, summary || "");
+  const projects = extractProjectsFromText(text, skills, summary || "");
 
-  for (const match of Array.from(expBlocks)) {
-    if (match[1] && match[1].trim().length > 3) {
-      workExperience.push({
-        company: match[2] ? match[2].trim() : "Enterprise AI Systems",
-        role: match[1].trim(),
-        startDate: match[3] ? match[3].trim() : "2021",
-        endDate: "Present",
-        description: summary || "Designed and deployed scalable AI architectures, production RAG pipelines, and intelligent workflow automation systems across cloud ecosystems.",
-      });
-      if (workExperience.length >= 4) break;
-    }
-  }
-
-  if (workExperience.length === 0) {
-    workExperience.push({
-      company: "Enterprise AI & Financial Systems",
-      role: currentRole,
-      startDate: "2016",
-      endDate: "Present",
-      description: summary || `Leading end-to-end AI products across banking, insurance, logistics, and financial domains using multi-agent orchestration, RAG pipelines, and LLM fine-tuning.`,
-    });
-  }
-
-  // 8. Extract Projects & Tech Stacks Cards matching resume text
-  const projects: ParsedProject[] = [
-    {
-      name: "Agentic AI Systems & Production RAG Pipeline Engine",
-      description: "Designed scalable, cost-efficient AI architecture using multi-agent orchestration, LLM fine-tuning, and vector search systems across banking, logistics, and financial domains.",
-      technologies: skills.slice(0, 5),
-    },
-    {
-      name: "Intelligent Enterprise Workflow Automation Platform",
-      description: "Built end-to-end AI products across cloud and open-source ecosystems — reducing manual effort, improving accuracy, and deploying production-grade LLM workflows.",
-      technologies: skills.slice(5, 10),
-    },
-  ];
-
-  // 9. Extract Certifications
+  // 8. Extract Certifications
   const certsMatch = text.matchAll(/(?:AWS|Google|Azure|PMP|Certified|Scrum|TensorFlow|Kubernetes)\s+[A-Za-z0-9\s\-_]+/gi);
   const certifications = Array.from(certsMatch).map((m) => m[0].trim()).filter((c) => c.length > 5 && c.length < 60);
 
@@ -452,10 +540,10 @@ function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedRes
     currentRole: ai.currentRole || fallback.currentRole,
     totalExperience: ai.totalExperience || fallback.totalExperience,
     currentLocation: ai.currentLocation || fallback.currentLocation,
-    skills: ai.skills && ai.skills.length > 0 ? ai.skills : fallback.skills,
+    skills: Array.from(new Set([...(ai.skills || []), ...(fallback.skills || [])])),
     education: ai.education || fallback.education,
     currentCompany: ai.currentCompany || fallback.currentCompany,
-    summary: ai.summary || fallback.summary,
+    summary: (ai.summary && ai.summary.length > 20) ? ai.summary : fallback.summary,
     strengths: ai.strengths || fallback.strengths,
     linkedinUrl: ai.linkedinUrl || fallback.linkedinUrl,
     workExperience: ai.workExperience && ai.workExperience.length > 0 ? ai.workExperience : fallback.workExperience,
