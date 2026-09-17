@@ -11,7 +11,6 @@
     "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:agent\" \"npm run dev:evaluator\" \"npm run dev:ml\" \"npm run dev\"",
     "build": "npx prisma generate && next build",
     "start": "next start",
-    "postinstall": "npx prisma generate",
     "lint": "eslint",
     "test": "vitest run",
     "test:e2e": "playwright test",
