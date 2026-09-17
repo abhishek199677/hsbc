@@ -62,9 +62,3 @@ services:
         value: "3.11"
     healthCheckPath: /health
     autoDeploy: true
-
-  # ─── PostgreSQL Database ─────────────────────────
-  - type: pgsql
-    name: hireright-db
-    plan: free
-    ipAllowList: []  # Only internal access
