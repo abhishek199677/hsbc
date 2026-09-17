@@ -9,6 +9,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resetUrl, setResetUrl] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +28,9 @@ export default function ForgotPasswordPage() {
         throw new Error(data.error || "Something went wrong");
       }
       setSent(true);
+      if (data.resetUrl) {
+        setResetUrl(data.resetUrl);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -59,13 +63,27 @@ export default function ForgotPasswordPage() {
               <div className="flex justify-center mb-4">
                 <CheckCircle className="w-16 h-16 text-[#4ade80]" />
               </div>
-              <p className="text-[#a1a1aa] mb-6">
-                If an account exists for <span className="font-medium text-[#fafafa]">{email}</span>,
-                we&apos;ve sent a password reset link to your inbox. It expires in 1 hour.
-              </p>
+              {resetUrl ? (
+                <>
+                  <p className="text-[#a1a1aa] mb-4">
+                    Password reset link generated. Click below to reset your password.
+                  </p>
+                  <a
+                    href={resetUrl}
+                    className="inline-block w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium text-center hover:bg-[#8b5cf6] transition-colors mb-3"
+                  >
+                    Reset Password Now
+                  </a>
+                </>
+              ) : (
+                <p className="text-[#a1a1aa] mb-6">
+                  If an account exists for <span className="font-medium text-[#fafafa]">{email}</span>,
+                  we&apos;ve sent a password reset link to your inbox. It expires in 1 hour.
+                </p>
+              )}
               <Link
                 href="/login"
-                className="inline-block w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium text-center hover:bg-[#8b5cf6] transition-colors"
+                className="inline-block w-full bg-[#27272a] text-[#fafafa] py-3 rounded-lg font-medium text-center hover:bg-[#3f3f46] transition-colors"
               >
                 Back to Sign In
               </Link>

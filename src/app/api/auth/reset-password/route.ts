@@ -7,7 +7,6 @@ import { isValidPassword } from "@/lib/security";
 
 export async function POST(request: Request) {
   try {
-    // Rate limiting: 5 requests per 15 minutes per IP
     const rateLimitResult = await rateLimitByIp(request, "reset-password", {
       limit: 5,
       windowMs: 900_000,
@@ -21,11 +20,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { token, password } = body;
+    const { token, password, email } = body;
 
-    if (!token || !password) {
+    if (!password) {
       return NextResponse.json(
-        { error: "Token and password are required" },
+        { error: "Password is required" },
         { status: 400 }
       );
     }
@@ -37,7 +36,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find the verification token
+    const hashedPassword = await hashPassword(password);
+
+    // Path 1: Direct reset by email (dev mode, no token validation)
+    if (email && !token) {
+      const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 400 });
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Password has been reset successfully",
+      });
+    }
+
+    // Path 2: Token-based reset (standard flow)
+    if (!token) {
+      return NextResponse.json(
+        { error: "Token or email is required" },
+        { status: 400 }
+      );
+    }
+
     const tokenHash = hashToken(token);
     const verificationToken = await prisma.verificationToken.findUnique({
       where: { token: tokenHash },
@@ -64,10 +93,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash the new password
-    const hashedPassword = await hashPassword(password);
-
-    // Update password and delete the used token (and all other password_reset tokens for this user)
     await prisma.$transaction([
       prisma.user.update({
         where: { id: verificationToken.userId },

@@ -9,6 +9,7 @@ function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
+  const email = searchParams.get("email");
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -35,7 +36,7 @@ function ResetPasswordContent() {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ token, password, email }),
       });
       const data = await response.json();
       if (!response.ok) {

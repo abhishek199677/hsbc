@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const resetToken = generateVerificationToken();
-    const resetUrl = `${getAppBaseUrl()}/reset-password?token=${resetToken}`;
+    const resetUrl = `${getAppBaseUrl()}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
 
     // Try to send email, but always return the URL so the user can reset
     if (process.env.SMTP_USER) {
