@@ -10,6 +10,7 @@ services:
     plan: free
     buildCommand: npx prisma generate && next build
     startCommand: next start
+    nodeVersion: "20"
     envVars:
       - key: DATABASE_URL
         sync: false

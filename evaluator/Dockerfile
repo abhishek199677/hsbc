@@ -15,7 +15,7 @@ ENV PATH=$PATH:/usr/local/go/bin
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 COPY . .
 RUN npx tsc
 
