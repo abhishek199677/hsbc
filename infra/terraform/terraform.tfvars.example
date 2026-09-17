@@ -1,0 +1,21 @@
+# ─── AWS Configuration ────────────────────────────────────────────────────────
+
+aws_region = "us-east-1"
+
+# ─── Project Configuration ────────────────────────────────────────────────────
+
+project_name = "hsbc"
+environment  = "prod"
+
+# ─── Database ──────────────────────────────────────────────────────────────────
+
+# Generate a strong password: openssl rand -base64 32
+db_password = "CHANGE_ME_TO_A_STRONG_PASSWORD"
+
+# ─── Secrets ───────────────────────────────────────────────────────────────────
+
+# Generate: openssl rand -base64 64
+jwt_secret = "CHANGE_ME_TO_A_RANDOM_64_CHAR_STRING"
+
+# Your OpenAI API key
+openai_api_key = "sk-proj-CHANGE_ME"
