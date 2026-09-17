@@ -124,7 +124,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!user.emailVerifiedAt) {
+    if (!user.emailVerifiedAt && process.env.SMTP_USER) {
       await prisma.loginLog.create({
         data: {
           userId: user.id,

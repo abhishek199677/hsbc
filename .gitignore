@@ -25,7 +25,8 @@ yarn-error.log*
 # database
 dev.db
 dev.db-journal
-auth
+auth.db
+auth.db-journal
 auth-wal
 
 # user uploads
