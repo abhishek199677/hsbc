@@ -1,0 +1,5 @@
+Contact: mailto:security@techcitta.com
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://techcitta.com/.well-known/security.txt
+Policy: https://techcitta.com/security-policy

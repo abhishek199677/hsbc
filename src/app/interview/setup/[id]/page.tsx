@@ -65,7 +65,7 @@ export default function InterviewSetupPage({ params }: { params: Promise<{ id: s
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -73,10 +73,10 @@ export default function InterviewSetupPage({ params }: { params: Promise<{ id: s
 
   if (!candidate) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-500">Candidate not found</p>
-          <button onClick={() => router.back()} className="mt-4 text-indigo-600 hover:underline">
+          <p className="text-[#a1a1aa]">Candidate not found</p>
+          <button onClick={() => router.back()} className="mt-4 text-[#a78bfa] hover:underline">
             Go back
           </button>
         </div>
@@ -85,12 +85,12 @@ export default function InterviewSetupPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#09090b]">
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
+          className="flex items-center gap-2 text-[#a1a1aa] hover:text-gray-700 mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -98,46 +98,46 @@ export default function InterviewSetupPage({ params }: { params: Promise<{ id: s
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Brain className="h-8 w-8 text-indigo-600" />
+          <div className="h-16 w-16 bg-[#27272a] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Brain className="h-8 w-8 text-[#a78bfa]" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">AI Interview Setup</h1>
-          <p className="text-gray-500 mt-1">15-minute personalized interview for {candidate.name}</p>
+          <h1 className="text-2xl font-bold text-white">AI Interview Setup</h1>
+          <p className="text-[#a1a1aa] mt-1">15-minute personalized interview for {candidate.name}</p>
         </div>
 
         {/* Candidate Info Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Candidate Profile</h2>
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
+          <h2 className="font-semibold text-white mb-4">Candidate Profile</h2>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-500">Name</span>
+              <span className="text-[#a1a1aa]">Name</span>
               <p className="font-medium">{candidate.name}</p>
             </div>
             {candidate.currentRole && (
               <div>
-                <span className="text-gray-500">Role</span>
+                <span className="text-[#a1a1aa]">Role</span>
                 <p className="font-medium">{candidate.currentRole}</p>
               </div>
             )}
             {candidate.currentCompany && (
               <div>
-                <span className="text-gray-500">Company</span>
+                <span className="text-[#a1a1aa]">Company</span>
                 <p className="font-medium">{candidate.currentCompany}</p>
               </div>
             )}
             {candidate.totalExperience && (
               <div>
-                <span className="text-gray-500">Experience</span>
+                <span className="text-[#a1a1aa]">Experience</span>
                 <p className="font-medium">{candidate.totalExperience}</p>
               </div>
             )}
           </div>
           {candidate.skills && (
             <div className="mt-4">
-              <span className="text-gray-500 text-sm">Skills</span>
+              <span className="text-[#a1a1aa] text-sm">Skills</span>
               <div className="flex flex-wrap gap-2 mt-1">
                 {candidate.skills.split(",").slice(0, 10).map((skill, i) => (
-                  <span key={i} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full">
+                  <span key={i} className="text-xs bg-[#18181b] text-indigo-700 px-2 py-1 rounded-full">
                     {skill.trim()}
                   </span>
                 ))}
@@ -147,50 +147,50 @@ export default function InterviewSetupPage({ params }: { params: Promise<{ id: s
         </div>
 
         {/* Interview Format Selection */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Interview Format</h2>
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
+          <h2 className="font-semibold text-white mb-4">Interview Format</h2>
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => setFormat("text")}
               className={`p-4 rounded-lg border-2 text-left transition-all ${
                 format === "text"
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-indigo-500 bg-[#18181b]"
+                  : "border-[#27272a] hover:border-gray-300"
               }`}
             >
-              <MessageSquare className={`h-6 w-6 mb-2 ${format === "text" ? "text-indigo-600" : "text-gray-400"}`} />
-              <p className="font-medium text-gray-900">Text Chat</p>
-              <p className="text-sm text-gray-500 mt-1">Type your answers. Works on all devices.</p>
+              <MessageSquare className={`h-6 w-6 mb-2 ${format === "text" ? "text-[#a78bfa]" : "text-[#a1a1aa]"}`} />
+              <p className="font-medium text-white">Text Chat</p>
+              <p className="text-sm text-[#a1a1aa] mt-1">Type your answers. Works on all devices.</p>
             </button>
             <button
               onClick={() => setFormat("voice")}
               className={`p-4 rounded-lg border-2 text-left transition-all ${
                 format === "voice"
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-indigo-500 bg-[#18181b]"
+                  : "border-[#27272a] hover:border-gray-300"
               }`}
             >
-              <Mic className={`h-6 w-6 mb-2 ${format === "voice" ? "text-indigo-600" : "text-gray-400"}`} />
-              <p className="font-medium text-gray-900">Voice Call</p>
-              <p className="text-sm text-gray-500 mt-1">Speak your answers. More realistic.</p>
+              <Mic className={`h-6 w-6 mb-2 ${format === "voice" ? "text-[#a78bfa]" : "text-[#a1a1aa]"}`} />
+              <p className="font-medium text-white">Voice Call</p>
+              <p className="text-sm text-[#a1a1aa] mt-1">Speak your answers. More realistic.</p>
             </button>
           </div>
         </div>
 
         {/* Interview Details */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="font-semibold text-gray-900 mb-4">What to Expect</h2>
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
+          <h2 className="font-semibold text-white mb-4">What to Expect</h2>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-gray-400" />
+              <Clock className="h-5 w-5 text-[#a1a1aa]" />
               <span className="text-sm text-gray-700">15 minutes total</span>
             </div>
             <div className="flex items-center gap-3">
-              <Brain className="h-5 w-5 text-gray-400" />
+              <Brain className="h-5 w-5 text-[#a1a1aa]" />
               <span className="text-sm text-gray-700">10 personalized questions based on resume</span>
             </div>
             <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-gray-400" />
+              <MessageSquare className="h-5 w-5 text-[#a1a1aa]" />
               <span className="text-sm text-gray-700">Mix of technical, behavioral, and project questions</span>
             </div>
           </div>

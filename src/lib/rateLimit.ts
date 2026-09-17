@@ -17,10 +17,7 @@ export interface RateLimitResult {
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-// Cache Ratelimit instances per window duration so each unique window size
-// gets its own correctly-configured sliding-window limiter.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const upstashLimiters = new Map<string, any>();
+const upstashLimiters = new Map<string, unknown>();
 
 let upstashInitialised = false;
 
@@ -29,7 +26,6 @@ async function ensureUpstash(): Promise<boolean> {
   upstashInitialised = true;
 
   if (!UPSTASH_URL || !UPSTASH_TOKEN) {
-    console.log("[rateLimit] Using in-memory rate limiter (no Upstash env vars)");
     return false;
   }
 
@@ -39,7 +35,6 @@ async function ensureUpstash(): Promise<boolean> {
 
     const redis = new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN });
 
-    // Store the factory so we can lazily create per-window limiters
     (globalThis as Record<string, unknown>).__upstashRatelimitFactory = Ratelimit;
     (globalThis as Record<string, unknown>).__upstashRedis = redis;
 
@@ -97,12 +92,35 @@ interface Bucket {
 
 const buckets = new Map<string, Bucket>();
 
-function now(): number {
-  return Date.now();
+// Periodic eviction of expired buckets to prevent unbounded memory growth
+const EVICTION_INTERVAL_MS = 60_000; // every 60 seconds
+let lastEviction = Date.now();
+
+function evictExpiredBuckets() {
+  const now = Date.now();
+  if (now - lastEviction < EVICTION_INTERVAL_MS) return;
+  lastEviction = now;
+
+  // Extract max window from all keys to determine staleness
+  // A bucket is stale if its newest timestamp is older than 2x the max window
+  for (const [id, bucket] of buckets) {
+    if (bucket.timestamps.length === 0) {
+      buckets.delete(id);
+      continue;
+    }
+    const newestTs = bucket.timestamps[bucket.timestamps.length - 1];
+    // If the newest entry is more than 10 minutes old, evict
+    if (now - newestTs > 10 * 60 * 1000) {
+      buckets.delete(id);
+    }
+  }
 }
 
 function inMemoryRateLimit(key: string, { limit, windowMs }: RateLimitOptions): RateLimitResult {
-  const t = now();
+  // Run eviction on every call (cheap check via timestamp)
+  evictExpiredBuckets();
+
+  const t = Date.now();
   const id = `${key}:${Math.floor(t / windowMs) * windowMs}`;
   let bucket = buckets.get(id);
   if (!bucket) {
@@ -125,7 +143,7 @@ function inMemoryRateLimit(key: string, { limit, windowMs }: RateLimitOptions): 
 }
 
 // ---------------------------------------------------------------------------
-// Unified public helpers – transparent to callers
+// Unified public helpers
 // ---------------------------------------------------------------------------
 
 export async function rateLimit(

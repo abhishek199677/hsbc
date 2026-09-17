@@ -112,7 +112,7 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
       case "problem_solving":
         return "bg-orange-100 text-orange-700";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-[#27272a] text-[#a1a1aa]";
     }
   };
 
@@ -136,7 +136,7 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -144,10 +144,10 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
 
   if (!interview) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-500">Interview not found</p>
-          <button onClick={() => router.back()} className="mt-4 text-indigo-600 hover:underline">
+          <p className="text-[#a1a1aa]">Interview not found</p>
+          <button onClick={() => router.back()} className="mt-4 text-[#a78bfa] hover:underline">
             Go back
           </button>
         </div>
@@ -156,40 +156,40 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#09090b]">
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Back */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
+          className="flex items-center gap-2 text-[#a1a1aa] hover:text-[#a1a1aa] mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
         </button>
 
         {/* Score Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
           <div className="text-center mb-6">
             <div className={`h-24 w-24 rounded-full flex items-center justify-center mx-auto mb-4 ${
               getScoreColor(interview.overallScore)
             }`}>
               <span className="text-3xl font-bold">{interview.overallScore}</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{interview.candidateName}</h1>
-            <p className="text-gray-500">Interview Results</p>
+            <h1 className="text-2xl font-bold text-white">{interview.candidateName}</h1>
+            <p className="text-[#a1a1aa]">Interview Results</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-sm text-gray-500">Duration</p>
+              <p className="text-sm text-[#a1a1aa]">Duration</p>
               <p className="font-medium">{formatDuration(interview.durationSeconds)}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Questions</p>
+              <p className="text-sm text-[#a1a1aa]">Questions</p>
               <p className="font-medium">{questions.length}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Format</p>
+              <p className="text-sm text-[#a1a1aa]">Format</p>
               <p className="font-medium capitalize">{interview.format}</p>
             </div>
           </div>
@@ -208,16 +208,16 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
 
         {/* Recommendation */}
         {interview.aiRecommendation && (
-          <div className="relative bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="relative bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
             {!resultsUnlocked && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl backdrop-blur-[2px] z-10">
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-sm w-full text-center">
+                <div className="bg-[#18181b] rounded-2xl shadow-xl border border-[#27272a] p-6 max-w-sm w-full text-center">
                   <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Lock className="w-7 h-7 text-indigo-600" />
+                    <Lock className="w-7 h-7 text-[#a78bfa]" />
                   </div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-2">Unlock Your Results</h4>
-                  <p className="text-sm text-gray-500 mb-1">View your recommendation, strengths, weaknesses, and detailed feedback.</p>
-                  <p className="text-2xl font-bold text-indigo-600 mb-4">$5.99</p>
+                  <h4 className="text-lg font-bold text-white mb-2">Unlock Your Results</h4>
+                  <p className="text-sm text-[#a1a1aa] mb-1">View your recommendation, strengths, weaknesses, and detailed feedback.</p>
+                  <p className="text-2xl font-bold text-[#a78bfa] mb-4">$5.99</p>
                   <PayPalUnlockButton
                     interviewId={id}
                     priceUsd={5.99}
@@ -226,19 +226,19 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
                       fetchInterview();
                     }}
                   />
-                  <p className="text-xs text-gray-400 mt-3">One-time payment. Results available forever after unlock.</p>
+                  <p className="text-xs text-[#a1a1aa] mt-3">One-time payment. Results available forever after unlock.</p>
                 </div>
               </div>
             )}
             <div className={!resultsUnlocked ? "blur-sm pointer-events-none select-none opacity-60" : ""}>
               <div className="flex items-center gap-3 mb-4">
                 {getRecommendationIcon(interview.aiRecommendation)}
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-white">
                   {interview.aiRecommendation}
                 </h2>
               </div>
               {summary.summary && (
-                <p className="text-gray-700 text-sm">{summary.summary}</p>
+                <p className="text-[#a1a1aa] text-sm">{summary.summary}</p>
               )}
             </div>
           </div>
@@ -251,11 +251,11 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
           )}
           <div className={!resultsUnlocked && interview.aiRecommendation ? "blur-sm pointer-events-none select-none opacity-60" : ""}>
             {summary.strengths && summary.strengths.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3 text-emerald-600">Strengths</h3>
+              <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
+                <h3 className="font-semibold text-white mb-3 text-emerald-600">Strengths</h3>
                 <ul className="space-y-2">
                   {summary.strengths.map((s: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                    <li key={i} className="flex items-start gap-2 text-sm text-[#a1a1aa]">
                       <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                       {s}
                     </li>
@@ -265,11 +265,11 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
             )}
 
             {summary.weaknesses && summary.weaknesses.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3 text-red-600">Areas for Improvement</h3>
+              <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
+                <h3 className="font-semibold text-white mb-3 text-red-600">Areas for Improvement</h3>
                 <ul className="space-y-2">
                   {summary.weaknesses.map((w: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                    <li key={i} className="flex items-start gap-2 text-sm text-[#a1a1aa]">
                       <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                       {w}
                     </li>
@@ -280,31 +280,31 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
 
             {/* Interview Prediction */}
             {summary.interviewPrediction && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Interview Prediction</h3>
-                <p className="text-sm text-gray-700">{summary.interviewPrediction}</p>
+              <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 mb-6">
+                <h3 className="font-semibold text-white mb-3">Interview Prediction</h3>
+                <p className="text-sm text-[#a1a1aa]">{summary.interviewPrediction}</p>
               </div>
             )}
 
             {/* Q&A Details */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Question & Answer Details</h3>
+              <h3 className="font-semibold text-white mb-4">Question & Answer Details</h3>
               <div className="space-y-3">
                 {questions.map((q) => (
                   <div
                     key={q.id}
-                    className="border border-gray-100 rounded-lg overflow-hidden"
+                    className="border border-[#27272a] rounded-lg overflow-hidden"
                   >
                     <button
                       onClick={() => setExpandedQ(expandedQ === q.questionNumber ? null : q.questionNumber)}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#09090b]"
                     >
                       <div className="flex items-center gap-3 text-left">
-                        <span className="text-sm font-medium text-gray-500">Q{q.questionNumber}</span>
+                        <span className="text-sm font-medium text-[#a1a1aa]">Q{q.questionNumber}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${getCategoryColor(q.category)}`}>
                           {q.category.replace("_", " ")}
                         </span>
-                        <span className="text-sm text-gray-700 truncate max-w-md">{q.question}</span>
+                        <span className="text-sm text-[#a1a1aa] truncate max-w-md">{q.question}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`text-sm font-medium px-2 py-0.5 rounded ${
@@ -317,21 +317,21 @@ export default function InterviewResultsPage({ params }: { params: Promise<{ id:
                       </div>
                     </button>
                     {expandedQ === q.questionNumber && (
-                      <div className="px-4 pb-4 border-t border-gray-100">
+                      <div className="px-4 pb-4 border-t border-[#27272a]">
                         <div className="mt-3">
-                          <p className="text-sm font-medium text-gray-500 mb-1">Question</p>
-                          <p className="text-sm text-gray-900">{q.question}</p>
+                          <p className="text-sm font-medium text-[#a1a1aa] mb-1">Question</p>
+                          <p className="text-sm text-white">{q.question}</p>
                         </div>
                         <div className="mt-3">
-                          <p className="text-sm font-medium text-gray-500 mb-1">Answer</p>
-                          <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                          <p className="text-sm font-medium text-[#a1a1aa] mb-1">Answer</p>
+                          <p className="text-sm text-[#a1a1aa] bg-[#09090b] p-3 rounded-lg">
                             {q.answer || "No answer provided"}
                           </p>
                         </div>
                         {q.aiFeedback && (
                           <div className="mt-3">
-                            <p className="text-sm font-medium text-gray-500 mb-1">AI Feedback</p>
-                            <p className="text-sm text-gray-700">{q.aiFeedback}</p>
+                            <p className="text-sm font-medium text-[#a1a1aa] mb-1">AI Feedback</p>
+                            <p className="text-sm text-[#a1a1aa]">{q.aiFeedback}</p>
                           </div>
                         )}
                       </div>

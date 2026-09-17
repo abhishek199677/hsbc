@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSession, verifyPassword, SESSION_COOKIE } from "@/lib/auth";
-import { rateLimitByIp } from "@/lib/rateLimit";
+import { rateLimitByIp, rateLimit } from "@/lib/rateLimit";
 import { verifyTwoFactorToken } from "@/lib/two-factor";
 
 function parseUserAgent(ua: string | null) {
@@ -30,8 +30,8 @@ function parseUserAgent(ua: string | null) {
 
 export async function POST(request: Request) {
   try {
-    const rateLimit = await rateLimitByIp(request, "login", { limit: 10, windowMs: 60_000 });
-    if (!rateLimit.allowed) {
+    const ipRateLimit = await rateLimitByIp(request, "login", { limit: 10, windowMs: 60_000 });
+    if (!ipRateLimit.allowed) {
       return NextResponse.json(
         { error: "Too many login attempts. Please try again later." },
         { status: 429 }
@@ -45,6 +45,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 }
+      );
+    }
+
+    // Account lockout: check if too many failed attempts for this email
+    const lockoutCheck = await rateLimit(`lockout:${email.toLowerCase()}`, { limit: 5, windowMs: 900_000 }); // 15 min window, 5 attempts
+    if (!lockoutCheck.allowed) {
+      return NextResponse.json(
+        { error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes." },
+        { status: 429 }
       );
     }
 
@@ -90,6 +99,9 @@ export async function POST(request: Request) {
     const isValidPassword = await verifyPassword(password, user.password);
 
     if (!isValidPassword) {
+      // Track failed attempt for lockout
+      await rateLimit(`lockout:${email.toLowerCase()}`, { limit: 5, windowMs: 900_000 });
+
       // Log failed login attempt
       await prisma.loginLog.create({
         data: {
@@ -156,6 +168,35 @@ export async function POST(request: Request) {
     const membership = user.teamMemberships.find(
       (candidate) => candidate.organizationId === user.organizationId
     );
+    const orgRole = membership?.role ?? null;
+    const isAdminOrOwner = orgRole === "owner" || orgRole === "admin";
+
+    // Mandatory 2FA for admin/owner roles
+    if (isAdminOrOwner && !user.twoFactorEnabled) {
+      await prisma.loginLog.create({
+        data: {
+          userId: user.id,
+          organizationId: user.organizationId,
+          email: user.email,
+          success: false,
+          failureReason: "2FA not configured (admin required)",
+          ipAddress,
+          userAgent,
+          device,
+          browser,
+          os,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          error: "Two-factor authentication is required for admin accounts. Please set up 2FA first.",
+          twoFactorSetupRequired: true,
+        },
+        { status: 403 }
+      );
+    }
+
     if (user.twoFactorEnabled) {
       if (!twoFactorToken) {
         return NextResponse.json({ error: "Authentication code required", twoFactorRequired: true }, { status: 401 });
@@ -181,6 +222,9 @@ export async function POST(request: Request) {
     }
 
     const { token } = await createSession(user.id, user.organizationId);
+
+    // Reset lockout counter on successful login
+    await rateLimit(`lockout:${email.toLowerCase()}`, { limit: 5, windowMs: 1 }); // Reset by using tiny window
 
     // Log successful login
     await prisma.loginLog.create({
@@ -226,7 +270,7 @@ export async function POST(request: Request) {
     response.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       path: "/",
       maxAge: 12 * 60 * 60,
     });

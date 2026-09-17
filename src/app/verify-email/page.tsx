@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { Mail, CheckCircle, XCircle, RefreshCw, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 function VerifyEmailContent() {
@@ -70,20 +70,29 @@ function VerifyEmailContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+    <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(167,139,250,0.05)_0%,transparent_50%)]" />
+
+      <div className="w-full max-w-md relative z-10">
+        <Link href="/" className="flex items-center justify-center mb-8 group">
+          <div className="flex items-center gap-3">
+            <Shield className="w-8 h-8 text-[#a78bfa]" />
+            <span className="text-2xl font-bold text-[#fafafa]">Techcitta</span>
+          </div>
+        </Link>
+
+        <div className="bg-[rgba(24,24,27,0.6)] backdrop-blur-xl border border-[#27272a] rounded-xl p-8 text-center">
           <div className="mb-4 flex justify-center">
             {status === "success" ? (
-              <CheckCircle className="w-16 h-16 text-green-500" />
+              <CheckCircle className="w-16 h-16 text-[#4ade80]" />
             ) : status === "error" ? (
-              <XCircle className="w-16 h-16 text-red-500" />
+              <XCircle className="w-16 h-16 text-[#ef4444]" />
             ) : (
-              <Mail className="w-16 h-16 text-indigo-500" />
+              <Mail className="w-16 h-16 text-[#a78bfa]" />
             )}
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-[#fafafa] mb-2">
             {status === "success"
               ? "Email Verified!"
               : status === "error"
@@ -91,7 +100,7 @@ function VerifyEmailContent() {
               : "Check Your Inbox"}
           </h1>
 
-          <p className="text-gray-500 mb-6">
+          <p className="text-[#a1a1aa] mb-6">
             {status === "verifying"
               ? "Verifying your email..."
               : status === "success"
@@ -105,7 +114,7 @@ function VerifyEmailContent() {
             <button
               onClick={handleResend}
               disabled={resending}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium hover:bg-[#8b5cf6] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${resending ? "animate-spin" : ""}`} />
               {resending ? "Sending..." : "Resend Verification Email"}
@@ -114,11 +123,11 @@ function VerifyEmailContent() {
 
           <div className="mt-6">
             {status === "success" ? (
-              <Link href="/login" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center">
+              <Link href="/login" className="w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium hover:bg-[#8b5cf6] transition-colors flex items-center justify-center">
                 Go to Sign In
               </Link>
             ) : (
-              <Link href="/login" className="text-indigo-600 font-medium hover:text-indigo-700">
+              <Link href="/login" className="text-[#f5c542] font-medium hover:text-[#f5c542]/80">
                 Go to Sign In
               </Link>
             )}
@@ -133,8 +142,8 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
+          <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
         </div>
       }
     >

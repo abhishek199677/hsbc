@@ -33,33 +33,33 @@ const ROLE_CONFIG: Record<
 > = {
   owner: {
     label: "Owner",
-    color: "bg-purple-100 text-purple-800",
-    bg: "bg-purple-100",
-    text: "text-purple-800",
+    color: "bg-[#a855f7]/10 text-[#a855f7]",
+    bg: "bg-[#a855f7]/10",
+    text: "text-[#a855f7]",
   },
   admin: {
     label: "Admin",
-    color: "bg-blue-100 text-blue-800",
-    bg: "bg-blue-100",
+    color: "bg-[#3b82f6]/10 text-blue-800",
+    bg: "bg-[#3b82f6]/10",
     text: "text-blue-800",
   },
   interviewer: {
     label: "Interviewer",
-    color: "bg-green-100 text-green-800",
-    bg: "bg-green-100",
-    text: "text-green-800",
+    color: "bg-[#22c55e]/10 text-[#22c55e]",
+    bg: "bg-[#22c55e]/10",
+    text: "text-[#22c55e]",
   },
   member: {
     label: "Member",
-    color: "bg-gray-100 text-gray-800",
-    bg: "bg-gray-100",
-    text: "text-gray-800",
+    color: "bg-[#27272a] text-[#fafafa]",
+    bg: "bg-[#27272a]",
+    text: "text-[#fafafa]",
   },
   viewer: {
     label: "Viewer",
-    color: "bg-slate-100 text-slate-800",
-    bg: "bg-slate-100",
-    text: "text-slate-800",
+    color: "bg-[#64748b]/10 text-[#64748b]",
+    bg: "bg-[#64748b]/10",
+    text: "text-[#64748b]",
   },
 };
 
@@ -86,8 +86,8 @@ export default function TeamManagement({ token }: TeamManagementProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const headers = useMemo(
-    () => (token ? { Authorization: `Bearer ${token}` } : {}) as Record<string, string>,
-    [token]
+    () => ({ "Content-Type": "application/json" }) as Record<string, string>,
+    []
   );
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
@@ -243,8 +243,8 @@ export default function TeamManagement({ token }: TeamManagementProps) {
         <div
           className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 ${
             toast.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-red-50 text-red-800 border border-red-200"
+              ? "bg-green-50 text-[#22c55e] border border-[#22c55e]/30"
+              : "bg-red-50 text-[#ef4444] border border-[#ef4444]/30"
           }`}
         >
           {toast.type === "success" ? (
@@ -258,16 +258,16 @@ export default function TeamManagement({ token }: TeamManagementProps) {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-[#fafafa]">
             Team Management
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[#a1a1aa]">
             Manage your team members, roles, and permissions.
           </p>
         </div>
         <button
           onClick={() => setInviteModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#a78bfa] text-white text-sm font-medium rounded-lg hover:bg-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#a78bfa] transition-colors"
         >
           <UserPlus className="w-4 h-4" />
           Invite Member
@@ -275,28 +275,28 @@ export default function TeamManagement({ token }: TeamManagementProps) {
       </div>
 
       {/* Team Members Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader className="w-6 h-6 text-indigo-600 animate-spin" />
-              <span className="ml-3 text-sm text-gray-500">
+              <Loader className="w-6 h-6 text-[#a78bfa] animate-spin" />
+              <span className="ml-3 text-sm text-[#a1a1aa]">
                 Loading team members…
               </span>
             </div>
           ) : members.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <UserPlus className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-[#27272a] rounded-full flex items-center justify-center mb-4">
+                <UserPlus className="w-8 h-8 text-[#a1a1aa]" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">
+              <h3 className="text-lg font-medium text-[#fafafa] mb-1">
                 No team members yet
               </h3>
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-[#a1a1aa] mb-6">
                 Invite your first team member.
               </p>
               <button
                 onClick={() => setInviteModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#a78bfa] text-white text-sm font-medium rounded-lg hover:bg-[#8b5cf6] transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
                 Invite Member
@@ -306,25 +306,25 @@ export default function TeamManagement({ token }: TeamManagementProps) {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <tr className="border-b border-[#27272a] bg-[#18181b]">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">
                       Member
                     </th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">
                       Role
                     </th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">
                       Status
                     </th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">
                       Joined
                     </th>
-                    <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-right px-6 py-3 text-xs font-semibold text-[#a1a1aa]">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[#27272a]">
                   {members.map((member) => {
                     const roleConf = ROLE_CONFIG[member.role] ?? ROLE_CONFIG.member;
                     const status = getMemberStatus(member);
@@ -333,20 +333,20 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                     return (
                       <tr
                         key={member.id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="hover:bg-[#27272a] transition-colors"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-semibold flex-shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-[#a78bfa] text-sm font-semibold flex-shrink-0">
                               {(member.name ?? member.email ?? "U")
                                 .charAt(0)
                                 .toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-[#fafafa] truncate">
                                 {member.name || "Pending"}
                               </p>
-                              <p className="text-sm text-gray-500 truncate">
+                              <p className="text-sm text-[#a1a1aa] truncate">
                                 {member.email}
                               </p>
                             </div>
@@ -361,18 +361,18 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                         </td>
                         <td className="px-6 py-4">
                           {status === "invited" ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#f59e0b]/10 text-[#f59e0b]">
                               <Mail className="w-3 h-3" />
                               Invited
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#22c55e]/10 text-[#22c55e]">
                               <Check className="w-3 h-3" />
                               Active
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-6 py-4 text-sm text-[#a1a1aa]">
                           {formatDate(member.joinedAt)}
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -384,22 +384,22 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                                     openMenuId === member.id ? null : member.id,
                                   )
                                 }
-                                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                                className="p-1.5 rounded-lg text-[#a1a1aa] hover:text-[#a1a1aa] hover:bg-[#27272a] transition-colors"
                               >
                                 <MoreVertical className="w-4 h-4" />
                               </button>
                               {openMenuId === member.id && (
-                                <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                <div className="absolute right-0 mt-1 w-44 bg-[#18181b] rounded-lg shadow-lg border border-[#27272a] py-1 z-10">
                                   <button
                                     onClick={() => openRoleModal(member)}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#a1a1aa] hover:bg-[#27272a] transition-colors"
                                   >
-                                    <Shield className="w-4 h-4 text-gray-400" />
+                                    <Shield className="w-4 h-4 text-[#a1a1aa]" />
                                     Change Role
                                   </button>
                                   <button
                                     onClick={() => openRemoveModal(member)}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#ef4444] hover:bg-red-50 transition-colors"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                     Remove
@@ -408,7 +408,7 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-400 italic">
+                            <span className="text-xs text-[#a1a1aa] italic">
                               Owner
                             </span>
                           )}
@@ -429,21 +429,21 @@ export default function TeamManagement({ token }: TeamManagementProps) {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setInviteModalOpen(false)}
           />
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="relative bg-[#18181b] rounded-xl shadow-xl border border-[#27272a] w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#27272a]">
+              <h2 className="text-lg font-semibold text-[#fafafa]">
                 Invite Team Member
               </h2>
               <button
                 onClick={() => setInviteModalOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg text-[#a1a1aa] hover:text-[#a1a1aa] hover:bg-[#27272a] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#a1a1aa] mb-1.5">
                   Email Address
                 </label>
                 <input
@@ -451,18 +451,18 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-[#27272a] rounded-lg text-sm text-[#fafafa] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa] transition-colors"
                   onKeyDown={(e) => e.key === "Enter" && handleInvite()}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#a1a1aa] mb-1.5">
                   Role
                 </label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
+                  className="w-full px-3.5 py-2.5 border border-[#27272a] rounded-lg text-sm text-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa] transition-colors bg-[#18181b]"
                 >
                   {ROLES.map((r) => (
                     <option key={r} value={r}>
@@ -472,17 +472,17 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                 </select>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#27272a] bg-[#18181b]">
               <button
                 onClick={() => setInviteModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg hover:bg-[#27272a] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleInvite}
                 disabled={inviting || !inviteEmail.trim()}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {inviting ? (
                   <Loader className="w-4 h-4 animate-spin" />
@@ -503,30 +503,30 @@ export default function TeamManagement({ token }: TeamManagementProps) {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setRoleModalOpen(false)}
           />
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="relative bg-[#18181b] rounded-xl shadow-xl border border-[#27272a] w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#27272a]">
+              <h2 className="text-lg font-semibold text-[#fafafa]">
                 Change Role
               </h2>
               <button
                 onClick={() => setRoleModalOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg text-[#a1a1aa] hover:text-[#a1a1aa] hover:bg-[#27272a] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="px-6 py-5 space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-semibold">
+              <div className="flex items-center gap-3 p-3 bg-[#18181b] rounded-lg">
+                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-[#a78bfa] text-sm font-semibold">
                   {(selectedMember.name ?? selectedMember.email ?? "U")
                     .charAt(0)
                     .toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-[#fafafa]">
                     {selectedMember.name || selectedMember.email}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[#a1a1aa]">
                     Current role:{" "}
                     <span
                       className={`font-medium ${ROLE_CONFIG[selectedMember.role]?.text ?? ""}`}
@@ -537,13 +537,13 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-[#a1a1aa] mb-1.5">
                   New Role
                 </label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
+                  className="w-full px-3.5 py-2.5 border border-[#27272a] rounded-lg text-sm text-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa] transition-colors bg-[#18181b]"
                 >
                   {ROLES.map((r) => (
                     <option key={r} value={r}>
@@ -553,17 +553,17 @@ export default function TeamManagement({ token }: TeamManagementProps) {
                 </select>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#27272a] bg-[#18181b]">
               <button
                 onClick={() => setRoleModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg hover:bg-[#27272a] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleChangeRole}
                 disabled={savingRole || newRole === selectedMember.role}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {savingRole ? (
                   <Loader className="w-4 h-4 animate-spin" />
@@ -584,26 +584,26 @@ export default function TeamManagement({ token }: TeamManagementProps) {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setRemoveModalOpen(false)}
           />
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
+          <div className="relative bg-[#18181b] rounded-xl shadow-xl border border-[#27272a] w-full max-w-sm mx-4 overflow-hidden">
             <div className="px-6 py-5 text-center">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 rounded-full bg-[#ef4444]/10 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-[#ef4444]" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
+              <h2 className="text-lg font-semibold text-[#fafafa] mb-2">
                 Remove Team Member
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[#a1a1aa]">
                 Are you sure you want to remove{" "}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-[#fafafa]">
                   {selectedMember.name || selectedMember.email}
                 </span>{" "}
                 from the team? This action cannot be undone.
               </p>
             </div>
-            <div className="flex items-center justify-center gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-center gap-3 px-6 py-4 border-t border-[#27272a] bg-[#18181b]">
               <button
                 onClick={() => setRemoveModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg hover:bg-[#27272a] transition-colors"
               >
                 Cancel
               </button>

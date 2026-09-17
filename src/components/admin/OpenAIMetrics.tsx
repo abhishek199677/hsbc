@@ -90,9 +90,7 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
         const params = new URLSearchParams({ period });
         if (modelFilter) params.set("model", modelFilter);
 
-        const res = await fetch(`/api/admin/openai-metrics?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`/api/admin/openai-metrics?${params}`);
 
         if (res.status === 401 || res.status === 403) {
           return;
@@ -115,7 +113,7 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
   if (loading || !metrics) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -133,24 +131,24 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
   };
 
   const getModelColor = (model: string) => {
-    if (model.includes("gpt-5")) return "bg-purple-100 text-purple-700";
-    if (model.includes("gpt-3.5")) return "bg-blue-100 text-blue-700";
-    if (model.includes("embedding")) return "bg-green-100 text-green-700";
-    return "bg-gray-100 text-gray-700";
+    if (model.includes("gpt-5")) return "bg-[#a855f7]/10 text-[#a855f7]";
+    if (model.includes("gpt-3.5")) return "bg-[#3b82f6]/10 text-[#3b82f6]";
+    if (model.includes("embedding")) return "bg-[#22c55e]/10 text-[#22c55e]";
+    return "bg-[#27272a] text-[#a1a1aa]";
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">OpenAI API Metrics</h1>
-          <p className="text-sm text-gray-500 mt-1">Track API usage, costs, and performance</p>
+          <h1 className="text-2xl font-bold text-[#fafafa]">OpenAI API Metrics</h1>
+          <p className="text-sm text-[#a1a1aa] mt-1">Track API usage, costs, and performance</p>
         </div>
         <div className="flex items-center gap-3">
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="border border-[#27272a] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa]"
           >
             <option value="24h">Last 24 hours</option>
             <option value="7d">Last 7 days</option>
@@ -161,7 +159,7 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
           <select
             value={modelFilter}
             onChange={(e) => setModelFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="border border-[#27272a] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa]"
           >
             <option value="">All models</option>
             <option value="gpt-5-nano">GPT-5 Nano</option>
@@ -173,110 +171,110 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Cost</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{formatCost(metrics.summary.totalCost)}</p>
+              <p className="text-sm font-medium text-[#a1a1aa]">Total Cost</p>
+              <p className="text-2xl font-bold text-[#fafafa] mt-1">{formatCost(metrics.summary.totalCost)}</p>
             </div>
-            <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <DollarSign className="h-5 w-5 text-green-600" />
+            <div className="h-10 w-10 rounded-lg bg-[#22c55e]/10 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-[#22c55e]" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[#a1a1aa] mt-2">
             <TrendingUp className="h-3 w-3 inline mr-1" />
             {metrics.summary.totalRequests} total requests
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Tokens</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{formatTokens(metrics.summary.totalTokens)}</p>
+              <p className="text-sm font-medium text-[#a1a1aa]">Total Tokens</p>
+              <p className="text-2xl font-bold text-[#fafafa] mt-1">{formatTokens(metrics.summary.totalTokens)}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <Zap className="h-5 w-5 text-indigo-600" />
+              <Zap className="h-5 w-5 text-[#a78bfa]" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[#a1a1aa] mt-2">
             {formatTokens(metrics.summary.totalPromptTokens)} prompt + {formatTokens(metrics.summary.totalCompletionTokens)} completion
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Avg Latency</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{metrics.summary.avgLatency}ms</p>
+              <p className="text-sm font-medium text-[#a1a1aa]">Avg Latency</p>
+              <p className="text-2xl font-bold text-[#fafafa] mt-1">{metrics.summary.avgLatency}ms</p>
             </div>
-            <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-amber-600" />
+            <div className="h-10 w-10 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center">
+              <Clock className="h-5 w-5 text-[#f59e0b]" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[#a1a1aa] mt-2">
             <Activity className="h-3 w-3 inline mr-1" />
             Per request average
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Error Rate</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{metrics.summary.errorRate}%</p>
+              <p className="text-sm font-medium text-[#a1a1aa]">Error Rate</p>
+              <p className="text-2xl font-bold text-[#fafafa] mt-1">{metrics.summary.errorRate}%</p>
             </div>
-            <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${metrics.summary.errorRate > 5 ? 'bg-red-100' : 'bg-green-100'}`}>
+            <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${metrics.summary.errorRate > 5 ? 'bg-[#ef4444]/10' : 'bg-[#22c55e]/10'}`}>
               {metrics.summary.errorRate > 5 ? (
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <AlertTriangle className="h-5 w-5 text-[#ef4444]" />
               ) : (
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle className="h-5 w-5 text-[#22c55e]" />
               )}
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[#a1a1aa] mt-2">
             {metrics.summary.totalRequests > 0 ? Math.round(metrics.summary.totalRequests * metrics.summary.errorRate / 100) : 0} failed requests
           </p>
         </div>
       </div>
 
       {/* Usage by Model */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage by Model</h2>
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+        <h2 className="text-lg font-semibold text-[#fafafa] mb-4">Usage by Model</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-[#27272a]">
             <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requests</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt Tokens</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Tokens</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Tokens</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Latency</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Model</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Requests</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Prompt Tokens</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Completion Tokens</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Total Tokens</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Cost</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Avg Latency</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#27272a]">
               {metrics.byModel.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-[#a1a1aa]">
                     No API usage data available yet.
                   </td>
                 </tr>
               ) : (
                 metrics.byModel.map((m) => (
-                  <tr key={m.model} className="hover:bg-gray-50">
+                  <tr key={m.model} className="hover:bg-[#27272a]">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getModelColor(m.model)}`}>
                         {m.model}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{m.requests.toLocaleString()}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatTokens(m.promptTokens)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatTokens(m.completionTokens)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatTokens(m.totalTokens)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{formatCost(m.cost)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{m.avgLatency}ms</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{m.requests.toLocaleString()}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{formatTokens(m.promptTokens)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{formatTokens(m.completionTokens)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{formatTokens(m.totalTokens)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-[#fafafa]">{formatCost(m.cost)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{m.avgLatency}ms</td>
                   </tr>
                 ))
               )}
@@ -286,34 +284,34 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
       </div>
 
       {/* Usage by Endpoint */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage by Endpoint</h2>
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+        <h2 className="text-lg font-semibold text-[#fafafa] mb-4">Usage by Endpoint</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-[#27272a]">
             <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requests</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Tokens</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Latency</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Endpoint</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Requests</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Total Tokens</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Cost</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Avg Latency</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#27272a]">
               {metrics.byEndpoint.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#a1a1aa]">
                     No API usage data available yet.
                   </td>
                 </tr>
               ) : (
                 metrics.byEndpoint.map((e) => (
-                  <tr key={e.endpoint} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{e.endpoint}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{e.requests.toLocaleString()}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatTokens(e.totalTokens)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{formatCost(e.cost)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{e.avgLatency}ms</td>
+                  <tr key={e.endpoint} className="hover:bg-[#27272a]">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-[#fafafa]">{e.endpoint}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{e.requests.toLocaleString()}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{formatTokens(e.totalTokens)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-[#fafafa]">{formatCost(e.cost)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{e.avgLatency}ms</td>
                   </tr>
                 ))
               )}
@@ -323,10 +321,10 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
       </div>
 
       {/* Daily Usage Chart */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Daily Usage</h2>
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+        <h2 className="text-lg font-semibold text-[#fafafa] mb-4">Daily Usage</h2>
         {metrics.dailyUsage.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-8">No daily usage data available yet.</p>
+          <p className="text-sm text-[#a1a1aa] text-center py-8">No daily usage data available yet.</p>
         ) : (
           <div className="space-y-3">
             {metrics.dailyUsage.map((d) => {
@@ -334,20 +332,20 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
               const width = maxCost > 0 ? (d.cost / maxCost) * 100 : 0;
               return (
                 <div key={d.date} className="flex items-center gap-4">
-                  <div className="w-24 text-sm text-gray-600">
+                  <div className="w-24 text-sm text-[#a1a1aa]">
                     {new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </div>
                   <div className="flex-1">
-                    <div className="h-6 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-6 bg-[#27272a] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                        className="h-full bg-[#a78bfa]/100 rounded-full transition-all duration-300"
                         style={{ width: `${width}%` }}
                       />
                     </div>
                   </div>
                   <div className="w-32 text-right">
-                    <span className="text-sm font-medium text-gray-900">{formatCost(d.cost)}</span>
-                    <span className="text-xs text-gray-500 ml-2">({d.requests} req)</span>
+                    <span className="text-sm font-medium text-[#fafafa]">{formatCost(d.cost)}</span>
+                    <span className="text-xs text-[#a1a1aa] ml-2">({d.requests} req)</span>
                   </div>
                 </div>
               );
@@ -357,33 +355,33 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
       </div>
 
       {/* Recent Requests */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Requests</h2>
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+        <h2 className="text-lg font-semibold text-[#fafafa] mb-4">Recent Requests</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-[#27272a]">
             <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tokens</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Latency</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Time</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Model</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Endpoint</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Tokens</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Cost</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Latency</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#a1a1aa]">User</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#27272a]">
               {metrics.recentRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-[#a1a1aa]">
                     No recent requests available.
                   </td>
                 </tr>
               ) : (
                 metrics.recentRequests.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <tr key={r.id} className="hover:bg-[#27272a]">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#a1a1aa]">
                       {new Date(r.createdAt).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -391,27 +389,27 @@ export default function OpenAIMetrics({ token }: { token: string | null }) {
                         {r.model}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{r.endpoint}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatTokens(r.totalTokens)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{formatCost(r.cost)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{r.latencyMs}ms</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{r.endpoint}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{formatTokens(r.totalTokens)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-[#fafafa]">{formatCost(r.cost)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#fafafa]">{r.latencyMs}ms</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {r.success ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <CheckCircle className="h-5 w-5 text-[#22c55e]" />
                       ) : (
                         <div className="flex items-center gap-1">
-                          <XCircle className="h-5 w-5 text-red-500" />
+                          <XCircle className="h-5 w-5 text-[#ef4444]" />
                           {r.errorMessage && (
-                            <span className="text-xs text-red-600 max-w-[150px] truncate" title={r.errorMessage}>
+                            <span className="text-xs text-[#ef4444] max-w-[150px] truncate" title={r.errorMessage}>
                               {r.errorMessage}
                             </span>
                           )}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#a1a1aa]">
                       <div>{r.userName}</div>
-                      {r.userEmail && <div className="text-xs text-gray-400">{r.userEmail}</div>}
+                      {r.userEmail && <div className="text-xs text-[#a1a1aa]">{r.userEmail}</div>}
                     </td>
                   </tr>
                 ))

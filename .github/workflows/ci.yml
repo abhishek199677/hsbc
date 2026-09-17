@@ -35,10 +35,31 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - run: npm ci
+      - run: npm audit --audit-level=high || true
+      - name: Check for secrets in code
+        run: |
+          if grep -r "sk-proj-" --include="*.ts" --include="*.tsx" --include="*.js" .; then
+            echo "ERROR: OpenAI API key found in source code"
+            exit 1
+          fi
+          if grep -r "password.*=.*['\"]" --include="*.ts" --include="*.tsx" src/lib/prisma.ts src/lib/auth.ts; then
+            echo "WARNING: Possible hardcoded password found"
+          fi
+
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, security]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,7 +71,7 @@ jobs:
       - run: npm run build
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
-          JWT_SECRET: "test-secret"
+          JWT_SECRET: "test-secret-for-build-only"
           OPENAI_API_KEY: "sk-test"
 
   deploy-vercel:
@@ -58,6 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: github.ref == 'refs/heads/main'
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to Vercel
@@ -73,6 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: github.ref == 'refs/heads/main'
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - name: Trigger Render Deploy
@@ -85,6 +108,7 @@ jobs:
     name: Database Migration
     runs-on: ubuntu-latest
     needs: [deploy-vercel]
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -93,6 +117,22 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npx prisma generate
-      - run: npx prisma db push
+      - run: npx prisma db push --skip-generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  health-check:
+    name: Post-Deploy Health Check
+    runs-on: ubuntu-latest
+    needs: [deploy-vercel]
+    steps:
+      - name: Wait for deployment
+        run: sleep 30
+      - name: Check health endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/health")
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Health check passed"

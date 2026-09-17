@@ -315,7 +315,7 @@ export default function InterviewRoomPage() {
     cameraOk,
     micStatus === "ready",
     speakerStatus === "ready",
-    speechStatus === "ready",
+    speechStatus === "ready" || speechStatus === "unavailable",
     networkStatus === "ready",
     roleLevelReady,
     checklistComplete,
@@ -331,28 +331,21 @@ export default function InterviewRoomPage() {
       sessionStorage.setItem("tcRole", selectedRole || "");
       sessionStorage.setItem("tcLevel", selectedLevel || "");
       sessionStorage.setItem("tcNoCamera", continueWithoutCamera ? "1" : "0");
-      // tcInterviewId should already be in sessionStorage from the scheduling step;
-      // if not, we'll try to fetch it below.
     } catch {}
     router.push("/interview/live");
   };
 
-  // Ensure tcInterviewId is in sessionStorage for the live interview page
   useEffect(() => {
     if (sessionStorage.getItem("tcInterviewId") || !token) return;
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/interview", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch("/api/interview");
         const data = await res.json();
         if (!cancelled && data.success && data.interview?.id) {
           sessionStorage.setItem("tcInterviewId", data.interview.id);
         }
-      } catch {
-        // Interview may not exist yet; the live page will handle this gracefully
-      }
+      } catch {}
     })();
     return () => { cancelled = true; };
   }, [token]);
@@ -363,45 +356,43 @@ export default function InterviewRoomPage() {
 
   const statusBadge = (status: DeviceStatus, extra?: string) => {
     if (status === "checking")
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20 text-xs font-medium"><Loader className="w-3 h-3 animate-spin" /> Checking...</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#e050b0]/10 text-[#a78bfa] border border-[#e050b0]/20 text-xs font-medium font-mono"><Loader className="w-3 h-3 animate-spin" /> Checking...</span>;
     if (status === "ready")
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-400/20 text-xs font-medium"><CheckCircle2 className="w-3.5 h-3.5" /> Ready{extra ? ` · ${extra}` : ""}</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4dacde]/10 text-[#f5c542] border border-[#4dacde]/20 text-xs font-medium font-mono"><CheckCircle2 className="w-3.5 h-3.5" /> Ready{extra ? ` · ${extra}` : ""}</span>;
     if (status === "denied")
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-400/10 text-red-300 border border-red-400/20 text-xs font-medium"><XCircle className="w-3.5 h-3.5" /> Blocked</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium font-mono"><XCircle className="w-3.5 h-3.5" /> Blocked</span>;
     if (status === "unavailable")
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-400/10 text-red-300 border border-red-400/20 text-xs font-medium"><XCircle className="w-3.5 h-3.5" /> Unavailable</span>;
-    return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-slate-400 border border-white/10 text-xs font-medium">Not tested</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium font-mono"><XCircle className="w-3.5 h-3.5" /> Unavailable</span>;
+    return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#18181b] text-[#a1a1aa] border border-[#27272a] text-xs font-medium font-mono">Not tested</span>;
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.15),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(139,92,246,0.12),transparent_55%)]" />
-
-      <header className="relative z-10 border-b border-white/10 bg-slate-950/70 backdrop-blur px-4 py-3">
+    <div className="min-h-screen bg-[#09090b] text-white flex flex-col">
+      <header className="relative z-10 border-b border-[#27272a] bg-[#18181b]/70 backdrop-blur px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <button
             onClick={() => router.push("/interview")}
             className="flex items-center gap-3 group"
           >
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-1.5">
-              <img src="/logo.png" alt="HireRight" className="h-6 w-auto rounded drop-shadow-md" />
+            <div className="bg-[#27272a] backdrop-blur-sm p-1.5">
+              <img src="/logo.png" alt="HireRight" className="h-6 w-auto drop-shadow-md" />
             </div>
-            <span className="px-2 py-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs rounded-full font-medium">
+            <span className="px-2 py-0.5 bg-[#e050b0] text-white text-xs font-medium font-mono uppercase tracking-wider">
               AI Interview Room
             </span>
           </button>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-[#a1a1aa] font-mono">
+              <ShieldCheck className="w-4 h-4 text-[#f5c542]" />
               Secure & private session
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center ring-2 ring-indigo-400/30">
+              <div className="w-9 h-9 bg-[#e050b0] flex items-center justify-center ring-2 ring-[#e050b0]/30">
                 <span className="text-sm font-semibold text-white">{displayName.charAt(0).toUpperCase()}</span>
               </div>
               <div className="hidden sm:block leading-tight">
-                <p className="text-sm font-medium">Hi, {displayName}</p>
-                <p className="text-xs text-slate-400">Pre-interview check</p>
+                <p className="text-sm font-medium text-white font-mono">Hi, {displayName}</p>
+                <p className="text-xs text-[#a1a1aa] font-mono">Pre-interview check</p>
               </div>
             </div>
           </div>
@@ -412,23 +403,23 @@ export default function InterviewRoomPage() {
         <div className="grid lg:grid-cols-5 gap-6">
           {/* LEFT: interviewer + devices */}
           <section className="lg:col-span-3 space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 flex items-center gap-5">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center flex-shrink-0 ring-4 ring-white/10">
+            <div className="border border-[#27272a] bg-[#e050b0]/10 p-6 flex items-center gap-5">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#27272a] backdrop-blur flex items-center justify-center flex-shrink-0 ring-4 ring-[#e050b0]/20">
                 <span className="text-5xl">🤖</span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-bold">{displayName}</h1>
-                  <span className="px-2 py-0.5 rounded-full bg-white/15 text-[11px] font-medium text-white/90">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white font-mono">{displayName}</h1>
+                  <span className="px-2 py-0.5 bg-[#e050b0]/20 text-[11px] font-medium text-[#a78bfa] font-mono uppercase tracking-wider">
                     AI Interviewer · HireRight
                   </span>
                 </div>
-                <p className="text-white/80 text-sm mt-1">
+                <p className="text-[#a1a1aa] text-sm mt-1 font-mono">
                   Let&apos;s make sure everything is ready before you step in. I&apos;ll be
                   asking your questions out loud — you answer by speaking.
                 </p>
-                <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-[#f5c542] font-mono">
+                  <span className="w-2 h-2 bg-[#4dacde] animate-pulse" />
                   Online & ready to interview you
                 </div>
               </div>
@@ -438,28 +429,28 @@ export default function InterviewRoomPage() {
                     <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="5" />
                     <circle cx="24" cy="24" r="20" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeDasharray={2 * Math.PI * 20} strokeDashoffset={2 * Math.PI * 20 * (1 - readiness / 100)} className="transition-all duration-700" />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">{readiness}%</span>
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white font-mono">{readiness}%</span>
                 </div>
-                <p className="text-[10px] text-white/70">Ready</p>
+                <p className="text-[10px] text-[#a1a1aa] font-mono">Ready</p>
               </div>
             </div>
 
             {/* Camera card */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+            <div className="border border-[#27272a] bg-[#18181b] overflow-hidden">
               <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <h2 className="flex items-center gap-2 font-semibold">
-                      <Camera className="w-4 h-4 text-indigo-400" />
+                    <h2 className="flex items-center gap-2 font-semibold text-white font-mono uppercase tracking-wider">
+                      <Camera className="w-4 h-4 text-[#a78bfa]" />
                       Camera
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Your video feed — stay centered and visible</p>
+                    <p className="text-xs text-[#a1a1aa] mt-0.5 font-mono">Your video feed — stay centered and visible</p>
                   </div>
                   {statusBadge(cameraStatus, continueWithoutCamera ? "off" : videoSize || undefined)}
                 </div>
               </div>
 
-              <div className="relative bg-black mx-4 sm:mx-5 rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
+              <div className="relative bg-[#09090b] mx-4 sm:mx-5 overflow-hidden" style={{ aspectRatio: "16/9" }}>
                 <video
                   ref={videoRef}
                   autoPlay
@@ -476,14 +467,14 @@ export default function InterviewRoomPage() {
                   style={{ transform: mirror ? "scaleX(-1)" : "none" }}
                 />
                 <div className={`absolute inset-0 flex flex-col items-center justify-center gap-3 ${cameraStatus === "ready" && !continueWithoutCamera ? "pointer-events-none opacity-0" : ""}`}>
-                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+                  <div className="w-20 h-20 bg-[#27272a] flex items-center justify-center">
                     {cameraStatus === "checking" ? (
-                      <Loader className="w-8 h-8 text-slate-400 animate-spin" />
+                      <Loader className="w-8 h-8 text-[#a1a1aa] animate-spin" />
                     ) : (
-                      <span className="text-3xl font-bold text-slate-500">{displayName.charAt(0).toUpperCase()}</span>
+                      <span className="text-3xl font-bold text-[#a1a1aa] font-mono">{displayName.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-[#a1a1aa] font-mono">
                     {cameraStatus === "checking"
                       ? "Requesting camera access..."
                       : continueWithoutCamera
@@ -493,13 +484,13 @@ export default function InterviewRoomPage() {
                 </div>
                 {cameraStatus === "ready" && !continueWithoutCamera && (
                   <>
-                    <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-md text-xs text-white">You</span>
-                    <span className="absolute top-2 left-2 px-2 py-1 bg-emerald-500/20 border border-emerald-400/30 rounded-md text-[11px] text-emerald-300 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
+                    <span className="absolute bottom-2 left-2 px-2 py-1 bg-[#09090b]/60 text-xs text-white font-mono">You</span>
+                    <span className="absolute top-2 left-2 px-2 py-1 bg-[#4dacde]/20 border border-[#4dacde]/30 text-[11px] text-[#f5c542] flex items-center gap-1 font-mono">
+                      <span className="w-1.5 h-1.5 bg-[#4dacde] animate-pulse" /> LIVE
                     </span>
                     <button
                       onClick={toggleMirror}
-                      className="absolute bottom-2 right-2 px-3 py-1.5 bg-black/60 hover:bg-black/80 rounded-md text-xs text-white"
+                      className="absolute bottom-2 right-2 px-3 py-1.5 bg-[#09090b]/60 hover:bg-[#09090b]/80 text-xs text-white font-mono"
                     >
                       {mirror ? "Mirror: On" : "Mirror: Off"}
                     </button>
@@ -508,14 +499,14 @@ export default function InterviewRoomPage() {
               </div>
 
               {showCameraFailover && cameraStatus !== "ready" && !continueWithoutCamera && (
-                <div className="mx-4 sm:mx-5 mt-4 p-4 rounded-xl border border-amber-400/20 bg-amber-400/5">
-                  <p className="text-sm text-amber-200">
+                <div className="mx-4 sm:mx-5 mt-4 p-4 border border-[#e050b0]/20 bg-[#e050b0]/5">
+                  <p className="text-sm text-[#a78bfa] font-mono">
                     <strong>Can&apos;t access your camera?</strong> You can still proceed without
                     video. We recommend a camera for the best experience.
                   </p>
                   <button
                     onClick={() => setContinueWithoutCamera(true)}
-                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-400/10 border border-amber-400/30 text-amber-200 text-sm font-medium hover:bg-amber-400/20"
+                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#e050b0]/10 border border-[#e050b0]/30 text-[#a78bfa] text-sm font-medium hover:bg-[#e050b0]/20 font-mono uppercase tracking-wider"
                   >
                     <CameraOff className="w-4 h-4" />
                     Continue without camera
@@ -526,19 +517,19 @@ export default function InterviewRoomPage() {
 
             {/* Mic + speaker cards */}
             <div className="grid sm:grid-cols-2 gap-6">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="border border-[#27272a] bg-[#18181b] p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
                   <div>
-                    <h2 className="flex items-center gap-2 font-semibold">
-                      <Mic className="w-4 h-4 text-violet-400" />
+                    <h2 className="flex items-center gap-2 font-semibold text-white font-mono uppercase tracking-wider">
+                      <Mic className="w-4 h-4 text-[#a78bfa]" />
                       Microphone
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Speak naturally — I listen live</p>
+                    <p className="text-xs text-[#a1a1aa] mt-0.5 font-mono">Speak naturally — I listen live</p>
                   </div>
                   {statusBadge(micStatus)}
                 </div>
 
-                <div className="flex items-end justify-center gap-1 h-16 rounded-xl bg-black/40 border border-white/5 px-4">
+                <div className="flex items-end justify-center gap-1 h-16 bg-[#09090b] border border-[#27272a] px-4">
                   {Array.from({ length: micBarCount }).map((_, i) => {
                     const peak = (i / micBarCount) * 1.15;
                     const level = micStatus === "ready" ? Math.max(audioLevel * 1.4 - peak, 0) : 0;
@@ -546,17 +537,17 @@ export default function InterviewRoomPage() {
                     return (
                       <div
                         key={i}
-                        className="flex-1 max-w-[6px] rounded-t transition-all duration-75"
+                        className="flex-1 max-w-[6px] transition-all duration-75"
                         style={{
                           height: `${Math.max(8, level * 100)}%`,
-                          background: active ? "linear-gradient(to top,#a78bfa,#6366f1)" : "#ffffff10",
-                          boxShadow: active ? "0 0 12px rgba(139,92,246,0.5)" : "none",
+                          background: active ? "linear-gradient(to top,#e050b0,#4dacde)" : "#2a2a2a",
+                          boxShadow: active ? "0 0 12px rgba(224,80,176,0.5)" : "none",
                         }}
                       />
                     );
                   })}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-3 flex items-center gap-1.5">
+                <p className="text-[11px] text-[#a1a1aa] mt-3 flex items-center gap-1.5 font-mono">
                   <AudioLines className="w-3.5 h-3.5" />
                   {micStatus === "ready"
                     ? audioLevel > 0.15
@@ -566,14 +557,14 @@ export default function InterviewRoomPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="border border-[#27272a] bg-[#18181b] p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
                   <div>
-                    <h2 className="flex items-center gap-2 font-semibold">
-                      <Volume2 className="w-4 h-4 text-emerald-400" />
+                    <h2 className="flex items-center gap-2 font-semibold text-white font-mono uppercase tracking-wider">
+                      <Volume2 className="w-4 h-4 text-[#f5c542]" />
                       Speaker & AI voice
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Make sure you can hear me ask questions</p>
+                    <p className="text-xs text-[#a1a1aa] mt-0.5 font-mono">Make sure you can hear me ask questions</p>
                   </div>
                   {statusBadge(speakerStatus)}
                 </div>
@@ -581,28 +572,28 @@ export default function InterviewRoomPage() {
                 <button
                   onClick={playTestTone}
                   disabled={speakerStatus === "checking"}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-400/30 text-emerald-200 text-sm font-medium hover:from-emerald-500/30 hover:to-teal-500/30 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#4dacde]/20 border border-[#4dacde]/30 text-[#f5c542] text-sm font-medium hover:bg-[#4dacde]/30 disabled:opacity-60 flex items-center justify-center gap-2 font-mono uppercase tracking-wider"
                 >
                   <Volume2 className="w-4 h-4" />
                   Play test sound
                 </button>
 
                 {speakerStatus === "checking" && (
-                  <div className="mt-3 p-3 rounded-xl border border-white/10 bg-white/5 text-sm text-slate-200">
-                    <p className="mb-3 flex items-center gap-2">
-                      <VolumeX className="w-4 h-4 text-amber-300" />
+                  <div className="mt-3 p-3 border border-[#27272a] bg-[#27272a] text-sm text-white">
+                    <p className="mb-3 flex items-center gap-2 font-mono">
+                      <VolumeX className="w-4 h-4 text-[#a78bfa]" />
                       Did you hear the tone?
                     </p>
                     <div className="flex gap-2">
                       <button
                         onClick={confirmSpeaker}
-                        className="flex-1 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600"
+                        className="flex-1 py-2 bg-[#4dacde] text-white text-sm font-medium hover:bg-[#4dacde]/80 font-mono uppercase tracking-wider"
                       >
                         Yes, I heard it
                       </button>
                       <button
                         onClick={() => setSpeakerStatus("idle")}
-                        className="flex-1 py-2 rounded-lg bg-white/10 text-sm font-medium hover:bg-white/20"
+                        className="flex-1 py-2 bg-[#27272a] text-sm font-medium hover:bg-[#2a2a2a] font-mono uppercase tracking-wider"
                       >
                         No, retry
                       </button>
@@ -610,7 +601,7 @@ export default function InterviewRoomPage() {
                   </div>
                 )}
                 {speakerHeard && (
-                  <p className="text-[11px] text-emerald-300 mt-3 flex items-center gap-1.5">
+                  <p className="text-[11px] text-[#f5c542] mt-3 flex items-center gap-1.5 font-mono">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Speaker confirmed — you&apos;ll hear every question clearly.
                   </p>
@@ -620,70 +611,75 @@ export default function InterviewRoomPage() {
 
             {/* Speech + network */}
             <div className="grid sm:grid-cols-2 gap-6">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="border border-[#27272a] bg-[#18181b] p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                   <div>
-                    <h2 className="flex items-center gap-2 font-semibold">
-                      <MessagesSquare className="w-4 h-4 text-sky-400" />
+                    <h2 className="flex items-center gap-2 font-semibold text-white font-mono uppercase tracking-wider">
+                      <MessagesSquare className="w-4 h-4 text-[#f5c542]" />
                       Voice recognition
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Confirm I can transcribe your voice</p>
+                    <p className="text-xs text-[#a1a1aa] mt-0.5 font-mono">Confirm I can transcribe your voice</p>
                   </div>
                   {statusBadge(speechStatus)}
                 </div>
                 <button
                   onClick={testSpeech}
                   disabled={speechStatus === "checking"}
-                  className="w-full py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-200 text-sm font-medium hover:bg-sky-500/25 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#4dacde]/15 border border-[#4dacde]/30 text-[#f5c542] text-sm font-medium hover:bg-[#4dacde]/25 disabled:opacity-60 flex items-center justify-center gap-2 font-mono uppercase tracking-wider"
                 >
                   <Mic className="w-4 h-4" />
                   {speechStatus === "checking" ? "Listening — say something..." : "Test my voice"}
                 </button>
                 {speechTranscript && (
-                  <p className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5 text-sm text-slate-200 italic">
-                    “{speechTranscript}”
+                  <p className="mt-3 p-3 bg-[#09090b] border border-[#27272a] text-sm text-white italic font-mono">
+                    &quot;{speechTranscript}&quot;
                   </p>
                 )}
                 {speechStatus === "idle" && (
-                  <p className="text-[11px] text-slate-500 mt-3">
-                    Click the button, then say <span className="text-slate-300">“Hello {displayName}, I am ready”</span>.
+                  <p className="text-[11px] text-[#a1a1aa] mt-3 font-mono">
+                    Click the button, then say <span className="text-white">&quot;Hello {displayName}, I am ready&quot;</span>.
                   </p>
                 )}
                 {speechStatus === "unavailable" && (
-                  <p className="text-[11px] text-amber-300 mt-3">
-                    Voice recognition isn&apos;t supported in this browser — you can type answers during the interview.
-                  </p>
+                  <div className="mt-3 p-3 bg-[#18181b] border border-[#27272a] rounded-lg">
+                    <p className="text-sm text-[#a1a1aa]">
+                      Voice recognition isn&apos;t available in this browser. You can <span className="text-white font-medium">type your answers</span> during the interview — it works perfectly.
+                    </p>
+                    <p className="text-xs text-[#a1a1aa]/70 mt-2">
+                      For voice input, use <span className="text-[#a78bfa]">Chrome</span>, <span className="text-[#a78bfa]">Edge</span>, or <span className="text-[#a78bfa]">Safari</span>.
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="border border-[#27272a] bg-[#18181b] p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
                   <div>
-                    <h2 className="flex items-center gap-2 font-semibold">
-                      <Wifi className="w-4 h-4 text-teal-400" />
+                    <h2 className="flex items-center gap-2 font-semibold text-white font-mono uppercase tracking-wider">
+                      <Wifi className="w-4 h-4 text-[#f5c542]" />
                       Connection
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Stable internet keeps your video smooth</p>
+                    <p className="text-xs text-[#a1a1aa] mt-0.5 font-mono">Stable internet keeps your video smooth</p>
                   </div>
                   {networkStatus === "ready" ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-400/20 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4dacde]/10 text-[#f5c542] border border-[#4dacde]/20 text-xs font-medium font-mono">
                       <CheckCircle2 className="w-3.5 h-3.5" /> {latency !== null ? `${latency}ms` : "Stable"}
                     </span>
                   ) : networkStatus === "checking" ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#e050b0]/10 text-[#a78bfa] border border-[#e050b0]/20 text-xs font-medium font-mono">
                       <Loader className="w-3 h-3 animate-spin" /> Checking...
                     </span>
                   ) : networkStatus === "unavailable" ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-400/10 text-red-300 border border-red-400/20 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium font-mono">
                       <XCircle className="w-3.5 h-3.5" /> Offline
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-slate-400 border border-white/10 text-xs font-medium">Not tested</span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#18181b] text-[#a1a1aa] border border-[#27272a] text-xs font-medium font-mono">Not tested</span>
                   )}
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex-1">
-                    <p className="text-slate-300">
+                    <p className="text-white font-mono">
                       {networkStatus === "ready"
                         ? latency !== null && latency < 150
                           ? "Excellent — great connection for a video interview."
@@ -701,7 +697,7 @@ export default function InterviewRoomPage() {
 
             <button
               onClick={runChecks}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-sm font-medium hover:bg-white/10"
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#27272a] bg-[#27272a] text-sm font-medium hover:bg-[#2a2a2a] text-white font-mono uppercase tracking-wider"
             >
               <RefreshCw className="w-4 h-4" />
               Recheck devices
@@ -710,12 +706,12 @@ export default function InterviewRoomPage() {
 
           {/* RIGHT: role, level, checklist, CTA */}
           <aside className="lg:col-span-2 space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <h2 className="font-semibold flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-indigo-400" />
+            <div className="border border-[#27272a] bg-[#18181b] p-5">
+              <h2 className="font-semibold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
+                <Briefcase className="w-4 h-4 text-[#a78bfa]" />
                 Role Track
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5 mb-4">What role are you interviewing for?</p>
+              <p className="text-xs text-[#a1a1aa] mt-0.5 mb-4 font-mono">What role are you interviewing for?</p>
               <div className="grid grid-cols-2 gap-2">
                 {roleTracks.map((track) => {
                   const Icon = track.icon;
@@ -724,29 +720,29 @@ export default function InterviewRoomPage() {
                     <button
                       key={track.id}
                       onClick={() => setSelectedRole(track.id)}
-                      className={`text-left p-3 rounded-xl border transition-all ${
+                      className={`text-left p-3 border transition-all ${
                         active
-                          ? "border-indigo-400/60 bg-indigo-500/15 ring-1 ring-indigo-400/40"
-                          : "border-white/10 bg-white/[0.02] hover:bg-white/5"
+                          ? "border-[#e050b0]/60 bg-[#e050b0]/15 ring-1 ring-[#e050b0]/40"
+                          : "border-[#27272a] bg-[#27272a] hover:bg-[#27272a]/80"
                       }`}
                     >
-                      <Icon className={`w-5 h-5 mb-2 ${active ? "text-indigo-300" : "text-slate-400"}`} />
-                      <p className={`text-sm font-medium leading-tight ${active ? "text-white" : "text-slate-200"}`}>
+                      <Icon className={`w-5 h-5 mb-2 ${active ? "text-[#a78bfa]" : "text-[#a1a1aa]"}`} />
+                      <p className={`text-sm font-medium leading-tight ${active ? "text-white" : "text-[#a1a1aa]"} font-mono`}>
                         {track.label}
                       </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{track.desc}</p>
+                      <p className="text-[11px] text-[#a1a1aa] mt-0.5 font-mono">{track.desc}</p>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <h2 className="font-semibold flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-violet-400" />
+            <div className="border border-[#27272a] bg-[#18181b] p-5">
+              <h2 className="font-semibold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
+                <GraduationCap className="w-4 h-4 text-[#a78bfa]" />
                 Experience Level
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5 mb-4">Pick the level that matches your experience</p>
+              <p className="text-xs text-[#a1a1aa] mt-0.5 mb-4 font-mono">Pick the level that matches your experience</p>
               <div className="grid grid-cols-2 gap-2">
                 {levels.map((level) => {
                   const active = selectedLevel === level.id;
@@ -754,35 +750,35 @@ export default function InterviewRoomPage() {
                     <button
                       key={level.id}
                       onClick={() => setSelectedLevel(level.id)}
-                      className={`text-left p-3 rounded-xl border transition-all ${
+                      className={`text-left p-3 border transition-all ${
                         active
-                          ? "border-violet-400/60 bg-violet-500/15 ring-1 ring-violet-400/40"
-                          : "border-white/10 bg-white/[0.02] hover:bg-white/5"
+                          ? "border-[#e050b0]/60 bg-[#e050b0]/15 ring-1 ring-[#e050b0]/40"
+                          : "border-[#27272a] bg-[#27272a] hover:bg-[#27272a]/80"
                       }`}
                     >
-                      <p className={`text-sm font-medium ${active ? "text-white" : "text-slate-200"}`}>{level.label}</p>
-                      <p className="text-[11px] text-slate-500">{level.sub}</p>
+                      <p className={`text-sm font-medium ${active ? "text-white" : "text-[#a1a1aa]"} font-mono`}>{level.label}</p>
+                      <p className="text-[11px] text-[#a1a1aa] font-mono">{level.sub}</p>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="border border-[#27272a] bg-[#18181b] p-5">
               <div className="flex items-center justify-between mb-1">
-                <h2 className="font-semibold flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
+                <h2 className="font-semibold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4 text-[#a78bfa]" />
                   Before you join
                 </h2>
-                <span className="text-[11px] text-slate-500">Required</span>
+                <span className="text-[11px] text-[#a1a1aa] font-mono">Required</span>
               </div>
               <ul className="space-y-2.5 mt-4 mb-5">
                 {tips.map((tip) => {
                   const Icon = tip.icon;
                   return (
-                    <li key={tip.text} className="flex items-start gap-3 text-sm text-slate-300">
-                      <span className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-3.5 h-3.5 text-indigo-300" />
+                    <li key={tip.text} className="flex items-start gap-3 text-sm text-[#a1a1aa] font-mono">
+                      <span className="w-7 h-7 bg-[#27272a] border border-[#27272a] flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-3.5 h-3.5 text-[#a78bfa]" />
                       </span>
                       {tip.text}
                     </li>
@@ -791,48 +787,48 @@ export default function InterviewRoomPage() {
               </ul>
 
               <div className="space-y-2.5">
-                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checklist.quiet ? "border-emerald-400/40 bg-emerald-400/10" : "border-white/10 bg-white/[0.02] hover:bg-white/5"}`}>
+                <label className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${checklist.quiet ? "border-[#4dacde]/40 bg-[#4dacde]/10" : "border-[#27272a] bg-[#27272a] hover:bg-[#27272a]/80"}`}>
                   <input
                     type="checkbox"
                     checked={checklist.quiet}
                     onChange={(e) => setChecklist((c) => ({ ...c, quiet: e.target.checked }))}
                     className="sr-only"
                   />
-                  <span className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${checklist.quiet ? "bg-emerald-500 border-emerald-500" : "border-slate-500"}`}>
+                  <span className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 ${checklist.quiet ? "bg-[#4dacde] border-[#4dacde]" : "border-[#a0a0a0]"}`}>
                     {checklist.quiet && <CheckCircle2 className="w-4 h-4 text-white" />}
                   </span>
-                  <span className="text-sm text-slate-200">I am in a quiet place</span>
+                  <span className="text-sm text-white font-mono">I am in a quiet place</span>
                 </label>
 
-                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checklist.devices ? "border-emerald-400/40 bg-emerald-400/10" : "border-white/10 bg-white/[0.02] hover:bg-white/5"}`}>
+                <label className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${checklist.devices ? "border-[#4dacde]/40 bg-[#4dacde]/10" : "border-[#27272a] bg-[#27272a] hover:bg-[#27272a]/80"}`}>
                   <input
                     type="checkbox"
                     checked={checklist.devices}
                     onChange={(e) => setChecklist((c) => ({ ...c, devices: e.target.checked }))}
                     className="sr-only"
                   />
-                  <span className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${checklist.devices ? "bg-emerald-500 border-emerald-500" : "border-slate-500"}`}>
+                  <span className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 ${checklist.devices ? "bg-[#4dacde] border-[#4dacde]" : "border-[#a0a0a0]"}`}>
                     {checklist.devices && <CheckCircle2 className="w-4 h-4 text-white" />}
                   </span>
-                  <span className="text-sm text-slate-200">My camera & mic are ready</span>
+                  <span className="text-sm text-white font-mono">My camera & mic are ready</span>
                 </label>
 
-                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checklist.outLoud ? "border-emerald-400/40 bg-emerald-400/10" : "border-white/10 bg-white/[0.02] hover:bg-white/5"}`}>
+                <label className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${checklist.outLoud ? "border-[#4dacde]/40 bg-[#4dacde]/10" : "border-[#27272a] bg-[#27272a] hover:bg-[#27272a]/80"}`}>
                   <input
                     type="checkbox"
                     checked={checklist.outLoud}
                     onChange={(e) => setChecklist((c) => ({ ...c, outLoud: e.target.checked }))}
                     className="sr-only"
                   />
-                  <span className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${checklist.outLoud ? "bg-emerald-500 border-emerald-500" : "border-slate-500"}`}>
+                  <span className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 ${checklist.outLoud ? "bg-[#4dacde] border-[#4dacde]" : "border-[#a0a0a0]"}`}>
                     {checklist.outLoud && <CheckCircle2 className="w-4 h-4 text-white" />}
                   </span>
-                  <span className="text-sm text-slate-200">I will answer out loud</span>
+                  <span className="text-sm text-white font-mono">I will answer out loud</span>
                 </label>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-500/15 to-violet-500/10 p-5">
+            <div className="border border-[#27272a] bg-[#e050b0]/10 p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="relative w-14 h-14">
@@ -852,35 +848,35 @@ export default function InterviewRoomPage() {
                       />
                       <defs>
                         <linearGradient id="readinessGrad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#818cf8" />
-                          <stop offset="100%" stopColor="#c084fc" />
+                          <stop offset="0%" stopColor="#e050b0" />
+                          <stop offset="100%" stopColor="#4dacde" />
                         </linearGradient>
                       </defs>
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">{readiness}%</span>
+                    <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white font-mono">{readiness}%</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Room readiness</p>
-                    <p className="text-[11px] text-slate-400">{checksPassed}/7 checks passed</p>
+                    <p className="text-sm font-medium text-white font-mono">Room readiness</p>
+                    <p className="text-[11px] text-[#a1a1aa] font-mono">{checksPassed}/7 checks passed</p>
                   </div>
                 </div>
               </div>
 
               {!canJoin && (
-                <ul className="text-[12px] text-slate-300 space-y-1.5 mb-4">
+                <ul className="text-[12px] text-[#a1a1aa] space-y-1.5 mb-4 font-mono">
                   {!roleLevelReady && (
                     <li className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Select a role track & level
+                      <span className="w-1.5 h-1.5 bg-[#e050b0]" /> Select a role track & level
                     </li>
                   )}
                   {!checklistComplete && (
                     <li className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Complete the checklist above
+                      <span className="w-1.5 h-1.5 bg-[#e050b0]" /> Complete the checklist above
                     </li>
                   )}
                   {!cameraOk && (
                     <li className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Allow camera or choose to continue without it
+                      <span className="w-1.5 h-1.5 bg-[#e050b0]" /> Allow camera or choose to continue without it
                     </li>
                   )}
                 </ul>
@@ -889,10 +885,10 @@ export default function InterviewRoomPage() {
               <button
                 onClick={handleJoin}
                 disabled={!canJoin || joining}
-                className={`w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
+                className={`w-full py-3.5 font-semibold flex items-center justify-center gap-2 transition-all font-mono uppercase tracking-wider ${
                   canJoin
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500 shadow-lg shadow-emerald-500/30"
-                    : "bg-white/10 text-slate-300 cursor-not-allowed border border-white/15"
+                    ? "bg-[#4dacde] text-black hover:bg-[#4dacde]/80"
+                    : "bg-[#27272a] text-[#a1a1aa] cursor-not-allowed border border-[#27272a]"
                 }`}
               >
                 {joining ? (
@@ -902,7 +898,7 @@ export default function InterviewRoomPage() {
                 )}
               </button>
               {!canJoin && (
-                <p className="text-center text-[11px] text-amber-300 mt-2 flex items-center justify-center gap-1">
+                <p className="text-center text-[11px] text-[#a78bfa] mt-2 flex items-center justify-center gap-1 font-mono">
                   <Lock className="w-3 h-3" />
                   {!roleLevelReady && !checklistComplete
                     ? "Pick a role, level & tick the checklist to enable"
@@ -911,7 +907,7 @@ export default function InterviewRoomPage() {
                     : "Complete the checklist above to enable"}
                 </p>
               )}
-              <p className="text-center text-[11px] text-slate-500 mt-3 flex items-center justify-center gap-1">
+              <p className="text-center text-[11px] text-[#a1a1aa] mt-3 flex items-center justify-center gap-1 font-mono">
                 <Lock className="w-3 h-3" />
                 Your data is encrypted & secure
               </p>

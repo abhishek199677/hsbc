@@ -40,13 +40,15 @@ const noticePeriods = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, token, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [resumeParsed, setResumeParsed] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<string[]>([]);
+  const [parsingError, setParsingError] = useState<string | null>(null);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
   const [newSkill, setNewSkill] = useState("");
 
   const [formData, setFormData] = useState({
@@ -83,10 +85,45 @@ export default function ProfilePage() {
   const [skillsList, setSkillsList] = useState<string[]>([]);
   const [certificationsList, setCertificationsList] = useState<string[]>([]);
   const [achievementsList, setAchievementsList] = useState<string[]>([]);
+  const [educationDetailsList, setEducationDetailsList] = useState<{degree: string; institution: string; year: string; grade?: string; details?: string}[]>([]);
+  const [suggestedRolesList, setSuggestedRolesList] = useState<string[]>([]);
 
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
     if (validationError) setValidationError(null);
+  };
+
+  const generateAISummary = async () => {
+    setGeneratingSummary(true);
+    try {
+      const response = await fetch("/api/ai/generate-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentRole: formData.currentRole,
+          totalExperience: formData.totalExperience,
+          currentLocation: formData.currentLocation,
+          skills: formData.skills || skillsList.join(", "),
+          workExperience: formData.workExperience,
+          projects: formData.projects,
+          education: formData.education,
+          currentCompany: formData.currentCompany,
+        }),
+      });
+      const data = await response.json();
+      if (data.success && data.summary) {
+        updateFormData({ aboutYou: data.summary });
+        setAutoFilledFields((prev) =>
+          prev.includes("About You") ? prev : [...prev, "AI Generated Summary"]
+        );
+      } else {
+        setValidationError(data.error || "Failed to generate summary");
+      }
+    } catch {
+      setValidationError("Failed to generate summary. Please try again.");
+    } finally {
+      setGeneratingSummary(false);
+    }
   };
 
   const progress = Math.round((currentStep / steps.length) * 100);
@@ -126,14 +163,12 @@ export default function ProfilePage() {
 
   // Fetch profile data on mount
   useEffect(() => {
-    if (!user || !token) return;
+    if (!user) return;
     let cancelled = false;
 
     (async () => {
       try {
-        const response = await fetch("/api/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await fetch("/api/profile");
         const data = await response.json();
         if (cancelled) return;
         if (data.success && data.profile) {
@@ -193,17 +228,15 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [user, token]);
+  }, [user]);
 
   const saveProfile = async (stepUpdate?: number): Promise<boolean> => {
-    if (!token) return false;
     setSaving(true);
     try {
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,
@@ -226,10 +259,11 @@ export default function ProfilePage() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0] || !token) return;
+    if (!e.target.files || !e.target.files[0]) return;
 
     const file = e.target.files[0];
     setUploading(true);
+    setParsingError(null);
 
     try {
       const formDataObj = new FormData();
@@ -237,7 +271,6 @@ export default function ProfilePage() {
 
       const response = await fetch("/api/upload", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formDataObj,
       });
 
@@ -257,65 +290,75 @@ export default function ProfilePage() {
 
           setFormData((prev) => {
             const updated = { ...prev };
-
-            if (parsed.summary) {
-              updated.aboutYou = parsed.summary;
-              filled.push("Professional Summary");
-            }
-            if (parsed.currentRole) {
-              updated.currentRole = parsed.currentRole;
-              filled.push("Current Role");
-            }
-            if (parsed.totalExperience) {
-              updated.totalExperience = parsed.totalExperience;
-              filled.push("Experience");
-            }
-            if (parsed.currentLocation) {
-              updated.currentLocation = parsed.currentLocation;
-              filled.push("Location");
-            }
+            
+            const autoFill = (field: keyof typeof updated, value: string, label: string) => {
+              if (value && (!updated[field] || String(updated[field]).trim() === "")) {
+                (updated as Record<string, unknown>)[field] = value;
+                filled.push(label);
+              }
+            };
+            
+            autoFill("currentRole", parsed.currentRole, "Current Role");
+            autoFill("totalExperience", parsed.totalExperience, "Experience");
+            autoFill("currentLocation", parsed.currentLocation, "Location");
+            autoFill("currentCompany", parsed.currentCompany, "Company");
+            autoFill("education", parsed.education, "Education");
+            autoFill("aboutYou", parsed.summary, "About You");
+            autoFill("strengths", parsed.strengths, "Strengths");
+            autoFill("linkedinUrl", parsed.linkedinUrl, "LinkedIn");
+            autoFill("noticePeriod", parsed.noticePeriod, "Notice Period");
+            autoFill("whatDrivesYou", parsed.whatDrivesYou, "What Drives You");
+            autoFill("jobType", parsed.jobType, "Job Type");
+            autoFill("preferredLocation", parsed.preferredLocation, "Preferred Location");
+            
             if (parsed.skills?.length > 0) {
-              updated.skills = parsed.skills.join(", ");
-              setSkillsList(parsed.skills);
-              filled.push(`${parsed.skills.length} Technical Skills`);
+              const newSkills = parsed.skills.join(", ");
+              if (!updated.skills || updated.skills.trim() === "") {
+                updated.skills = newSkills;
+                filled.push("Skills");
+              } else {
+                const existing = new Set(updated.skills.split(",").map((s: string) => s.trim().toLowerCase()));
+                const toAdd = parsed.skills.filter((s: string) => !existing.has(s.toLowerCase()));
+                if (toAdd.length > 0) {
+                  updated.skills = updated.skills + ", " + toAdd.join(", ");
+                  filled.push(`Skills (+${toAdd.length} new)`);
+                }
+              }
             }
-            if (parsed.currentCompany) {
-              updated.currentCompany = parsed.currentCompany;
-              filled.push("Current Company");
-            }
-            if (parsed.education) {
-              updated.education = parsed.education;
-              filled.push("Education");
-            }
-            if (parsed.strengths) {
-              updated.strengths = parsed.strengths;
-              filled.push("Strengths");
-            }
-            if (parsed.linkedinUrl) {
-              updated.linkedinUrl = parsed.linkedinUrl;
-              filled.push("LinkedIn");
-            }
-            if (parsed.workExperience?.length > 0) {
+            
+            if (parsed.workExperience?.length > 0 && (!updated.workExperience || updated.workExperience === "")) {
               updated.workExperience = JSON.stringify(parsed.workExperience);
               setWorkExpList(parsed.workExperience);
               filled.push(`${parsed.workExperience.length} Work Experience Cards`);
             }
-            if (parsed.projects?.length > 0) {
+            if (parsed.projects?.length > 0 && (!updated.projects || updated.projects === "")) {
               updated.projects = JSON.stringify(parsed.projects);
               setProjectsList(parsed.projects);
               filled.push(`${parsed.projects.length} Project & Tech Stack Cards`);
             }
-            if (parsed.keyAchievements?.length > 0) {
+            if (parsed.keyAchievements?.length > 0 && (!updated.keyAchievements || updated.keyAchievements === "")) {
               updated.keyAchievements = JSON.stringify(parsed.keyAchievements);
               setAchievementsList(parsed.keyAchievements);
               filled.push("Highlights & Achievements");
             }
-            if (parsed.certifications?.length > 0) {
+            if (parsed.certifications?.length > 0 && (!updated.certifications || updated.certifications === "")) {
               updated.certifications = JSON.stringify(parsed.certifications);
               setCertificationsList(parsed.certifications);
               filled.push(`${parsed.certifications.length} Certifications`);
             }
-
+            if (parsed.languages?.length > 0 && (!updated.languages || updated.languages === "")) {
+              updated.languages = JSON.stringify(parsed.languages);
+              filled.push("Languages");
+            }
+            if (parsed.educationDetails?.length > 0 && educationDetailsList.length === 0) {
+              setEducationDetailsList(parsed.educationDetails);
+              filled.push(`${parsed.educationDetails.length} Education Entries`);
+            }
+            if (parsed.suggestedRoles?.length > 0 && suggestedRolesList.length === 0) {
+              setSuggestedRolesList(parsed.suggestedRoles);
+              filled.push(`${parsed.suggestedRoles.length} Suggested Roles`);
+            }
+            
             return {
               ...updated,
               resume: file,
@@ -327,11 +370,84 @@ export default function ProfilePage() {
           if (filled.length > 0) {
             setResumeParsed(true);
             setAutoFilledFields(filled);
+          } else if (data.parsingStatus === "success") {
+            // Parsing succeeded but no new fields to fill (all already had data)
+            setResumeParsed(true);
+            setAutoFilledFields(["Resume uploaded - profile already up to date"]);
+          }
+        }
+
+        // If inline parsing failed, try re-fetching profile from the API
+        // (backend may have saved partial data before the error)
+        if (!data.parsedResume && data.parsingStatus === "failed") {
+          setParsingError(data.parsingError || "Resume parsing failed. Upload was successful but fields could not be auto-filled.");
+          console.log("[upload] Parsing failed, attempting to re-fetch profile from API...");
+          try {
+            const profileResponse = await fetch("/api/profile");
+            const profileData = await profileResponse.json();
+            if (profileData.success && profileData.profile) {
+              const p = profileData.profile;
+              const filled: string[] = [];
+              setFormData((prev) => {
+                const updated = { ...prev };
+                const autoFill = (field: keyof typeof updated, value: string, label: string) => {
+                  if (value && (!updated[field] || String(updated[field]).trim() === "")) {
+                    (updated as Record<string, unknown>)[field] = value;
+                    filled.push(label);
+                  }
+                };
+                autoFill("currentRole", p.currentRole, "Current Role");
+                autoFill("totalExperience", p.totalExperience, "Experience");
+                autoFill("currentLocation", p.currentLocation, "Location");
+                autoFill("currentCompany", p.currentCompany, "Company");
+                autoFill("education", p.education, "Education");
+                autoFill("aboutYou", p.aboutYou, "About You");
+                autoFill("strengths", p.strengths, "Strengths");
+                autoFill("linkedinUrl", p.linkedinUrl, "LinkedIn");
+                autoFill("noticePeriod", p.noticePeriod, "Notice Period");
+                autoFill("whatDrivesYou", p.whatDrivesYou, "What Drives You");
+                autoFill("jobType", p.jobType, "Job Type");
+                autoFill("preferredLocation", p.preferredLocation, "Preferred Location");
+                if (p.skills && (!updated.skills || updated.skills.trim() === "")) {
+                  updated.skills = p.skills;
+                  filled.push("Skills");
+                }
+                if (p.workExperience && (!updated.workExperience || updated.workExperience === "")) {
+                  updated.workExperience = p.workExperience;
+                  try { setWorkExpList(JSON.parse(p.workExperience)); } catch {}
+                  filled.push("Work Experience");
+                }
+                if (p.projects && (!updated.projects || updated.projects === "")) {
+                  updated.projects = p.projects;
+                  try { setProjectsList(JSON.parse(p.projects)); } catch {}
+                  filled.push("Projects");
+                }
+                if (p.certifications && (!updated.certifications || updated.certifications === "")) {
+                  updated.certifications = p.certifications;
+                  try { setCertificationsList(JSON.parse(p.certifications)); } catch {}
+                  filled.push("Certifications");
+                }
+                if (p.keyAchievements && (!updated.keyAchievements || updated.keyAchievements === "")) {
+                  updated.keyAchievements = p.keyAchievements;
+                  try { setAchievementsList(JSON.parse(p.keyAchievements)); } catch {}
+                  filled.push("Achievements");
+                }
+                return updated;
+              });
+              if (filled.length > 0) {
+                setResumeParsed(true);
+                setAutoFilledFields(filled);
+                setParsingError(null); // Clear error since recovery succeeded
+              }
+            }
+          } catch (fetchErr) {
+            console.error("[upload] Failed to re-fetch profile:", fetchErr);
           }
         }
       }
     } catch (error) {
       console.error("Upload failed:", error);
+      setParsingError("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -420,8 +536,8 @@ export default function ProfilePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
+        <div className="animate-spin h-8 w-8 border-4 border-[#e050b0] border-t-transparent" />
       </div>
     );
   }
@@ -431,27 +547,27 @@ export default function ProfilePage() {
   const renderStep1 = () => (
     <div className="space-y-8">
       {/* Upload Resume Box */}
-      <div className="bg-white rounded-xl border p-6 shadow-sm">
+      <div className="bg-[#18181b] border border-[#27272a] p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600" />
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#a78bfa]" />
             1. Upload Resume for Instant AI Auto-Fill
           </h3>
-          <button className="text-sm text-indigo-600 flex items-center gap-1 hover:text-indigo-800 font-medium">
+          <button className="text-sm font-mono text-[#f5c542] flex items-center gap-1 hover:text-[#a78bfa] font-medium uppercase tracking-wider">
             <Eye className="w-4 h-4" /> AI Resume Parsing Active
           </button>
         </div>
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-32 h-40 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-indigo-100">
-            <FileText className="w-16 h-16 text-indigo-400" />
+          <div className="w-32 h-40 bg-[#18181b] flex items-center justify-center flex-shrink-0 border border-[#27272a]">
+            <FileText className="w-16 h-16 text-[#a78bfa]" />
           </div>
           <div className="flex-1">
-            <h4 className="font-medium text-gray-900 mb-2">Upload your resume (PDF, DOCX, or Image)</h4>
-            <p className="text-sm text-gray-500 mb-4">
+            <h4 className="font-mono font-bold text-white mb-2 uppercase tracking-wider">Upload your resume (PDF, DOCX, or Image)</h4>
+            <p className="text-sm font-mono text-[#a1a1aa] mb-4">
               All your skills, professional summary, work history, tech stacks, projects, and certifications will be auto-parsed into your profile without manual entry!
             </p>
             <div
-              className="drop-zone border-2 border-dashed border-indigo-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-indigo-50/50"
+              className="drop-zone border-2 border-dashed border-[#27272a] p-6 text-center cursor-pointer hover:border-[#e050b0] transition-colors bg-[#18181b]"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -459,22 +575,22 @@ export default function ProfilePage() {
             >
               {uploading ? (
                 <div className="flex flex-col items-center py-4">
-                  <svg className="animate-spin h-8 w-8 text-indigo-600 mb-2" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-8 w-8 text-[#a78bfa] mb-2" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <p className="text-sm font-medium text-indigo-900">AI Parsing your resume...</p>
-                  <p className="text-xs text-indigo-600 mt-1">Extracting technical skills, projects, and work experience</p>
+                  <p className="text-sm font-mono font-bold text-[#a78bfa]">AI Parsing your resume...</p>
+                  <p className=" text-xs text-[#a1a1aa] mt-1">Extracting technical skills, projects, and work experience</p>
                 </div>
               ) : (
                 <>
-                  <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-800">Drag & drop your resume here</p>
-                  <p className="text-xs text-gray-500 my-1">or click to browse files</p>
-                  <span className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors mt-2 shadow-sm">
+                  <Upload className="w-8 h-8 text-[#a78bfa] mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-white">Drag & drop your resume here</p>
+                  <p className=" text-xs text-[#a1a1aa] my-1">or click to browse files</p>
+                  <span className="rounded-lg bg-[#a78bfa] text-white px-4 py-2 text-sm font-medium hover:bg-[#8b5cf6] transition-colors mt-2">
                     Browse Resume File
                   </span>
-                  <p className="text-xs text-gray-500 mt-2">Supports PDF, DOC, DOCX, PNG, JPG (Max 5MB)</p>
+                  <p className=" text-xs text-[#a1a1aa] mt-2">Supports PDF, DOC, DOCX, PNG, JPG (Max 5MB)</p>
                 </>
               )}
             </div>
@@ -487,25 +603,31 @@ export default function ProfilePage() {
             />
 
             {formData.resumeFileName && (
-              <div className="mt-3 flex items-center gap-2 text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200">
+              <div className="mt-3 flex items-center gap-2 text-[#f5c542] bg-[#18181b] p-2.5 border border-[#27272a]">
                 <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm font-medium">{formData.resumeFileName}</span>
+                <span className="text-sm font-mono font-bold">{formData.resumeFileName}</span>
+              </div>
+            )}
+
+            {parsingError && (
+              <div className="mt-3 flex items-start gap-2 text-[#a78bfa] bg-[#18181b] p-3 border border-[#27272a]">
+                <span className="text-sm font-mono">{parsingError}</span>
               </div>
             )}
 
             {resumeParsed && autoFilledFields.length > 0 && (
-              <div className="mt-4 p-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-700 text-white rounded-2xl shadow-lg border border-indigo-400">
-                <div className="flex items-center gap-2 font-bold text-base mb-1">
-                  <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
-                  ✨ Resume Auto-Parsed & Fields Highlighted!
+              <div className="mt-4 p-5 bg-[#18181b] text-white border border-[#e050b0]">
+                <div className="flex items-center gap-2 font-mono font-bold text-base mb-1 uppercase tracking-wider">
+                  <Sparkles className="w-5 h-5 text-[#a78bfa] animate-pulse" />
+                  Resume Auto-Parsed & Fields Highlighted!
                 </div>
-                <p className="text-xs text-indigo-100 mb-3 font-medium">
+                <p className=" text-xs text-[#a1a1aa] mb-3 font-medium">
                   The following sections were extracted from your resume and automatically populated with high-contrast emphasis into form boxes below:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {autoFilledFields.map((field) => (
-                    <span key={field} className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full font-bold border border-white/40 shadow-xs">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-300" /> {field}
+                    <span key={field} className="inline-flex items-center gap-1.5 bg-[#2a2a2a] text-white text-xs font-mono px-3 py-1 font-bold border border-[#e050b0]">
+                      <CheckCircle className="w-3.5 h-3.5 text-[#f5c542]" /> {field}
                     </span>
                   ))}
                 </div>
@@ -516,67 +638,90 @@ export default function ProfilePage() {
       </div>
 
       {/* Professional Summary Box */}
-      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${formData.aboutYou ? "border-indigo-400 ring-4 ring-indigo-500/15 bg-gradient-to-b from-indigo-50/30 to-white" : "border-gray-200"}`}>
+      <div className={`bg-[#18181b] border-2 p-6 transition-all ${formData.aboutYou ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             2. Professional Summary
           </h3>
-          {formData.aboutYou && (
-            <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-300" /> ✨ Highlighted Auto-Fill
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {formData.aboutYou && (
+              <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-white" /> Highlighted Auto-Fill
+              </span>
+            )}
+            <button
+              onClick={generateAISummary}
+              disabled={generatingSummary}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-[#a78bfa] to-[#e050b0] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {generatingSummary ? (
+                <>
+                  <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  AI Auto-Fill
+                </>
+              )}
+            </button>
+          </div>
         </div>
-        <p className="text-sm text-gray-600 mb-4 font-medium">Auto-extracted from your resume. Feel free to edit or refine it.</p>
+        <p className="text-sm font-mono text-[#a1a1aa] mb-4 font-medium">
+          {formData.aboutYou
+            ? "Auto-extracted from your resume. Feel free to edit or refine it."
+            : "Upload a resume or click AI Auto-Fill to generate a professional summary."}
+        </p>
         <textarea
-          className="w-full border-2 border-indigo-200 rounded-xl p-4 text-sm font-bold text-gray-900 resize-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white leading-relaxed shadow-xs placeholder-gray-400"
+          className="w-full border-2 border-[#27272a] p-4 text-sm font-medium text-white resize-none focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b] leading-relaxed placeholder-[#a0a0a0]"
           rows={5}
-          placeholder="Professional summary will be automatically filled when you upload your resume..."
+          placeholder="Professional summary will be automatically filled when you upload your resume or click AI Auto-Fill..."
           value={formData.aboutYou}
           onChange={(e) => updateFormData({ aboutYou: e.target.value })}
         />
-        <div className="flex justify-between items-center mt-2 text-xs font-semibold text-indigo-800">
-          <span>✨ Editable box • Synced with AI interviewer</span>
+        <div className="flex justify-between items-center mt-2 text-xs font-semibold text-[#a78bfa]">
+          <span>Editable box - Synced with AI interviewer</span>
           <span>{formData.aboutYou.length} characters</span>
         </div>
       </div>
 
       {/* Current Role Snapshot */}
-      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${formData.currentRole ? "border-indigo-400 ring-4 ring-indigo-500/15 bg-gradient-to-b from-indigo-50/30 to-white" : "border-gray-200"}`}>
+      <div className={`bg-[#18181b] border-2 p-6 transition-all ${formData.currentRole ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">3. Role Snapshot & Overview</h3>
+          <h3 className="text-lg font-semibold text-white">3. Role Snapshot & Overview</h3>
           {(formData.currentRole || formData.totalExperience || formData.currentLocation) && (
-            <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-300" /> ✨ Auto-Filled
+            <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-white" /> Auto-Filled
             </span>
           )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Current / Target Role</label>
+            <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Current / Target Role</label>
             <input
               type="text"
-              className="w-full border-2 border-indigo-300 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-indigo-50/40 shadow-2xs"
+              className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
               placeholder="e.g. Senior AI Engineer"
               value={formData.currentRole}
               onChange={(e) => updateFormData({ currentRole: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Total Experience</label>
+            <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Total Experience</label>
             <input
               type="text"
-              className="w-full border-2 border-indigo-300 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-indigo-50/40 shadow-2xs"
+              className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
               placeholder="e.g. 10+ years"
               value={formData.totalExperience}
               onChange={(e) => updateFormData({ totalExperience: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Current Location</label>
+            <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Current Location</label>
             <input
               type="text"
-              className="w-full border-2 border-indigo-300 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-indigo-50/40 shadow-2xs"
+              className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
               placeholder="e.g. Bangalore, India"
               value={formData.currentLocation}
               onChange={(e) => updateFormData({ currentLocation: e.target.value })}
@@ -590,38 +735,38 @@ export default function ProfilePage() {
   const renderStep3 = () => (
     <div className="space-y-8">
       {/* Technical Skills & Tech Stacks Box */}
-      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${skillsList.length > 0 ? "border-indigo-400 ring-4 ring-indigo-500/15" : "border-gray-200"}`}>
+      <div className={`bg-[#18181b] border-2 p-6 transition-all ${skillsList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Code className="w-5 h-5 text-indigo-600" />
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Code className="w-5 h-5 text-[#a78bfa]" />
             Technical Skills & Tech Stacks
           </h3>
-          <span className="text-xs bg-indigo-600 text-white px-3 py-1 rounded-full font-bold shadow-2xs flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-amber-300" /> {skillsList.length} Skills Extracted
+          <span className="text-xs font-mono bg-[#a78bfa] text-white px-3 py-1 font-bold flex items-center gap-1 uppercase tracking-wider">
+            <Sparkles className="w-3 h-3 text-white" /> {skillsList.length} Skills Extracted
           </span>
         </div>
-        <p className="text-sm text-gray-600 font-medium mb-4">
+        <p className="text-sm font-mono text-[#a1a1aa] font-medium mb-4">
           All programming languages, frameworks, databases, and tools parsed from your resume.
         </p>
 
         {/* Skill Tag Chips */}
-        <div className="flex flex-wrap gap-2 mb-4 p-4 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 rounded-2xl border-2 border-indigo-200 min-h-[70px] items-center">
+        <div className="flex flex-wrap gap-2 mb-4 p-4 bg-[#09090b] border-2 border-[#27272a] min-h-[70px] items-center">
           {skillsList.length === 0 ? (
-            <p className="text-sm text-gray-500 font-medium italic">No skills extracted yet. Upload a resume or add skills below.</p>
+            <p className="text-sm font-mono text-[#a1a1aa] font-medium italic">No skills extracted yet. Upload a resume or add skills below.</p>
           ) : (
             skillsList.map((skill) => (
               <span
                 key={skill}
-                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-xs hover:scale-105 transition-all group"
+                className="inline-flex items-center gap-1.5 bg-[#a78bfa] text-white text-xs font-mono font-bold px-3.5 py-1.5 hover:bg-[#8b5cf6] transition-all group"
               >
-                <Tag className="w-3.5 h-3.5 text-indigo-200" />
+                <Tag className="w-3.5 h-3.5 text-white" />
                 {skill}
                 <button
                   onClick={() => removeSkillTag(skill)}
-                  className="hover:text-red-300 transition-colors ml-1 font-bold text-sm"
+                  className="hover:text-[#f5c542] transition-colors ml-1 font-bold text-sm"
                   title="Remove skill"
                 >
-                  ×
+                  x
                 </button>
               </span>
             ))
@@ -632,7 +777,7 @@ export default function ProfilePage() {
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white"
+            className="flex-1 rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
             placeholder="Add another skill or tech stack (e.g. Docker, Next.js, PyTorch)"
             value={newSkill}
             onChange={(e) => setNewSkill(e.target.value)}
@@ -646,7 +791,7 @@ export default function ProfilePage() {
           <button
             onClick={addSkillTag}
             type="button"
-            className="bg-indigo-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-1.5 shadow-sm"
+            className="rounded-lg bg-[#a78bfa] text-white px-5 py-3 text-sm font-medium hover:bg-[#8b5cf6] transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> Add Skill
           </button>
@@ -654,14 +799,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Work Experience Cards */}
-      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${workExpList.length > 0 ? "border-indigo-400 ring-4 ring-indigo-500/15" : "border-gray-200"}`}>
+      <div className={`bg-[#18181b] border-2 p-6 transition-all ${workExpList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-[#a78bfa]" />
               Work Experience History
             </h3>
-            <p className="text-sm text-gray-600 font-medium mt-1">Auto-extracted job titles, companies, durations, and responsibilities.</p>
+            <p className="text-sm font-mono text-[#a1a1aa] font-medium mt-1">Auto-extracted job titles, companies, durations, and responsibilities.</p>
           </div>
           <button
             onClick={() => {
@@ -672,32 +817,32 @@ export default function ProfilePage() {
               updateWorkExperienceList(updated);
             }}
             type="button"
-            className="text-xs bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-3.5 py-2 rounded-xl shadow-xs flex items-center gap-1 transition-colors"
+            className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3.5 py-2 flex items-center gap-1 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add Experience
           </button>
         </div>
 
         {workExpList.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50/50">
-            <Briefcase className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm font-bold text-gray-700">No work experience entries yet</p>
-            <p className="text-xs text-gray-500 mt-1">Upload your resume to automatically fill this section.</p>
+          <div className="text-center py-8 border-2 border-dashed border-[#27272a] bg-[#09090b]">
+            <Briefcase className="w-10 h-10 text-[#a1a1aa] mx-auto mb-2" />
+            <p className="text-sm font-semibold text-white">No work experience entries yet</p>
+            <p className=" text-xs text-[#a1a1aa] mt-1">Upload your resume to automatically fill this section.</p>
           </div>
         ) : (
           <div className="space-y-5">
             {workExpList.map((exp, idx) => (
-              <div key={idx} className="border-2 border-indigo-300 rounded-2xl p-5 bg-gradient-to-br from-indigo-50/40 to-purple-50/20 shadow-xs hover:border-indigo-500 transition-all space-y-4">
+              <div key={idx} className="border-2 border-[#27272a] p-5 bg-[#09090b] hover:border-[#e050b0] transition-all space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-amber-300" /> Experience #{idx + 1} • Auto-Filled
+                  <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3 text-white" /> Experience #{idx + 1} - Auto-Filled
                   </span>
                   <button
                     onClick={() => {
                       const updated = workExpList.filter((_, i) => i !== idx);
                       updateWorkExperienceList(updated);
                     }}
-                    className="text-red-500 hover:text-red-700 bg-white p-1.5 rounded-lg border border-red-200 transition-colors shadow-2xs"
+                    className="text-[#a78bfa] hover:text-white bg-[#18181b] p-1.5 border border-[#27272a] transition-colors"
                     title="Delete entry"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -706,10 +851,10 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Company</label>
+                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Company</label>
                     <input
                       type="text"
-                      className="w-full border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 bg-white shadow-2xs focus:ring-2 focus:ring-indigo-600"
+                      className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
                       value={exp.company}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -719,10 +864,10 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Role / Job Title</label>
+                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Role / Job Title</label>
                     <input
                       type="text"
-                      className="w-full border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 bg-white shadow-2xs focus:ring-2 focus:ring-indigo-600"
+                      className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
                       value={exp.role}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -735,10 +880,10 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Start Date</label>
+                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Start Date</label>
                     <input
                       type="text"
-                      className="w-full border-2 border-gray-300 rounded-xl p-2.5 text-xs font-bold text-gray-900 bg-white"
+                      className="w-full rounded-lg border border-[#27272a] p-2.5 text-xs font-medium text-white bg-[#09090b]"
                       value={exp.startDate}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -748,10 +893,10 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">End Date</label>
+                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">End Date</label>
                     <input
                       type="text"
-                      className="w-full border-2 border-gray-300 rounded-xl p-2.5 text-xs font-bold text-gray-900 bg-white"
+                      className="w-full rounded-lg border border-[#27272a] p-2.5 text-xs font-medium text-white bg-[#09090b]"
                       value={exp.endDate}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -763,9 +908,9 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Responsibilities & Achievements</label>
+                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Responsibilities & Achievements</label>
                   <textarea
-                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-xs font-semibold text-gray-900 bg-white leading-relaxed resize-none shadow-2xs"
+                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono font-semibold text-white bg-[#09090b] leading-relaxed resize-none"
                     rows={3}
                     value={exp.description}
                     onChange={(e) => {
@@ -782,50 +927,50 @@ export default function ProfilePage() {
       </div>
 
       {/* Projects & Tech Stacks Cards */}
-      <div className={`bg-white rounded-2xl border-2 p-6 shadow-sm transition-all ${projectsList.length > 0 ? "border-indigo-400 ring-4 ring-indigo-500/15" : "border-gray-200"}`}>
+      <div className={`bg-[#18181b] border-2 p-6 transition-all ${projectsList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Code className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Code className="w-5 h-5 text-[#a78bfa]" />
               Projects & Tech Stacks
             </h3>
-            <p className="text-sm text-gray-600 font-medium mt-1">Key projects and technologies extracted from your resume.</p>
+            <p className="text-sm font-mono text-[#a1a1aa] font-medium mt-1">Key projects and technologies extracted from your resume.</p>
           </div>
           <button
             onClick={() => {
               const updated = [
                 ...projectsList,
-                { name: "New Project", description: "Brief description of the project...", technologies: ["React", "TypeScript"] },
+                { name: "New Project", description: "Brief description of the project...", summary: "Detailed overview of the project...", technologies: ["React", "TypeScript"] },
               ];
               updateProjectsList(updated);
             }}
             type="button"
-            className="text-xs bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-3.5 py-2 rounded-xl shadow-xs flex items-center gap-1 transition-colors"
+            className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3.5 py-2 flex items-center gap-1 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add Project
           </button>
         </div>
 
         {projectsList.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50/50">
-            <Code className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm font-bold text-gray-700">No project entries yet</p>
-            <p className="text-xs text-gray-500 mt-1">Upload your resume to automatically fill this section.</p>
+          <div className="text-center py-8 border-2 border-dashed border-[#27272a] bg-[#09090b]">
+            <Code className="w-10 h-10 text-[#a1a1aa] mx-auto mb-2" />
+            <p className="text-sm font-semibold text-white">No project entries yet</p>
+            <p className=" text-xs text-[#a1a1aa] mt-1">Upload your resume to automatically fill this section.</p>
           </div>
         ) : (
           <div className="space-y-5">
             {projectsList.map((proj, idx) => (
-              <div key={idx} className="border-2 border-indigo-300 rounded-2xl p-5 bg-gradient-to-br from-indigo-50/40 to-purple-50/20 shadow-xs hover:border-indigo-500 transition-all space-y-4">
+              <div key={idx} className="border-2 border-[#27272a] p-5 bg-[#09090b] hover:border-[#e050b0] transition-all space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-amber-300" /> Project #{idx + 1} • Auto-Filled
+                  <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3 text-white" /> Project #{idx + 1} - Auto-Filled
                   </span>
                   <button
                     onClick={() => {
                       const updated = projectsList.filter((_, i) => i !== idx);
                       updateProjectsList(updated);
                     }}
-                    className="text-red-500 hover:text-red-700 bg-white p-1.5 rounded-lg border border-red-200 transition-colors shadow-2xs"
+                    className="text-[#a78bfa] hover:text-white bg-[#18181b] p-1.5 border border-[#27272a] transition-colors"
                     title="Delete project"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -833,10 +978,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Project Title</label>
+                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Project Title</label>
                   <input
                     type="text"
-                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-sm font-bold text-gray-900 bg-white shadow-2xs focus:ring-2 focus:ring-indigo-600"
+                    className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
                     value={proj.name}
                     onChange={(e) => {
                       const updated = [...projectsList];
@@ -847,9 +992,9 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Description</label>
+                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Description</label>
                   <textarea
-                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-xs font-semibold text-gray-900 bg-white leading-relaxed resize-none shadow-2xs"
+                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono font-semibold text-white bg-[#09090b] leading-relaxed resize-none"
                     rows={2}
                     value={proj.description}
                     onChange={(e) => {
@@ -860,12 +1005,27 @@ export default function ProfilePage() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Project Overview</label>
+                  <textarea
+                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono text-[#a1a1aa] bg-[#09090b] leading-relaxed resize-none"
+                    rows={4}
+                    placeholder="Detailed overview of what the project does, its architecture, key features, and impact..."
+                    value={proj.summary || ""}
+                    onChange={(e) => {
+                      const updated = [...projectsList];
+                      updated[idx].summary = e.target.value;
+                      updateProjectsList(updated);
+                    }}
+                  />
+                </div>
+
                 {/* Tech Stack Tags for Project */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Tech Stack Used</label>
+                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Tech Stack Used</label>
                   <input
                     type="text"
-                    className="w-full border-2 border-indigo-200 rounded-xl p-3 text-xs font-bold text-indigo-900 bg-indigo-50/30"
+                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono font-bold text-[#f5c542] bg-[#09090b]"
                     placeholder="Comma-separated tech stack (e.g. Next.js, Tailwind, PostgreSQL)"
                     value={proj.technologies ? proj.technologies.join(", ") : ""}
                     onChange={(e) => {
@@ -882,22 +1042,22 @@ export default function ProfilePage() {
       </div>
 
       {/* Education & Certifications Box */}
-      <div className="bg-white rounded-2xl border-2 border-indigo-300 p-6 shadow-sm space-y-6">
+      <div className="bg-[#18181b] rounded-lg border border-[#27272a] p-6 space-y-6">
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-[#a78bfa]" />
               Education & Qualification
             </h3>
             {formData.education && (
-              <span className="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-full shadow-2xs flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-300" /> Auto-Filled
+              <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-white" /> Auto-Filled
               </span>
             )}
           </div>
           <input
             type="text"
-            className="w-full border-2 border-indigo-300 rounded-xl p-3.5 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-600 bg-indigo-50/40 shadow-2xs"
+            className="w-full rounded-lg border border-[#27272a] p-3.5 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] bg-[#09090b]"
             placeholder="e.g. B.Tech in Computer Science, IIT Delhi, 2020"
             value={formData.education}
             onChange={(e) => updateFormData({ education: e.target.value })}
@@ -906,8 +1066,8 @@ export default function ProfilePage() {
 
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <Award className="w-4 h-4 text-indigo-600" />
+            <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Award className="w-4 h-4 text-[#a78bfa]" />
               Certifications & Credentials
             </h4>
             <button
@@ -916,7 +1076,7 @@ export default function ProfilePage() {
                 updateCertificationsList(updated);
               }}
               type="button"
-              className="text-xs bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1"
+              className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3 py-1.5 flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" /> Add Certification
             </button>
@@ -924,13 +1084,13 @@ export default function ProfilePage() {
 
           <div className="space-y-2.5">
             {certificationsList.length === 0 ? (
-              <p className="text-xs text-gray-500 font-medium italic">No certifications extracted yet.</p>
+              <p className=" text-xs text-[#a1a1aa] font-medium italic">No certifications extracted yet.</p>
             ) : (
               certificationsList.map((cert, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
                   <input
                     type="text"
-                    className="flex-1 border-2 border-indigo-300 rounded-xl p-3 text-xs font-bold text-gray-900 bg-indigo-50/30 shadow-2xs"
+                    className="flex-1 border-2 border-[#27272a] p-3 text-xs font-medium text-white bg-[#09090b]"
                     value={cert}
                     onChange={(e) => {
                       const updated = [...certificationsList];
@@ -943,7 +1103,7 @@ export default function ProfilePage() {
                       const updated = certificationsList.filter((_, i) => i !== idx);
                       updateCertificationsList(updated);
                     }}
-                    className="text-red-500 hover:text-red-700 bg-white p-2.5 rounded-xl border border-red-200 shadow-2xs transition-colors"
+                    className="text-[#a78bfa] hover:text-white bg-[#18181b] p-2.5 border border-[#27272a] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -952,19 +1112,143 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+
+        {/* Education Details Timeline */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-[#a78bfa]" />
+              Complete Education History
+            </h4>
+            <button
+              onClick={() => {
+                const updated = [...educationDetailsList, { degree: "", institution: "", year: "", grade: "", details: "" }];
+                setEducationDetailsList(updated);
+              }}
+              type="button"
+              className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3 py-1.5 flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Education
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {educationDetailsList.length === 0 ? (
+              <p className=" text-xs text-[#a1a1aa] font-medium italic">No education details extracted yet. Upload your resume to auto-fill.</p>
+            ) : (
+              educationDetailsList.map((edu, idx) => (
+                <div key={idx} className="border border-[#27272a] p-4 bg-[#09090b] space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-mono text-[#a78bfa] font-bold">Education #{idx + 1}</span>
+                    <button
+                      onClick={() => {
+                        const updated = educationDetailsList.filter((_, i) => i !== idx);
+                        setEducationDetailsList(updated);
+                      }}
+                      className="text-[#a78bfa] hover:text-white p-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      placeholder="Degree (e.g. B.Tech in CSE)"
+                      value={edu.degree}
+                      onChange={(e) => {
+                        const updated = [...educationDetailsList];
+                        updated[idx].degree = e.target.value;
+                        setEducationDetailsList(updated);
+                      }}
+                    />
+                    <input
+                      type="text"
+                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      placeholder="Institution"
+                      value={edu.institution}
+                      onChange={(e) => {
+                        const updated = [...educationDetailsList];
+                        updated[idx].institution = e.target.value;
+                        setEducationDetailsList(updated);
+                      }}
+                    />
+                    <input
+                      type="text"
+                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      placeholder="Year (e.g. 2020)"
+                      value={edu.year}
+                      onChange={(e) => {
+                        const updated = [...educationDetailsList];
+                        updated[idx].year = e.target.value;
+                        setEducationDetailsList(updated);
+                      }}
+                    />
+                    <input
+                      type="text"
+                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      placeholder="Grade/GPA (optional)"
+                      value={edu.grade || ""}
+                      onChange={(e) => {
+                        const updated = [...educationDetailsList];
+                        updated[idx].grade = e.target.value;
+                        setEducationDetailsList(updated);
+                      }}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    className="w-full border border-[#27272a] p-2 text-xs text-[#a1a1aa] bg-[#09090b] rounded"
+                    placeholder="Additional details (specialization, honors, coursework)"
+                    value={edu.details || ""}
+                    onChange={(e) => {
+                      const updated = [...educationDetailsList];
+                      updated[idx].details = e.target.value;
+                      setEducationDetailsList(updated);
+                    }}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Suggested Roles */}
+        {suggestedRolesList.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-[#f5c542]" />
+                AI-Suggested Best Fit Roles
+              </h4>
+              <span className="text-xs font-mono bg-[#f5c542] text-[#09090b] font-bold px-2 py-1 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> AI Powered
+              </span>
+            </div>
+            <div className="space-y-2">
+              {suggestedRolesList.map((role, idx) => (
+                <div key={idx} className="flex items-center gap-3 p-3 bg-[#09090b] border border-[#27272a] rounded-lg">
+                  <span className="text-xs font-mono font-bold text-[#f5c542] w-6">#{idx + 1}</span>
+                  <span className="text-sm text-white font-medium">{role}</span>
+                  {idx === 0 && <span className="text-xs bg-[#22c55e]/20 text-[#22c55e] px-2 py-0.5 rounded-full ml-auto">Best Fit</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 
   const renderStep4 = () => (
-    <div className="bg-white rounded-xl border p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Preferences</h3>
-      <p className="text-sm text-gray-500 mb-6">What kind of opportunities are you looking for?</p>
+    <div className="bg-[#18181b] border border-[#27272a] p-6">
+      <h3 className="text-lg font-mono font-bold text-white mb-4 uppercase tracking-wider">Your Preferences</h3>
+      <p className="text-sm font-mono text-[#a1a1aa] mb-6">What kind of opportunities are you looking for?</p>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Job Type</label>
+          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Job Type</label>
           <select
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
             value={formData.jobType}
             onChange={(e) => updateFormData({ jobType: e.target.value })}
           >
@@ -976,19 +1260,19 @@ export default function ProfilePage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Expected Salary Range</label>
+          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Expected Salary Range</label>
           <input
             type="text"
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
-            placeholder="e.g. ₹15-20 LPA"
+            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+            placeholder="e.g. 15-20 LPA"
             value={formData.salaryRange}
             onChange={(e) => updateFormData({ salaryRange: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Location</label>
+          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Location</label>
           <select
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
             value={formData.preferredLocation}
             onChange={(e) => updateFormData({ preferredLocation: e.target.value })}
           >
@@ -999,18 +1283,18 @@ export default function ProfilePage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Work Mode</label>
+          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Work Mode</label>
           <div className="flex gap-4 mt-2">
             {["Remote", "Hybrid", "On-site"].map((mode) => (
               <label key={mode} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="workMode"
-                  className="w-4 h-4 text-indigo-600"
+                  className="w-4 h-4 text-[#a78bfa]"
                   checked={formData.workMode === mode}
                   onChange={() => updateFormData({ workMode: mode })}
                 />
-                <span className="text-sm text-gray-700">{mode}</span>
+                <span className="text-sm font-mono text-white">{mode}</span>
               </label>
             ))}
           </div>
@@ -1020,31 +1304,31 @@ export default function ProfilePage() {
   );
 
   const renderStep5 = () => (
-    <div className="bg-white rounded-xl border p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Interview Preparation</h3>
-      <p className="text-sm text-gray-500 mb-6">Get ready for your 15-minute AI-powered interview.</p>
+    <div className="bg-[#18181b] border border-[#27272a] p-6">
+      <h3 className="text-lg font-mono font-bold text-white mb-4 uppercase tracking-wider">AI Interview Preparation</h3>
+      <p className="text-sm font-mono text-[#a1a1aa] mb-6">Get ready for your 15-minute AI-powered interview.</p>
       <div className="space-y-4">
-        <div className="bg-indigo-50 rounded-xl p-4">
-          <h4 className="font-medium text-indigo-900 mb-2">What to expect:</h4>
-          <ul className="space-y-2 text-sm text-indigo-800">
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Technical questions based on your resume & tech stacks</li>
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Behavioral assessment</li>
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Live coding challenge in WebRTC room</li>
+        <div className="bg-[#09090b] border border-[#27272a] p-4">
+          <h4 className=" font-semibold text-[#a78bfa] mb-2">What to expect:</h4>
+          <ul className="space-y-2 text-sm text-white">
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#f5c542]" /> Technical questions based on your resume & tech stacks</li>
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#f5c542]" /> Behavioral assessment</li>
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#f5c542]" /> Live coding challenge in WebRTC room</li>
           </ul>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Interview Date</label>
+          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Interview Date</label>
           <input
             type="date"
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
             value={formData.preferredDate}
             onChange={(e) => updateFormData({ preferredDate: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Time Slot</label>
+          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Time Slot</label>
           <select
-            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
             value={formData.preferredTimeSlot}
             onChange={(e) => updateFormData({ preferredTimeSlot: e.target.value })}
           >
@@ -1059,14 +1343,14 @@ export default function ProfilePage() {
   );
 
   const renderStep6 = () => (
-    <div className="bg-white rounded-xl border p-6 text-center py-12 shadow-sm">
-      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <CheckCircle className="w-10 h-10 text-green-600" />
+    <div className="bg-[#18181b] border border-[#27272a] p-6 text-center py-12">
+      <div className="w-20 h-20 bg-[#18181b] border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
+        <CheckCircle className="w-10 h-10 text-[#f5c542]" />
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">All Set! You&apos;re Good to Go! 🎉</h3>
-      <p className="text-gray-500 mb-6">We&apos;re looking forward to your interview. Get ready to showcase your best self.</p>
-      <div className="bg-green-50 rounded-xl p-4 max-w-md mx-auto">
-        <p className="text-sm text-green-800">Your profile is complete and your AI interview is scheduled. You&apos;ll receive a confirmation email shortly.</p>
+      <h3 className="text-xl font-semibold text-white mb-2">All Set! You&apos;re Good to Go!</h3>
+      <p className="text-[#a1a1aa] font-mono mb-6">We&apos;re looking forward to your interview. Get ready to showcase your best self.</p>
+      <div className="bg-[#09090b] border border-[#4dacde] p-4 max-w-md mx-auto">
+        <p className="text-sm font-mono text-[#f5c542]">Your profile is complete and your AI interview is scheduled. You&apos;ll receive a confirmation email shortly.</p>
       </div>
     </div>
   );
@@ -1076,13 +1360,13 @@ export default function ProfilePage() {
       case 1: return renderStep1();
       case 2:
         return (
-          <div className="bg-white rounded-xl border p-6 space-y-6 shadow-sm">
+          <div className="bg-[#18181b] border border-[#27272a] p-6 space-y-6">
             <div className="text-center py-12">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-green-600" />
+              <div className="w-20 h-20 bg-[#18181b] border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-[#f5c542]" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Great! Your resume is uploaded and parsed! 🎉</h3>
-              <p className="text-gray-500">All your tech stacks, projects, skills, and work experience have been auto-filled.</p>
+              <h3 className="text-xl font-semibold text-white mb-2">Great! Your resume is uploaded and parsed!</h3>
+              <p className="text-[#a1a1aa] font-mono">All your tech stacks, projects, skills, and work experience have been auto-filled.</p>
             </div>
           </div>
         );
@@ -1097,30 +1381,30 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <Sidebar currentStep={currentStep} progress={progress} />
-      <main className="flex-1 bg-gray-50 overflow-auto">
-        <div className="p-4 bg-white border-b flex items-center justify-between shadow-2xs">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Shield className="w-4 h-4 text-green-600" />
+      <main className="flex-1 bg-[#09090b] overflow-auto">
+        <div className="p-4 bg-[#18181b] border-b border-[#27272a] flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-[#a1a1aa]">
+            <Shield className="w-4 h-4 text-[#f5c542]" />
             Your data is safe with us
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-indigo-600">{user?.name?.charAt(0) || "U"}</span>
+            <div className="w-8 h-8 bg-[#a78bfa] flex items-center justify-center">
+              <span className="text-sm font-mono font-bold text-white">{user?.name?.charAt(0) || "U"}</span>
             </div>
-            <span className="text-sm font-medium">Hi, {user?.name || "User"} 👋</span>
+            <span className="text-sm font-mono font-medium text-white">Hi, {user?.name || "User"}</span>
           </div>
         </div>
         <StepIndicator steps={steps} currentStep={currentStep} />
         <div className="max-w-4xl mx-auto px-4 pb-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Let&apos;s Build Your Profile 👋</h2>
-            <p className="text-gray-500 mt-1">Upload your resume to auto-fill all skills, projects, and work experience!</p>
+            <h2 className="text-2xl font-semibold text-white">Let&apos;s Build Your Profile</h2>
+            <p className="text-[#a1a1aa] font-mono mt-1">Upload your resume to auto-fill all skills, projects, and work experience!</p>
           </div>
 
           {renderCurrentStep()}
 
           {validationError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mt-4">
+            <div className="mb-4 p-3 bg-[#18181b] border border-[#e050b0] font-mono text-[#a78bfa] text-sm mt-4">
               {validationError}
             </div>
           )}
@@ -1129,17 +1413,17 @@ export default function ProfilePage() {
             <button
               onClick={handlePrev}
               disabled={currentStep === 1}
-              className="flex items-center gap-2 px-6 py-3 border rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+              className="rounded-lg flex items-center gap-2 px-6 py-3 border border-[#27272a] text-sm font-medium hover:bg-[#18181b] disabled:opacity-50 disabled:cursor-not-allowed bg-[#09090b] text-white"
             >
               <ChevronLeft className="w-4 h-4" />
               Save & Exit
             </button>
             <div className="flex items-center gap-2">
-              {saving && <span className="text-sm text-gray-500">Saving...</span>}
+              {saving && <span className="text-sm font-mono text-[#a1a1aa]">Saving...</span>}
               <button
                 onClick={handleNext}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm"
+                className="rounded-lg flex items-center gap-2 px-6 py-3 bg-[#a78bfa] text-white text-sm font-medium hover:bg-[#8b5cf6] transition-colors disabled:opacity-50"
               >
                 {saving ? "Completing..." : currentStep === steps.length ? "Complete" : "Save & Continue"}
                 <ArrowRight className="w-4 h-4" />

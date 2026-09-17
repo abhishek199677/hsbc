@@ -102,8 +102,8 @@ export default function AdminDashboard() {
     (async () => {
       try {
         const [usersRes, feedbackRes] = await Promise.all([
-          fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/admin/feedback", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/admin/users"),
+          fetch("/api/admin/feedback"),
         ]);
         if (usersRes.status === 401 || usersRes.status === 403) {
           router.push("/login");
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
         onTabChange={() => {}}
       >
         <div className="flex items-center justify-center py-32">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
         </div>
       </AdminSidebar>
     );
@@ -171,9 +171,9 @@ export default function AdminDashboard() {
       case "overview":
         return <VirtusaDashboard token={token} />;
       case "job-seekers":
-        return <JobSeekersTab token={token} />;
+        return <JobSeekersTab />;
       case "job-requests":
-        return <JobRequestsTab token={token} />;
+        return <JobRequestsTab />;
       case "agency":
         return <AgencyDashboard token={token} />;
       case "candidates":
@@ -225,8 +225,8 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
         const user = u as unknown as UserData;
         return (
         <div>
-          <p className="font-medium text-gray-900">{user.name || "N/A"}</p>
-          <p className="text-sm text-gray-500">{user.email}</p>
+          <p className="font-medium text-[#fafafa]">{user.name || "N/A"}</p>
+          <p className="text-sm text-[#a1a1aa]">{user.email}</p>
         </div>
         );
       },
@@ -237,7 +237,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
       sortable: true,
       render: (u: Record<string, unknown>) => {
         const user = u as unknown as UserData;
-        return <span className="text-sm text-gray-900">{user.interview?.date}</span>;
+        return <span className="text-sm text-[#fafafa]">{user.interview?.date}</span>;
       },
     },
     {
@@ -245,7 +245,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
       label: "Time",
       render: (u: Record<string, unknown>) => {
         const user = u as unknown as UserData;
-        return <span className="text-sm text-gray-900">{user.interview?.time}</span>;
+        return <span className="text-sm text-[#fafafa]">{user.interview?.time}</span>;
       },
     },
     {
@@ -258,10 +258,10 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
         return (
         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
           user.interview?.status === "completed"
-            ? "bg-green-100 text-green-700"
+            ? "bg-[#22c55e]/10 text-[#22c55e]"
             : user.interview?.status === "scheduled"
-            ? "bg-blue-100 text-blue-700"
-            : "bg-gray-100 text-gray-700"
+            ? "bg-[#3b82f6]/10 text-[#3b82f6]"
+            : "bg-[#27272a] text-[#a1a1aa]"
         }`}>
           {user.interview?.status || "Unknown"}
         </span>
@@ -275,9 +275,9 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
       render: (u: Record<string, unknown>) => {
         const user = u as unknown as UserData;
         const score = user.interview?.evaluationScore;
-        if (score == null) return <span className="text-gray-400 text-sm">—</span>;
+        if (score == null) return <span className="text-[#a1a1aa] text-sm">—</span>;
         return (
-          <span className={`text-sm font-medium ${score >= 7 ? "text-green-600" : score >= 5 ? "text-yellow-600" : "text-red-600"}`}>
+          <span className={`text-sm font-medium ${score >= 7 ? "text-[#22c55e]" : score >= 5 ? "text-[#f59e0b]" : "text-[#ef4444]"}`}>
             {score}/10
           </span>
         );
@@ -291,20 +291,20 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
       render: (u: Record<string, unknown>) => {
         const user = u as unknown as UserData;
         const status = user.interview?.proctoringStatus;
-        if (!status) return <span className="text-gray-400 text-sm">—</span>;
+        if (!status) return <span className="text-[#a1a1aa] text-sm">—</span>;
         const badges: Record<string, string> = {
-          pass: "bg-green-100 text-green-700",
-          review: "bg-yellow-100 text-yellow-700",
-          fail: "bg-red-100 text-red-700",
-          off: "bg-gray-100 text-gray-600",
+          pass: "bg-[#22c55e]/10 text-[#22c55e]",
+          review: "bg-[#f59e0b]/10 text-[#f59e0b]",
+          fail: "bg-[#ef4444]/10 text-[#ef4444]",
+          off: "bg-[#27272a] text-[#a1a1aa]",
         };
         return (
           <div>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${badges[status] || "bg-gray-100 text-gray-600"}`}>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${badges[status] || "bg-[#27272a] text-[#a1a1aa]"}`}>
               {status === "pass" ? "✓ Clean" : status === "review" ? "⚠ Review" : status === "fail" ? "⚠ Failed" : "Monitor off"}
             </span>
             {(user.interview?.proctoringFlags ?? 0) > 0 && (
-              <p className="text-[11px] text-gray-500 mt-1">{user.interview?.proctoringFlags} incident(s)</p>
+              <p className="text-[11px] text-[#a1a1aa] mt-1">{user.interview?.proctoringFlags} incident(s)</p>
             )}
           </div>
         );
@@ -322,7 +322,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
               href={`/interview/live?userId=${user.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-[#3b82f6] hover:text-[#3b82f6] text-sm font-medium"
             >
               Watch
             </a>
@@ -331,7 +331,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
               href={`/interview/live?userId=${user.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-[#3b82f6] hover:text-[#3b82f6] text-sm font-medium"
             >
               Start
             </a>
@@ -345,12 +345,12 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Interview Management</h1>
-        <p className="text-sm text-gray-500 mt-1">View and manage all candidate interviews</p>
+        <h1 className="text-2xl font-bold text-[#fafafa]">Interview Management</h1>
+        <p className="text-sm text-[#a1a1aa] mt-1">View and manage all candidate interviews</p>
       </div>
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
         </div>
       ) : (
         <DataTable
@@ -381,7 +381,7 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
         const item = f as unknown as Feedback;
         return (
         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-          item.type === "bug" ? "bg-red-100 text-red-700" : item.type === "feature" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"
+          item.type === "bug" ? "bg-[#ef4444]/10 text-[#ef4444]" : item.type === "feature" ? "bg-[#3b82f6]/10 text-[#3b82f6]" : "bg-[#27272a] text-[#a1a1aa]"
         }`}>
           {item.type === "bug" ? "Bug" : item.type === "feature" ? "Feature Request" : "General"}
         </span>
@@ -393,7 +393,7 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
       label: "Message",
       render: (f: Record<string, unknown>) => {
         const item = f as unknown as Feedback;
-        return <p className="text-sm text-gray-900 max-w-md truncate">{item.message}</p>;
+        return <p className="text-sm text-[#fafafa] max-w-md truncate">{item.message}</p>;
       },
     },
     {
@@ -402,7 +402,7 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
       sortable: true,
       render: (f: Record<string, unknown>) => {
         const item = f as unknown as Feedback;
-        return <span className="text-sm text-gray-500">{item.email || "Anonymous"}</span>;
+        return <span className="text-sm text-[#a1a1aa]">{item.email || "Anonymous"}</span>;
       },
     },
     {
@@ -410,7 +410,7 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
       label: "Page",
       render: (f: Record<string, unknown>) => {
         const item = f as unknown as Feedback;
-        return <span className="text-sm text-gray-500">{item.page || "N/A"}</span>;
+        return <span className="text-sm text-[#a1a1aa]">{item.page || "N/A"}</span>;
       },
     },
     {
@@ -423,7 +423,7 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
         const item = f as unknown as Feedback;
         return (
         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-          item.status === "open" ? "bg-yellow-100 text-yellow-700" : item.status === "in_progress" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+          item.status === "open" ? "bg-[#f59e0b]/10 text-[#f59e0b]" : item.status === "in_progress" ? "bg-[#3b82f6]/10 text-[#3b82f6]" : "bg-[#22c55e]/10 text-[#22c55e]"
         }`}>
           {item.status === "open" ? "Open" : item.status === "in_progress" ? "In Progress" : "Resolved"}
         </span>
@@ -436,7 +436,7 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
       sortable: true,
       render: (f: Record<string, unknown>) => {
         const item = f as unknown as Feedback;
-        return <span className="text-sm text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</span>;
+        return <span className="text-sm text-[#a1a1aa]">{new Date(item.createdAt).toLocaleDateString()}</span>;
       },
     },
   ];
@@ -444,12 +444,12 @@ function FeedbackTab({ feedback, loading, onExport }: { feedback: Feedback[]; lo
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">User Feedback</h1>
-        <p className="text-sm text-gray-500 mt-1">View and manage user feedback submissions</p>
+        <h1 className="text-2xl font-bold text-[#fafafa]">User Feedback</h1>
+        <p className="text-sm text-[#a1a1aa] mt-1">View and manage user feedback submissions</p>
       </div>
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
         </div>
       ) : (
         <DataTable
@@ -472,29 +472,29 @@ function SettingsTab({ organization }: { organization: { name: string | null; pl
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage your organization details and preferences</p>
+        <h1 className="text-2xl font-bold text-[#fafafa]">Organization Settings</h1>
+        <p className="text-sm text-[#a1a1aa] mt-1">Manage your organization details and preferences</p>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+      <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6 space-y-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Details</h3>
+          <h3 className="text-lg font-semibold text-[#fafafa] mb-4">Organization Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+              <label className="block text-sm font-medium text-[#a1a1aa] mb-1">Organization Name</label>
               <input
                 type="text"
                 value={organization?.name || ""}
                 disabled
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50"
+                className="w-full border border-[#27272a] rounded-lg px-3 py-2 text-sm bg-[#18181b]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+              <label className="block text-sm font-medium text-[#a1a1aa] mb-1">Plan</label>
               <div className="flex items-center gap-2">
                 <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  organization?.plan === "enterprise" ? "bg-purple-100 text-purple-700" :
-                  organization?.plan === "pro" ? "bg-blue-100 text-blue-700" :
-                  "bg-gray-100 text-gray-700"
+                  organization?.plan === "enterprise" ? "bg-[#a855f7]/10 text-[#a855f7]" :
+                  organization?.plan === "pro" ? "bg-[#3b82f6]/10 text-[#3b82f6]" :
+                  "bg-[#27272a] text-[#a1a1aa]"
                 }`}>
                   {organization?.plan === "enterprise" ? "Enterprise" : organization?.plan === "pro" ? "Pro" : "Starter"}
                 </span>
@@ -503,12 +503,12 @@ function SettingsTab({ organization }: { organization: { name: string | null; pl
           </div>
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Branding</h3>
-          <p className="text-sm text-gray-500">Organization branding and customization options coming soon.</p>
+          <h3 className="text-lg font-semibold text-[#fafafa] mb-4">Branding</h3>
+          <p className="text-sm text-[#a1a1aa]">Organization branding and customization options coming soon.</p>
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Integrations</h3>
-          <p className="text-sm text-gray-500">Third-party integrations management coming soon.</p>
+          <h3 className="text-lg font-semibold text-[#fafafa] mb-4">Integrations</h3>
+          <p className="text-sm text-[#a1a1aa]">Third-party integrations management coming soon.</p>
         </div>
       </div>
     </div>

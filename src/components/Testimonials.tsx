@@ -1,143 +1,127 @@
 "use client";
 
-import { Star, Quote } from "lucide-react";
-import { useGlare } from "@/lib/useGlare";
+import { Star, Quote, ArrowRight, TrendingUp, Clock, Users, Building2 } from "lucide-react";
 
 const testimonials = [
   {
+    name: "Sarah Chen",
+    role: "VP of Talent Acquisition",
+    company: "Fortune 500 Tech Company",
+    companyLogo: "TC",
+    quote: "Techcitta reduced our average time-to-hire from 23 days to 8 days. The AI accuracy is remarkable — we've eliminated almost all false positives in our screening process.",
+    metrics: { metric: "65%", label: "Faster hiring" },
+    rating: 5,
+  },
+  {
+    name: "Michael Torres",
+    role: "Head of HR Operations",
+    company: "Global Financial Services",
+    companyLogo: "FS",
+    quote: "The integration with our Workday ATS was seamless. Our recruiters now spend 85% less time on manual verification tasks. The ROI was evident within the first quarter.",
+    metrics: { metric: "85%", label: "Time saved" },
+    rating: 5,
+  },
+  {
     name: "Priya Sharma",
-    role: "Software Engineer at Google",
-    avatar: "PS",
-    gradient: "from-rose-500 to-pink-500",
+    role: "Chief People Officer",
+    company: "Leading Healthcare Provider",
+    companyLogo: "HC",
+    quote: "Compliance was our biggest concern. Techcitta's GDPR and HIPAA compliance gave us confidence to scale globally while maintaining the highest security standards.",
+    metrics: { metric: "100%", label: "Compliance rate" },
     rating: 5,
-    text: "HireRight's AI interview prepared me perfectly. The adaptive questions matched my experience level, and the feedback helped me identify exactly what to improve. Landed my dream job within 2 weeks!",
-  },
-  {
-    name: "Rahul Verma",
-    role: "Data Scientist at Microsoft",
-    avatar: "RV",
-    gradient: "from-indigo-500 to-purple-500",
-    rating: 5,
-    text: "The coding challenges were spot-on — not too easy, not too hard. The real-time voice interview felt natural, like talking to a senior engineer. Best interview prep I've ever used.",
-  },
-  {
-    name: "Ananya Patel",
-    role: "Product Manager at Amazon",
-    avatar: "AP",
-    gradient: "from-emerald-500 to-green-500",
-    rating: 5,
-    text: "As a fresher, I was nervous about interviews. HireRight's AI asked the right questions about my projects and fundamentals. The personalized study plan was a game-changer.",
-  },
-  {
-    name: "Vikram Singh",
-    role: "Senior DevOps at Flipkart",
-    avatar: "VS",
-    gradient: "from-amber-500 to-orange-500",
-    rating: 5,
-    text: "Even with 7 years of experience, I learned something new. The system design questions were challenging, and the proctoring gave my employer confidence in the results.",
-  },
-  {
-    name: "Deepa Nair",
-    role: "ML Engineer at Tesla",
-    avatar: "DN",
-    gradient: "from-blue-500 to-cyan-500",
-    rating: 5,
-    text: "The background verification was seamless. My verified profile got me 3x more interview calls. The AI matching connected me with roles that actually fit my skills.",
-  },
-  {
-    name: "Arjun Reddy",
-    role: "Full Stack Developer at Stripe",
-    avatar: "AR",
-    gradient: "from-purple-500 to-fuchsia-500",
-    rating: 5,
-    text: "I've used many interview platforms. HireRight is different — it actually adapts to how you perform. Got detailed feedback on my coding approach that I still use today.",
   },
 ];
 
-export default function Testimonials() {
-  const { onMouseMove } = useGlare<HTMLDivElement>();
+const stats = [
+  { value: "1,200+", label: "Enterprise clients", icon: Building2 },
+  { value: "10M+", label: "Verifications completed", icon: Users },
+  { value: "99.7%", label: "Accuracy rate", icon: TrendingUp },
+  { value: "48hr", label: "Average turnaround", icon: Clock },
+];
 
+export default function Testimonials() {
   return (
-    <section className="py-24 bg-[#0a0a1a] relative overflow-hidden">
-      {/* Ambient orbs */}
+    <section className="py-28 bg-[#06060a] relative overflow-hidden">
+      {/* Background */}
       <div className="absolute inset-0">
-        <div className="absolute top-0 left-[20%] w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-[20%] w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px]" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1e1e28] to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1e1e28] to-transparent" />
+        <div className="absolute top-1/3 right-0 w-[600px] h-[600px] bg-[#f5c542]/[0.015] rounded-full blur-[120px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Section header */}
-        <div className="text-center mb-16">
-          <span className="inline-block px-4 py-2 glass rounded-full text-sm font-medium mb-4 text-indigo-400">
-            Success Stories
-          </span>
-          <h2 className="text-3xl lg:text-5xl font-bold mb-4">
-            <span className="text-white">Loved by </span>
-            <span className="gradient-text">10,000+</span>
-            <span className="text-white"> Professionals</span>
+        {/* Header */}
+        <div className="max-w-2xl mx-auto text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-[#13131a] border border-[#1e1e28]">
+            <Star className="w-4 h-4 text-[#f5c542]" />
+            <span className="text-sm text-[#8b8ba0] font-medium">Trusted by industry leaders</span>
+          </div>
+          <h2 className="text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
+            <span className="text-[#f8f8fc]">See what our</span>
+            <br />
+            <span className="bg-gradient-to-r from-[#f5c542] to-[#fbbf24] bg-clip-text text-transparent">enterprise clients</span>
+            <span className="text-[#f8f8fc]"> say</span>
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-            See how HireRight helped candidates land their dream roles
+          <p className="text-[#8b8ba0] text-lg leading-relaxed">
+            Real results from organizations that transformed their hiring with Techcitta.
           </p>
         </div>
 
         {/* Testimonials grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" onMouseMove={onMouseMove}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-16">
           {testimonials.map((testimonial) => (
             <div
               key={testimonial.name}
-              className="glass-card card-glare rounded-2xl p-6 relative group"
+              className="bg-[#13131a] border border-[#1e1e28] rounded-2xl p-7 relative group hover:border-[#a78bfa]/20 transition-all duration-500"
             >
               {/* Quote icon */}
-              <Quote className="absolute top-6 right-6 w-8 h-8 text-white/5 group-hover:text-indigo-500/20 transition-colors" />
+              <Quote className="absolute top-6 right-6 w-8 h-8 text-[#1e1e28] group-hover:text-[#a78bfa]/10 transition-colors duration-500" />
 
               {/* Stars */}
-              <div className="flex items-center gap-1 mb-4">
+              <div className="flex items-center gap-1 mb-5">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                  <Star key={i} className="w-4 h-4 text-[#f59e0b] fill-current" />
                 ))}
               </div>
 
-              {/* Text */}
-              <p className="text-gray-300 text-sm leading-relaxed mb-6">
-                &ldquo;{testimonial.text}&rdquo;
+              {/* Quote */}
+              <p className="text-[#8b8ba0] text-sm leading-[1.8] mb-6 relative">
+                &ldquo;{testimonial.quote}&rdquo;
               </p>
 
+              {/* Metric highlight */}
+              <div className="flex items-center gap-3 p-4 bg-[#0f0f16] border border-[#1e1e28] rounded-xl mb-6">
+                <p className="text-3xl font-bold text-[#a78bfa]">{testimonial.metrics.metric}</p>
+                <p className="text-sm text-[#8b8ba0]">{testimonial.metrics.label}</p>
+              </div>
+
               {/* Author */}
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 bg-gradient-to-br ${testimonial.gradient} rounded-full flex items-center justify-center text-white text-xs font-bold`}>
-                  {testimonial.avatar}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#a78bfa]/20 to-[#8b5cf6]/20 rounded-xl flex items-center justify-center text-sm font-bold text-[#a78bfa] border border-[#a78bfa]/10">
+                  {testimonial.companyLogo}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">{testimonial.name}</p>
-                  <p className="text-xs text-gray-500">{testimonial.role}</p>
+                  <p className="text-sm font-semibold text-[#f8f8fc]">{testimonial.name}</p>
+                  <p className="text-xs text-[#8b8ba0]">{testimonial.role}</p>
+                  <p className="text-xs text-[#a78bfa]">{testimonial.company}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Bottom stat */}
-        <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-3 glass rounded-full px-6 py-3">
-            <div className="flex -space-x-2">
-              {["PS", "RV", "AP", "VS", "DN"].map((initials, i) => (
-                <div
-                  key={i}
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 border-2 border-[#0a0a1a] flex items-center justify-center text-white text-[10px] font-bold"
-                >
-                  {initials}
+        {/* Stats bar */}
+        <div className="bg-[#13131a] border border-[#1e1e28] rounded-2xl p-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="w-10 h-10 bg-[#a78bfa]/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <stat.icon className="w-5 h-5 text-[#a78bfa]" />
                 </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-current" />
-              ))}
-            </div>
-            <span className="text-sm text-gray-400">
-              <span className="font-semibold text-white">4.9/5</span> average rating
-            </span>
+                <p className="text-3xl font-bold text-[#f8f8fc] tracking-tight">{stat.value}</p>
+                <p className="text-sm text-[#8b8ba0] mt-1">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

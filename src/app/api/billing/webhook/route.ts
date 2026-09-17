@@ -9,6 +9,26 @@ function planFromPriceId(priceId: string | null): string {
   return "starter";
 }
 
+// ---------------------------------------------------------------------------
+// Event ID deduplication — prevents processing Stripe retries
+// ---------------------------------------------------------------------------
+
+const processedEvents = new Map<string, number>();
+const EVENT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function isDuplicateEvent(eventId: string): boolean {
+  const now = Date.now();
+  // Clean expired entries periodically
+  if (processedEvents.size > 1000) {
+    for (const [id, ts] of processedEvents) {
+      if (now - ts > EVENT_TTL_MS) processedEvents.delete(id);
+    }
+  }
+  if (processedEvents.has(eventId)) return true;
+  processedEvents.set(eventId, now);
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
     if (!isStripeConfigured()) {
@@ -35,7 +55,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
+    // Deduplication — skip already-processed events
+    if (isDuplicateEvent(event.id)) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
     switch (event.type) {
+      // ─── Checkout Complete ──────────────────────────────────────
       case "checkout.session.completed": {
         const session = event.data.object as import("stripe").Stripe.Checkout.Session;
         const organizationId =
@@ -58,15 +84,16 @@ export async function POST(request: Request) {
         }
         break;
       }
+
+      // ─── Subscription Updated / Deleted ─────────────────────────
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object as import("stripe").Stripe.Subscription;
         const status = subscription.status;
-        const plan = planFromPriceId(
-          typeof subscription.items.data[0]?.price?.id === "string"
-            ? subscription.items.data[0].price.id
-            : null
-        );
+        const priceId = typeof subscription.items.data[0]?.price?.id === "string"
+          ? subscription.items.data[0].price.id
+          : null;
+        const plan = planFromPriceId(priceId);
         const planStatus =
           status === "active" ? "active"
           : status === "trialing" ? "trialing"
@@ -75,18 +102,51 @@ export async function POST(request: Request) {
           : status === "unpaid" ? "unpaid"
           : "inactive";
 
+        // On cancellation or unpaid, downgrade to starter
+        const effectivePlan = (planStatus === "canceled" || planStatus === "unpaid")
+          ? "starter"
+          : plan;
+
         await prisma.organization.updateMany({
           where: { stripeSubscriptionId: subscription.id },
           data: {
             planStatus,
-            plan,
-            stripePriceId: (typeof subscription.items.data[0]?.price?.id === "string"
-              ? subscription.items.data[0].price.id
-              : null) || undefined,
+            plan: effectivePlan,
+            stripePriceId: priceId || undefined,
           },
         });
         break;
       }
+
+      // ─── Payment Failed ────────────────────────────────────────
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as import("stripe").Stripe.Invoice;
+        const subId = (invoice as unknown as Record<string, unknown>).subscription;
+        const subscriptionId = typeof subId === "string" ? subId : null;
+        if (subscriptionId) {
+          await prisma.organization.updateMany({
+            where: { stripeSubscriptionId: subscriptionId },
+            data: { planStatus: "past_due" },
+          });
+        }
+        break;
+      }
+
+      // ─── Trial Will End (3 days before) ────────────────────────
+      case "customer.subscription.trial_will_end": {
+        const subscription = event.data.object as import("stripe").Stripe.Subscription;
+        const trialEnd = typeof subscription.trial_end === "number"
+          ? new Date(subscription.trial_end * 1000)
+          : null;
+        if (trialEnd) {
+          await prisma.organization.updateMany({
+            where: { stripeSubscriptionId: subscription.id },
+            data: { trialEndsAt: trialEnd },
+          });
+        }
+        break;
+      }
+
       default:
         break;
     }

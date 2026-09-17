@@ -95,7 +95,7 @@ function InterviewLayout({
       {/* Video panels */}
       <div className="flex-1 flex gap-4 p-4">
         {/* Candidate video */}
-        <div className="w-1/2 bg-gray-800 rounded-xl overflow-hidden relative" style={{ aspectRatio: "16/9" }}>
+        <div className="w-1/2 bg-[#18181b] rounded-xl overflow-hidden relative border border-[#27272a]" style={{ aspectRatio: "16/9" }}>
           {videoEnabled && localVideoTrack ? (
             <VideoTrack
               trackRef={localVideoTrack}
@@ -103,16 +103,16 @@ function InterviewLayout({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center">
-                <span className="text-3xl font-bold text-gray-400">Y</span>
+              <div className="w-20 h-20 bg-[#27272a] rounded-full flex items-center justify-center">
+                <span className="text-3xl font-bold text-[#a1a1aa]">Y</span>
               </div>
             </div>
           )}
-          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-xs text-white">You</div>
+          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-xs text-[#fafafa]">You</div>
         </div>
 
         {/* AI interviewer panel */}
-        <div className="w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl overflow-hidden relative" style={{ aspectRatio: "16/9" }}>
+        <div className="w-1/2 bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] rounded-xl overflow-hidden relative" style={{ aspectRatio: "16/9" }}>
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center">
               <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -145,11 +145,11 @@ function InterviewLayout({
       <RoomAudioRenderer />
 
       {/* Controls */}
-      <div className="flex justify-center gap-4 py-4 bg-gray-800 border-t border-gray-700">
+      <div className="flex justify-center gap-4 py-4 bg-[#18181b] border-t border-[#27272a]">
         <button
           onClick={onToggleVideo}
           className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 ${
-            videoEnabled ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-red-600 text-white hover:bg-red-500"
+            videoEnabled ? "bg-[#27272a] text-[#fafafa] hover:bg-[#3f3f46]" : "bg-[#ef4444] text-white hover:bg-[#dc2626]"
           }`}
         >
           {videoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
@@ -157,14 +157,14 @@ function InterviewLayout({
         <button
           onClick={onToggleAudio}
           className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 ${
-            audioEnabled ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-red-600 text-white hover:bg-red-500"
+            audioEnabled ? "bg-[#27272a] text-[#fafafa] hover:bg-[#3f3f46]" : "bg-[#ef4444] text-white hover:bg-[#dc2626]"
           }`}
         >
           {audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
         </button>
         <button
           onClick={onEndCall}
-          className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-500 transition-all duration-200 hover:scale-105 active:scale-95"
+          className="w-12 h-12 rounded-full bg-[#ef4444] text-white flex items-center justify-center hover:bg-[#dc2626] transition-all duration-200 hover:scale-105 active:scale-95"
         >
           <Phone className="w-5 h-5 rotate-[135deg]" />
         </button>
@@ -210,14 +210,14 @@ export default function LiveKitInterviewRoom({
 
   if (connectionError) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-gray-800 rounded-xl p-8 max-w-md w-full text-center">
-          <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-white mb-2">Connection Error</h2>
-          <p className="text-gray-400 mb-4">{connectionError}</p>
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
+        <div className="bg-[#18181b] rounded-xl p-8 max-w-md w-full text-center border border-[#27272a]">
+          <AlertTriangle className="w-12 h-2xl text-[#f59e0b] mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-[#fafafa] mb-2">Connection Error</h2>
+          <p className="text-[#a1a1aa] mb-4">{connectionError}</p>
           <button
             onClick={onDisconnected}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="px-4 py-2 bg-[#a78bfa] text-white rounded-lg hover:bg-[#8b5cf6]"
           >
             Return to Setup
           </button>
@@ -227,7 +227,7 @@ export default function LiveKitInterviewRoom({
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-[#09090b] flex flex-col">
       <LiveKitRoom
         serverUrl={serverUrl}
         token={token}

@@ -75,9 +75,7 @@ export default function EnterpriseSettings({ token }: EnterpriseSettingsProps) {
     message: string;
   } | null>(null);
 
-  const headers: HeadersInit = token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
+  const headers: HeadersInit = { "Content-Type": "application/json" };
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -99,8 +97,8 @@ export default function EnterpriseSettings({ token }: EnterpriseSettingsProps) {
         <div
           className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 ${
             toast.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-red-50 text-red-800 border border-red-200"
+              ? "bg-green-50 text-[#22c55e] border border-[#22c55e]/30"
+              : "bg-red-50 text-[#ef4444] border border-[#ef4444]/30"
           }`}
         >
           {toast.type === "success" ? (
@@ -113,17 +111,17 @@ export default function EnterpriseSettings({ token }: EnterpriseSettingsProps) {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-[#fafafa]">
           Enterprise Settings
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-[#a1a1aa]">
           Configure SSO, API access, webhooks, and custom branding for your
           organization.
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-[#27272a]">
         <nav className="flex space-x-8" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
@@ -131,8 +129,8 @@ export default function EnterpriseSettings({ token }: EnterpriseSettingsProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.id
-                  ? "border-indigo-500 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "border-[#a78bfa] text-[#a78bfa]"
+                  : "border-transparent text-[#a1a1aa] hover:text-[#a1a1aa] hover:border-[#27272a]"
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -143,7 +141,7 @@ export default function EnterpriseSettings({ token }: EnterpriseSettingsProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
         {activeTab === "sso" && (
           <SSOTab token={token} headers={headers} showToast={showToast} />
         )}
@@ -247,7 +245,7 @@ function SSOTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader className="w-6 h-6 text-indigo-600 animate-spin" />
+        <Loader className="w-6 h-6 text-[#a78bfa] animate-spin" />
       </div>
     );
   }
@@ -255,51 +253,51 @@ function SSOTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-[#fafafa]">
           Single Sign-On (SSO)
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-[#a1a1aa] mt-1">
           Configure SAML or OIDC authentication for your organization
         </p>
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-[#18181b] rounded-lg">
           <div>
-            <p className="font-medium text-gray-900">Enable SSO</p>
-            <p className="text-sm text-gray-500">
+            <p className="font-medium text-[#fafafa]">Enable SSO</p>
+            <p className="text-sm text-[#a1a1aa]">
               Allow users to sign in with your identity provider
             </p>
           </div>
           <button
             onClick={() => setFormData({ ...formData, enabled: !formData.enabled })}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              formData.enabled ? "bg-indigo-600" : "bg-gray-200"
+              formData.enabled ? "bg-[#a78bfa]" : "bg-[#27272a]"
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-[#18181b] transition-transform ${
                 formData.enabled ? "translate-x-6" : "translate-x-1"
               }`}
             />
           </button>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-[#18181b] rounded-lg">
           <div>
-            <p className="font-medium text-gray-900">Enforce SSO</p>
-            <p className="text-sm text-gray-500">
+            <p className="font-medium text-[#fafafa]">Enforce SSO</p>
+            <p className="text-sm text-[#a1a1aa]">
               Disable password login and require SSO for all users
             </p>
           </div>
           <button
             onClick={() => setFormData({ ...formData, enforceSso: !formData.enforceSso })}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              formData.enforceSso ? "bg-indigo-600" : "bg-gray-200"
+              formData.enforceSso ? "bg-[#a78bfa]" : "bg-[#27272a]"
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-[#18181b] transition-transform ${
                 formData.enforceSso ? "translate-x-6" : "translate-x-1"
               }`}
             />
@@ -308,13 +306,13 @@ function SSOTab({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Identity Provider
             </label>
             <select
               value={formData.provider}
               onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a78bfa]"
             >
               <option value="okta">Okta</option>
               <option value="azure_ad">Microsoft Azure AD</option>
@@ -324,13 +322,13 @@ function SSOTab({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Default Role for SSO Users
             </label>
             <select
               value={formData.defaultRole}
               onChange={(e) => setFormData({ ...formData, defaultRole: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a78bfa]"
             >
               <option value="member">Member</option>
               <option value="interviewer">Interviewer</option>
@@ -342,7 +340,7 @@ function SSOTab({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               SAML Metadata URL
             </label>
             <input
@@ -350,11 +348,11 @@ function SSOTab({
               value={formData.samlMetadataUrl}
               onChange={(e) => setFormData({ ...formData, samlMetadataUrl: e.target.value })}
               placeholder="https://your-idp.com/metadata"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a78bfa]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               SSO Login URL
             </label>
             <input
@@ -362,14 +360,14 @@ function SSOTab({
               value={formData.samlSsoUrl}
               onChange={(e) => setFormData({ ...formData, samlSsoUrl: e.target.value })}
               placeholder="https://your-idp.com/sso/saml"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a78bfa]"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Entity ID
             </label>
             <input
@@ -377,11 +375,11 @@ function SSOTab({
               value={formData.samlEntityId}
               onChange={(e) => setFormData({ ...formData, samlEntityId: e.target.value })}
               placeholder="https://your-app.com/saml/metadata"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a78bfa]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Attribute Mapping - Email
             </label>
             <input
@@ -389,7 +387,7 @@ function SSOTab({
               value={formData.emailAttribute}
               onChange={(e) => setFormData({ ...formData, emailAttribute: e.target.value })}
               placeholder="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a78bfa]"
             />
           </div>
         </div>
@@ -399,7 +397,7 @@ function SSOTab({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#a78bfa] text-white text-sm font-medium rounded-lg hover:bg-[#8b5cf6] disabled:opacity-50 transition-colors"
         >
           {saving ? (
             <Loader className="w-4 h-4 animate-spin" />
@@ -494,7 +492,7 @@ function ApiKeysTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader className="w-6 h-6 text-indigo-600 animate-spin" />
+        <Loader className="w-6 h-6 text-[#a78bfa] animate-spin" />
       </div>
     );
   }
@@ -503,14 +501,14 @@ function ApiKeysTab({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">API Keys</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-lg font-semibold text-[#fafafa]">API Keys</h2>
+          <p className="text-sm text-[#a1a1aa] mt-1">
             Manage API keys for programmatic access to your account
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#a78bfa] text-white text-sm font-medium rounded-lg hover:bg-[#8b5cf6] transition-colors"
         >
           <Plus className="w-4 h-4" />
           Create API Key
@@ -519,28 +517,28 @@ function ApiKeysTab({
 
       {/* New Key Display */}
       {newKey && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="p-4 bg-green-50 border border-[#22c55e]/30 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <p className="font-medium text-green-800">
+            <p className="font-medium text-[#22c55e]">
               API Key Created Successfully
             </p>
             <button
               onClick={() => setNewKey(null)}
-              className="text-green-600 hover:text-green-800"
+              className="text-[#22c55e] hover:text-[#22c55e]"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-sm text-green-700 mb-2">
+          <p className="text-sm text-[#22c55e] mb-2">
             Copy this key now - it won&apos;t be shown again:
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 p-2 bg-white border border-green-200 rounded text-sm font-mono">
+            <code className="flex-1 p-2 bg-[#18181b] border border-[#22c55e]/30 rounded text-sm ">
               {newKey.key}
             </code>
             <button
               onClick={() => copyToClipboard(newKey.key)}
-              className="p-2 text-green-600 hover:text-green-800"
+              className="p-2 text-[#22c55e] hover:text-[#22c55e]"
             >
               <Copy className="w-4 h-4" />
             </button>
@@ -551,20 +549,20 @@ function ApiKeysTab({
       {/* API Keys List */}
       {keys.length === 0 ? (
         <div className="text-center py-12">
-          <Key className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No API keys yet</p>
+          <Key className="w-12 h-12 text-[#a1a1aa] mx-auto mb-4" />
+          <p className="text-[#a1a1aa]">No API keys yet</p>
         </div>
       ) : (
         <div className="space-y-4">
           {keys.map((key) => (
             <div
               key={key.id}
-              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="p-4 border border-[#27272a] rounded-lg hover:bg-[#27272a] transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">{key.name}</p>
-                  <p className="text-sm text-gray-500 font-mono">
+                  <p className="font-medium text-[#fafafa]">{key.name}</p>
+                  <p className="text-sm text-[#a1a1aa] ">
                     {key.keyPrefix}
                   </p>
                 </div>
@@ -572,21 +570,21 @@ function ApiKeysTab({
                   <span
                     className={`px-2 py-1 text-xs rounded-full ${
                       key.enabled
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
+                        ? "bg-[#22c55e]/10 text-[#22c55e]"
+                        : "bg-[#27272a] text-[#fafafa]"
                     }`}
                   >
                     {key.enabled ? "Active" : "Disabled"}
                   </span>
                   <button
                     onClick={() => handleDelete(key.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    className="p-1 text-[#a1a1aa] hover:text-[#ef4444] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
+              <div className="mt-2 flex items-center gap-4 text-sm text-[#a1a1aa]">
                 <span>{key.permissions.length} permissions</span>
                 <span>{key.rateLimitPerMin} req/min</span>
                 {key.lastUsedAt && (
@@ -607,19 +605,19 @@ function ApiKeysTab({
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setShowCreateModal(false)}
           />
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+          <div className="relative bg-[#18181b] rounded-xl shadow-xl border border-[#27272a] w-full max-w-md mx-4">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h3 className="text-lg font-semibold">Create API Key</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 text-gray-400 hover:text-gray-600"
+                className="p-1 text-[#a1a1aa] hover:text-[#a1a1aa]"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
                   Key Name
                 </label>
                 <input
@@ -629,20 +627,20 @@ function ApiKeysTab({
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="e.g., Production API"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a78bfa]"
                 />
               </div>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 text-sm text-[#a1a1aa] border border-[#27272a] rounded-lg hover:bg-[#27272a]"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={!formData.name}
-                  className="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                  className="px-4 py-2 text-sm text-white bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6] disabled:opacity-50"
                 >
                   Create
                 </button>
@@ -689,7 +687,7 @@ function WebhooksTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader className="w-6 h-6 text-indigo-600 animate-spin" />
+        <Loader className="w-6 h-6 text-[#a78bfa] animate-spin" />
       </div>
     );
   }
@@ -697,38 +695,38 @@ function WebhooksTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Webhooks</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-lg font-semibold text-[#fafafa]">Webhooks</h2>
+        <p className="text-sm text-[#a1a1aa] mt-1">
           Receive real-time notifications for events in your account
         </p>
       </div>
 
       {webhooks.length === 0 ? (
         <div className="text-center py-12">
-          <Webhook className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No webhooks configured</p>
+          <Webhook className="w-12 h-12 text-[#a1a1aa] mx-auto mb-4" />
+          <p className="text-[#a1a1aa]">No webhooks configured</p>
         </div>
       ) : (
         <div className="space-y-4">
           {webhooks.map((webhook) => (
             <div
               key={webhook.id}
-              className="p-4 border border-gray-200 rounded-lg"
+              className="p-4 border border-[#27272a] rounded-lg"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900 truncate max-w-md">
+                  <p className="font-medium text-[#fafafa] truncate max-w-md">
                     {webhook.url}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#a1a1aa]">
                     {webhook.events.length} events
                   </p>
                 </div>
                 <span
                   className={`px-2 py-1 text-xs rounded-full ${
                     webhook.enabled
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
+                      ? "bg-[#22c55e]/10 text-[#22c55e]"
+                      : "bg-[#27272a] text-[#fafafa]"
                   }`}
                 >
                   {webhook.enabled ? "Active" : "Disabled"}
@@ -795,7 +793,7 @@ function BrandingTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader className="w-6 h-6 text-indigo-600 animate-spin" />
+        <Loader className="w-6 h-6 text-[#a78bfa] animate-spin" />
       </div>
     );
   }
@@ -803,8 +801,8 @@ function BrandingTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Custom Branding</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-lg font-semibold text-[#fafafa]">Custom Branding</h2>
+        <p className="text-sm text-[#a1a1aa] mt-1">
           Customize the look and feel of your account
         </p>
       </div>
@@ -812,7 +810,7 @@ function BrandingTab({
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Primary Color
             </label>
             <div className="flex items-center gap-2">
@@ -822,7 +820,7 @@ function BrandingTab({
                 onChange={(e) =>
                   setBranding({ ...branding, primaryColor: e.target.value })
                 }
-                className="w-10 h-10 rounded border border-gray-300"
+                className="w-10 h-10 rounded border border-[#27272a]"
               />
               <input
                 type="text"
@@ -830,13 +828,13 @@ function BrandingTab({
                 onChange={(e) =>
                   setBranding({ ...branding, primaryColor: e.target.value })
                 }
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="flex-1 px-3 py-2 border border-[#27272a] rounded-lg text-sm"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Logo URL
             </label>
             <input
@@ -846,12 +844,12 @@ function BrandingTab({
                 setBranding({ ...branding, logoUrl: e.target.value })
               }
               placeholder="https://your-logo.com/logo.png"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Custom Domain
             </label>
             <input
@@ -861,18 +859,18 @@ function BrandingTab({
                 setBranding({ ...branding, customDomain: e.target.value })
               }
               placeholder="careers.yourcompany.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm"
             />
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-[#18181b] rounded-lg">
             <div>
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-[#fafafa]">
                 Hide Techcitta Branding
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[#a1a1aa]">
                 Remove &quot;Powered by Techcitta&quot; from the interface
               </p>
             </div>
@@ -884,11 +882,11 @@ function BrandingTab({
                 })
               }
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                branding?.hideTechcittaBranding ? "bg-indigo-600" : "bg-gray-200"
+                branding?.hideTechcittaBranding ? "bg-[#a78bfa]" : "bg-[#27272a]"
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-[#18181b] transition-transform ${
                   branding?.hideTechcittaBranding ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -896,7 +894,7 @@ function BrandingTab({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
               Custom Footer Text
             </label>
             <input
@@ -906,7 +904,7 @@ function BrandingTab({
                 setBranding({ ...branding, customFooterText: e.target.value })
               }
               placeholder="© 2024 Your Company"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-[#27272a] rounded-lg text-sm"
             />
           </div>
         </div>
@@ -916,7 +914,7 @@ function BrandingTab({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#a78bfa] text-white text-sm font-medium rounded-lg hover:bg-[#8b5cf6] disabled:opacity-50 transition-colors"
         >
           {saving ? (
             <Loader className="w-4 h-4 animate-spin" />
@@ -994,7 +992,7 @@ function AuditTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader className="w-6 h-6 text-indigo-600 animate-spin" />
+        <Loader className="w-6 h-6 text-[#a78bfa] animate-spin" />
       </div>
     );
   }
@@ -1003,22 +1001,22 @@ function AuditTab({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Audit Logs</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-lg font-semibold text-[#fafafa]">Audit Logs</h2>
+          <p className="text-sm text-[#a1a1aa] mt-1">
             Track all activity in your organization for compliance
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => handleExport("csv")}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#27272a] text-[#a1a1aa] text-sm font-medium rounded-lg hover:bg-[#27272a] transition-colors"
           >
             <Download className="w-4 h-4" />
             Export CSV
           </button>
           <button
             onClick={() => handleExport("json")}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#27272a] text-[#a1a1aa] text-sm font-medium rounded-lg hover:bg-[#27272a] transition-colors"
           >
             <Download className="w-4 h-4" />
             Export JSON
@@ -1029,27 +1027,27 @@ function AuditTab({
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-4 gap-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            <p className="text-sm text-gray-500">Total Events</p>
+          <div className="p-4 bg-[#18181b] rounded-lg">
+            <p className="text-2xl font-bold text-[#fafafa]">{stats.total}</p>
+            <p className="text-sm text-[#a1a1aa]">Total Events</p>
           </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-900">
+          <div className="p-4 bg-[#18181b] rounded-lg">
+            <p className="text-2xl font-bold text-[#fafafa]">
               {stats.bySeverity?.info || 0}
             </p>
-            <p className="text-sm text-gray-500">Info Events</p>
+            <p className="text-sm text-[#a1a1aa]">Info Events</p>
           </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-amber-600">
+          <div className="p-4 bg-[#18181b] rounded-lg">
+            <p className="text-2xl font-bold text-[#f59e0b]">
               {stats.bySeverity?.warning || 0}
             </p>
-            <p className="text-sm text-gray-500">Warnings</p>
+            <p className="text-sm text-[#a1a1aa]">Warnings</p>
           </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-red-600">
+          <div className="p-4 bg-[#18181b] rounded-lg">
+            <p className="text-2xl font-bold text-[#ef4444]">
               {stats.bySeverity?.critical || 0}
             </p>
-            <p className="text-sm text-gray-500">Critical</p>
+            <p className="text-sm text-[#a1a1aa]">Critical</p>
           </div>
         </div>
       )}
@@ -1057,48 +1055,48 @@ function AuditTab({
       {/* Logs Table */}
       {logs.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No audit logs yet</p>
+          <FileText className="w-12 h-12 text-[#a1a1aa] mx-auto mb-4" />
+          <p className="text-[#a1a1aa]">No audit logs yet</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">
+              <tr className="border-b border-[#27272a]">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#a1a1aa]">
                   Timestamp
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#a1a1aa]">
                   Action
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#a1a1aa]">
                   User
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#a1a1aa]">
                   Severity
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#27272a]">
               {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                <tr key={log.id} className="hover:bg-[#27272a]">
+                  <td className="px-4 py-3 text-sm text-[#a1a1aa]">
                     {new Date(log.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                  <td className="px-4 py-3 text-sm text-[#fafafa]">
                     {log.action}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-[#a1a1aa]">
                     {log.user?.email || log.actorEmail || "System"}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
                         log.severity === "critical"
-                          ? "bg-red-100 text-red-800"
+                          ? "bg-[#ef4444]/10 text-[#ef4444]"
                           : log.severity === "warning"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-gray-100 text-gray-800"
+                          ? "bg-[#f59e0b]/10 text-[#f59e0b]"
+                          : "bg-[#27272a] text-[#fafafa]"
                       }`}
                     >
                       {log.severity}

@@ -18,13 +18,13 @@ export default function EnterprisePage() {
   if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#09090b]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <EnterpriseSettings token={token} />
       </div>

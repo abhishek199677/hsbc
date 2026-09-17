@@ -63,7 +63,7 @@ export default function FeedbackWidget() {
     <>
       <button
         onClick={handleOpen}
-        className="fixed bottom-6 right-6 z-50 bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-6 right-6 z-50 bg-[#a78bfa] hover:bg-[#8b5cf6] text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors"
         aria-label="Send feedback"
       >
         <MessageSquare className="w-6 h-6" />
@@ -71,22 +71,22 @@ export default function FeedbackWidget() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <div className="fixed inset-0 bg-black/60" onClick={() => setOpen(false)} />
+          <div className="relative bg-[#18181b] rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 border border-[#27272a]">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Send Feedback</h2>
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <h2 className="text-lg font-semibold text-[#fafafa]">Send Feedback</h2>
+              <button onClick={() => setOpen(false)} className="text-[#a1a1aa] hover:text-[#fafafa]">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">Type</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="w-full border border-[#27272a] bg-[#27272a] text-[#fafafa] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa] outline-none"
                 >
                   <option value="general">General</option>
                   <option value="bug">Bug</option>
@@ -95,32 +95,32 @@ export default function FeedbackWidget() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">Message</label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={4}
                   placeholder="Tell us what's on your mind..."
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                  className="w-full border border-[#27272a] bg-[#27272a] text-[#fafafa] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa] outline-none resize-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">Email (optional)</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="w-full border border-[#27272a] bg-[#27272a] text-[#fafafa] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa] outline-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
+                className="w-full bg-[#a78bfa] hover:bg-[#8b5cf6] disabled:bg-[#a78bfa]/50 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
               >
                 {submitting ? "Submitting..." : "Submit Feedback"}
               </button>

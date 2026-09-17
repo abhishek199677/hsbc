@@ -37,9 +37,7 @@ export default function InterviewSchedulePage() {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch("/api/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await fetch("/api/profile");
         const data = await response.json();
         if (!cancelled && data.success && data.profile?.timezone) {
           setTimezone(data.profile.timezone);
@@ -131,7 +129,6 @@ export default function InterviewSchedulePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           date: dateStr,
@@ -159,85 +156,85 @@ export default function InterviewSchedulePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#09090b]">
       <Sidebar currentStep={currentStep} progress={progress} />
-      <main className="flex-1 bg-gray-50 overflow-auto">
-        <div className="p-4 bg-white border-b flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Shield className="w-4 h-4 text-green-600" />
+      <main className="flex-1 bg-[#09090b] overflow-auto">
+        <div className="p-4 bg-[#18181b] border-b border-[#27272a] flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-[#a1a1aa]">
+            <Shield className="w-4 h-4 text-[#f5c542]" />
             Your data is safe with us
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-primary">{displayName.charAt(0).toUpperCase()}</span>
+            <div className="w-8 h-8 bg-[#e050b0]/10 flex items-center justify-center">
+              <span className="text-sm font-medium text-[#a78bfa]">{displayName.charAt(0).toUpperCase()}</span>
             </div>
-            <span className="text-sm font-medium">Hi, {displayName} 👋</span>
+            <span className=" text-sm font-medium text-white">Hi, {displayName}</span>
           </div>
         </div>
         <StepIndicator steps={steps} currentStep={currentStep} />
         <div className="max-w-4xl mx-auto px-4 pb-8">
           {/* Success Banner */}
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6 flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+          <div className="bg-[#18181b] border border-[#4dacde]/30 p-6 mb-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#4dacde]/10 flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-6 h-6 text-[#f5c542]" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Great! Your resume is uploaded successfully! 🎉</h3>
-              <p className="text-sm text-gray-600">Let&apos;s book your 15-minute AI interview. Choose a time that works best for you.</p>
+              <h3 className="text-lg font-medium text-white">Great! Your resume is uploaded successfully!</h3>
+              <p className=" text-sm text-[#a1a1aa]">Let&apos;s book your 15-minute AI interview. Choose a time that works best for you.</p>
             </div>
           </div>
 
           {/* AI Interview Info */}
-          <div className="bg-primary/10 rounded-xl p-6 mb-6 flex items-center gap-6">
-            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="bg-[#e050b0]/10 p-6 mb-6 flex items-center gap-6">
+            <div className="w-12 h-12 bg-[#e050b0]/20 flex items-center justify-center flex-shrink-0">
               <span className="text-2xl">✨</span>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-primary">Just 15 minutes to open doors to endless opportunities.</p>
-              <p className="text-xs text-primary-dark mt-1">Our AI interview is designed to understand you better and match you with roles where you can shine.</p>
+              <p className="text-sm font-medium text-[#a78bfa] font-mono">Just 15 minutes to open doors to endless opportunities.</p>
+              <p className="text-xs text-[#a1a1aa] mt-1 font-mono">Our AI interview is designed to understand you better and match you with roles where you can shine.</p>
             </div>
             <div className="flex gap-6">
               <div className="text-center">
-                <Clock className="w-6 h-6 text-primary mx-auto" />
-                <p className="text-[10px] text-gray-600 mt-1">15 Min<br/>Interview</p>
+                <Clock className="w-6 h-6 text-[#a78bfa] mx-auto" />
+                <p className=" text-[10px] text-[#a1a1aa] mt-1">15 Min<br/>Interview</p>
               </div>
               <div className="text-center">
                 <span className="text-2xl">🧠</span>
-                <p className="text-[10px] text-gray-600 mt-1">AI-Powered<br/>Assessment</p>
+                <p className=" text-[10px] text-[#a1a1aa] mt-1">AI-Powered<br/>Assessment</p>
               </div>
               <div className="text-center">
-                <Lock className="w-6 h-6 text-primary mx-auto" />
-                <p className="text-[10px] text-gray-600 mt-1">Secure &<br/>Private</p>
+                <Lock className="w-6 h-6 text-[#a78bfa] mx-auto" />
+                <p className=" text-[10px] text-[#a1a1aa] mt-1">Secure &<br/>Private</p>
               </div>
             </div>
           </div>
 
           {/* Calendar Section */}
-          <div className="bg-white rounded-xl border p-6 mb-6">
+          <div className="bg-[#18181b] border border-[#27272a] p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">4. Select Your 15-Minute Interview Slot</h3>
-              <span className="text-xs text-gray-500 flex items-center gap-1">
+              <h3 className="text-lg font-medium text-white">4. Select Your 15-Minute Interview Slot</h3>
+              <span className="text-xs text-[#a1a1aa] flex items-center gap-1 font-mono">
                 <Clock className="w-3 h-3" />
                 Interview duration: 15 minutes
               </span>
             </div>
-            <p className="text-sm text-gray-500 mb-6">All times are shown in <span className="font-medium text-primary">{tzLabel} ({timezone})</span></p>
+            <p className="text-sm text-[#a1a1aa] mb-6 font-mono">All times are shown in <span className="font-medium text-[#a78bfa]">{tzLabel} ({timezone})</span></p>
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* Calendar */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-gray-900">{monthName}</h4>
+                  <h4 className="font-semibold text-white">{monthName}</h4>
                   <div className="flex gap-2">
                     <button
                       onClick={() => changeMonth(-1)}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-1 hover:bg-[#27272a] text-white"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => changeMonth(1)}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-1 hover:bg-[#27272a] text-white"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -245,7 +242,7 @@ export default function InterviewSchedulePage() {
                 </div>
                 <div className="grid grid-cols-7 gap-1">
                   {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((day) => (
-                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">{day}</div>
+                    <div key={day} className="text-center text-xs font-medium text-[#a1a1aa] py-2">{day}</div>
                   ))}
                   {Array.from({ length: firstDay }).map((_, i) => (
                     <div key={`empty-${i}`} />
@@ -261,35 +258,35 @@ export default function InterviewSchedulePage() {
                         key={day}
                         onClick={() => isAvailable && setSelectedDate(day)}
                         disabled={!isAvailable}
-                        className={`relative w-full aspect-square rounded-lg flex items-center justify-center text-sm transition-colors ${
+                        className={`relative w-full aspect-square flex items-center justify-center text-sm transition-colors ${
                           isSelected
-                            ? "bg-primary text-white"
+                            ? "bg-[#e050b0] text-white"
                             : isAvailable
-                            ? "hover:bg-gray-100 text-gray-900"
-                            : "text-gray-300 cursor-not-allowed"
+                            ? "hover:bg-[#27272a] text-white"
+                            : "text-[#a1a1aa] cursor-not-allowed"
                         }`}
                       >
                         {day}
                         {isAvailable && !isSelected && (
-                          <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${isLimited ? "bg-yellow-500" : "bg-green-500"}`} />
+                          <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 ${isLimited ? "bg-yellow-500" : "bg-[#4dacde]"}`} />
                         )}
                       </button>
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full" /> Available</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-yellow-500 rounded-full" /> Limited Slots</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-gray-300 rounded-full" /> Unavailable</span>
+                <div className="flex items-center gap-4 mt-4 text-xs text-[#a1a1aa] font-mono">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-[#4dacde]" /> Available</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-yellow-500" /> Limited Slots</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-[#2a2a2a]" /> Unavailable</span>
                 </div>
               </div>
 
               {/* Time Slots */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-4">{selectedDateLabel} ☀️</h4>
+                <h4 className="font-semibold text-white mb-4 font-mono uppercase tracking-wider">{selectedDateLabel}</h4>
                 <div className="space-y-6">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-3">Morning</p>
+                    <p className="text-sm font-medium text-[#a1a1aa] mb-3">Morning</p>
                     <div className="grid grid-cols-3 gap-2">
                       {timeSlots.morning.map((time) => (
                         <button
@@ -303,7 +300,7 @@ export default function InterviewSchedulePage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-3">Afternoon</p>
+                    <p className="text-sm font-medium text-[#a1a1aa] mb-3">Afternoon</p>
                     <div className="grid grid-cols-3 gap-2">
                       {timeSlots.afternoon.map((time) => (
                         <button
@@ -317,7 +314,7 @@ export default function InterviewSchedulePage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-3">Evening</p>
+                    <p className="text-sm font-medium text-[#a1a1aa] mb-3">Evening</p>
                     <div className="grid grid-cols-3 gap-2">
                       {timeSlots.evening.map((time) => (
                         <button
@@ -336,18 +333,18 @@ export default function InterviewSchedulePage() {
           </div>
 
           {/* Selected Time Confirmation */}
-          <div className="bg-white rounded-xl border p-4 mb-6 flex items-center justify-between">
+          <div className="bg-[#18181b] border border-[#27272a] p-4 mb-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-[#4dacde]/10 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-[#f5c542]" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">You&apos;ve selected</p>
-                <p className="text-sm text-gray-600">{selectedDateShort}</p>
-                <p className="text-sm text-gray-600">{selectedTime} ({tzLabel})</p>
+                <p className=" text-sm font-medium text-white">You&apos;ve selected</p>
+                <p className=" text-sm text-[#a1a1aa]">{selectedDateShort}</p>
+                <p className=" text-sm text-[#a1a1aa]">{selectedTime} ({tzLabel})</p>
               </div>
             </div>
-            <div className="flex items-center gap-6 text-xs text-gray-500">
+            <div className="flex items-center gap-6 text-xs text-[#a1a1aa] font-mono">
               <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> You will receive a reminder before your interview</span>
               <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Reschedule or change time anytime</span>
               <span className="flex items-center gap-1"><Shield className="w-4 h-4" /> Smooth, secure and distraction-free experience</span>
@@ -355,13 +352,13 @@ export default function InterviewSchedulePage() {
           </div>
 
           {/* All Set Banner */}
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6 flex items-center gap-4">
+          <div className="bg-[#18181b] border border-[#4dacde]/30 p-6 mb-6 flex items-center gap-4">
             <span className="text-4xl">🎉</span>
             <div className="flex-1">
-              <h4 className="font-semibold text-gray-900">All Set! You&apos;re Good to Go!</h4>
-              <p className="text-sm text-gray-600">We&apos;re looking forward to your interview. Get ready to showcase your <strong>best</strong> self.</p>
+              <h4 className="font-semibold text-white">All Set! You&apos;re Good to Go!</h4>
+              <p className=" text-sm text-[#a1a1aa]">We&apos;re looking forward to your interview. Get ready to showcase your <strong>best</strong> self.</p>
             </div>
-            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-[#4dacde] flex items-center justify-center">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -370,7 +367,7 @@ export default function InterviewSchedulePage() {
           <div className="flex justify-between">
             <button
               onClick={() => router.push("/profile")}
-              className="flex items-center gap-2 px-6 py-3 border rounded-lg text-sm font-medium hover:bg-gray-50"
+              className="rounded-lg flex items-center gap-2 px-6 py-3 border border-[#27272a] text-white text-sm font-medium hover:bg-[#27272a]"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -378,7 +375,7 @@ export default function InterviewSchedulePage() {
             <div className="flex gap-3">
               <Link
                 href="/interview/room"
-                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                className="rounded-lg flex items-center gap-2 px-6 py-3 bg-[#f5c542] text-black text-sm font-medium hover:bg-[#f5c542]/80 transition-colors"
               >
                 <Video className="w-4 h-4" />
                 Start Live Interview
@@ -386,14 +383,14 @@ export default function InterviewSchedulePage() {
               <button
                 onClick={handleConfirm}
                 disabled={saving || selectedDate === null}
-                className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+                className="rounded-lg flex items-center gap-2 px-6 py-3 bg-[#a78bfa] text-white text-sm font-medium hover:bg-[#8b5cf6] transition-colors disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Confirm & Continue"}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
-          <p className="text-center text-xs text-gray-500 mt-4 flex items-center justify-center gap-1">
+          <p className="text-center text-xs text-[#a1a1aa] mt-4 flex items-center justify-center gap-1 font-mono">
             <Lock className="w-3 h-3" />
             Your information is encrypted and secure
           </p>

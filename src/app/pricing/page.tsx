@@ -60,17 +60,17 @@ export default function PricingPage() {
   const { currency } = useCurrency();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+    <div className="min-h-screen bg-[#09090b]">
       <div className="max-w-6xl mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-[#fafafa] mb-4">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+          <p className="text-[#a1a1aa] text-lg max-w-2xl mx-auto">
             Start free, upgrade when you need more interviews. No hidden fees, cancel anytime.
           </p>
           <div className="mt-6 flex justify-center">
-            <CurrencySelector className="bg-white/5 rounded-lg px-2 py-1" />
+            <CurrencySelector className="bg-[#18181b] border border-[#27272a] px-2 py-1 rounded-lg" />
           </div>
         </div>
 
@@ -78,40 +78,40 @@ export default function PricingPage() {
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`rounded-2xl p-8 flex flex-col ${
+              className={`p-8 flex flex-col rounded-xl ${
                 plan.highlighted
-                  ? "bg-white shadow-2xl scale-105 border-2 border-indigo-400"
-                  : "bg-white/95"
+                  ? "bg-[#18181b] border-2 border-[#a78bfa] scale-105"
+                  : "bg-[#18181b] border border-[#27272a]"
               }`}
             >
               {plan.highlighted && (
-                <div className="flex items-center gap-1 text-indigo-600 text-xs font-semibold uppercase tracking-wide mb-2">
+                <div className="flex items-center gap-1 text-[#a78bfa] text-xs font-semibold mb-2">
                   <Sparkles className="w-4 h-4" />
                   Most Popular
                 </div>
               )}
-              <h2 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h2>
-              <p className="text-sm text-gray-500 mb-4">{plan.description}</p>
+              <h2 className="text-xl font-bold text-[#fafafa] mb-1">{plan.name}</h2>
+              <p className="text-sm text-[#a1a1aa] mb-4">{plan.description}</p>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">
+                <span className="text-4xl font-bold text-[#fafafa]">
                   {formatPrice(PLAN_PRICES_USD[plan.id].monthly, currency)}
                 </span>
-                <span className="text-gray-500"> {plan.period}</span>
+                <span className="text-[#a1a1aa]"> {plan.period}</span>
               </div>
               <ul className="space-y-2.5 mb-8 flex-1">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm text-gray-700">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <li key={feature} className="flex items-start gap-2 text-sm text-[#a1a1aa]">
+                    <CheckCircle className="w-5 h-5 text-[#22c55e] flex-shrink-0 mt-0.5" />
                     {feature}
                   </li>
                 ))}
               </ul>
               <Link
                 href={plan.href}
-                className={`text-center py-3 rounded-lg font-medium transition-colors ${
+                className={`text-center py-3 font-medium transition-colors text-sm rounded-lg ${
                   plan.highlighted
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                    : "border border-gray-300 text-gray-800 hover:bg-gray-50"
+                    ? "bg-[#a78bfa] text-white hover:bg-[#8b5cf6]"
+                    : "border border-[#27272a] text-[#a1a1aa] hover:bg-[#27272a]"
                 }`}
               >
                 {plan.cta}
@@ -120,9 +120,9 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <p className="text-center text-slate-400 text-sm mt-10">
+        <p className="text-center text-[#a1a1aa] text-sm mt-10">
           Questions? Reach out at{" "}
-          <a href="mailto:support@hireright.com" className="text-slate-200 underline">
+          <a href="mailto:support@hireright.com" className="text-[#f5c542] underline">
             support@hireright.com
           </a>
         </p>

@@ -77,35 +77,35 @@ function StatCard({
 }) {
   const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col items-center text-center">
+    <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-5 flex flex-col items-center text-center">
       <div
         className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
         style={{ backgroundColor: `${color}15` }}
       >
         <Icon className="w-5 h-5" style={{ color }} />
       </div>
-      <span className="text-2xl font-bold text-gray-900">{value}</span>
-      <span className="text-xs text-gray-500 mt-1">{pct}% of total</span>
-      <span className="text-xs font-medium text-gray-700 mt-0.5">{label}</span>
+      <span className="text-2xl font-bold text-[#fafafa]">{value}</span>
+      <span className="text-xs text-[#a1a1aa] mt-1">{pct}% of total</span>
+      <span className="text-xs font-medium text-[#a1a1aa] mt-0.5">{label}</span>
     </div>
   );
 }
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
-      <div className="w-10 h-10 bg-gray-200 rounded-full mx-auto mb-2" />
-      <div className="h-7 bg-gray-200 rounded w-12 mx-auto mb-1" />
-      <div className="h-3 bg-gray-100 rounded w-16 mx-auto" />
+    <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-5 animate-pulse">
+      <div className="w-10 h-10 bg-[#27272a] rounded-full mx-auto mb-2" />
+      <div className="h-7 bg-[#27272a] rounded w-12 mx-auto mb-1" />
+      <div className="h-3 bg-[#27272a] rounded w-16 mx-auto" />
     </div>
   );
 }
 
 function SkeletonChart() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
-      <div className="h-5 bg-gray-200 rounded w-40 mb-6" />
-      <div className="h-56 bg-gray-100 rounded-lg" />
+    <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6 animate-pulse">
+      <div className="h-5 bg-[#27272a] rounded w-40 mb-6" />
+      <div className="h-56 bg-[#27272a] rounded-lg" />
     </div>
   );
 }
@@ -120,9 +120,9 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
     setLoading(true);
     try {
       const [statsRes, analyticsRes, usersRes] = await Promise.all([
-        fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/admin/analytics", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/analytics"),
+        fetch("/api/admin/users"),
       ]);
 
       const statsData = await statsRes.json();
@@ -210,19 +210,19 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-[#fafafa]">Dashboard</h1>
+          <p className="text-sm text-[#a1a1aa] mt-1">
             Overview of all jobs, suppliers and hiring pipeline
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[#a1a1aa]">
             Last Refresh: {lastRefresh || "Loading..."}
           </span>
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-[#a1a1aa] hover:text-[#fafafa] hover:bg-[#27272a] rounded-lg transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -259,8 +259,8 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
       ) : stats ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Stage Funnel */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Stage Funnel</h3>
+          <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-4">Stage Funnel</h3>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie
@@ -290,7 +290,7 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
             <div className="flex flex-wrap gap-2 mt-2">
               {["New", "Review", "HR Interview", "Technical", "Interviews", "Offer", "Hires"].map(
                 (label, i) => (
-                  <span key={label} className="flex items-center gap-1 text-[11px] text-gray-600">
+                  <span key={label} className="flex items-center gap-1 text-[11px] text-[#a1a1aa]">
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: PIPELINE_COLORS[i] }} />
                     {label}
                   </span>
@@ -300,18 +300,18 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
           </div>
 
           {/* Submission Trend */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Submission Trend</h3>
+          <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-4">Submission Trend</h3>
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={stats.recentActivity}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#d1d5db" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#d1d5db" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#a1a1aa" />
+                <YAxis tick={{ fontSize: 11 }} stroke="#a1a1aa" />
                 <Tooltip />
                 <Area
                   type="monotone"
                   dataKey="count"
-                  stroke="#2563eb"
+                  stroke="#3b82f6"
                   fill="#2563eb"
                   fillOpacity={0.1}
                   strokeWidth={2}
@@ -321,8 +321,8 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
           </div>
 
           {/* Recommendation Breakdown */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Recommendation Distribution</h3>
+          <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-4">Recommendation Distribution</h3>
             {stats.recommendationBreakdown.some((r) => r.value > 0) ? (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
@@ -345,13 +345,13 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">
+              <div className="flex items-center justify-center h-[240px] text-[#a1a1aa] text-sm">
                 No Data Available
               </div>
             )}
             <div className="flex flex-wrap gap-3 mt-2 justify-center">
               {stats.recommendationBreakdown.map((item) => (
-                <span key={item.label} className="flex items-center gap-1 text-[11px] text-gray-600">
+                <span key={item.label} className="flex items-center gap-1 text-[11px] text-[#a1a1aa]">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                   {item.label} ({item.value})
                 </span>
@@ -365,13 +365,13 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
       {stats && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Score Distribution */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Score Distribution</h3>
+          <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-4">Score Distribution</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={stats.scoreDistribution}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="#d1d5db" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#d1d5db" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="#a1a1aa" />
+                <YAxis tick={{ fontSize: 11 }} stroke="#a1a1aa" />
                 <Tooltip />
                 <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -379,13 +379,13 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
           </div>
 
           {/* Top 5 Jobs */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Top 5 Job Roles</h3>
+          <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-4">Top 5 Job Roles</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart layout="vertical" data={stats.topLocations.slice(0, 5)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="#d1d5db" />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="#d1d5db" width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis type="number" tick={{ fontSize: 11 }} stroke="#a1a1aa" />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="#a1a1aa" width={100} />
                 <Tooltip />
                 <Bar dataKey="count" fill="#2563eb" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -393,13 +393,13 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
           </div>
 
           {/* Top 5 Locations */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Top 5 Locations</h3>
+          <div className="bg-[#18181b] rounded-xl border border-[#27272a] p-6">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-4">Top 5 Locations</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart layout="vertical" data={stats.topLocations.slice(0, 5)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="#d1d5db" />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="#d1d5db" width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis type="number" tick={{ fontSize: 11 }} stroke="#a1a1aa" />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="#a1a1aa" width={100} />
                 <Tooltip />
                 <Bar dataKey="count" fill="#10b981" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -409,7 +409,7 @@ export default function VirtusaDashboard({ token }: VirtusaDashboardProps) {
       )}
 
       {/* Footer */}
-      <div className="text-center text-xs text-gray-400 py-4">
+      <div className="text-center text-xs text-[#a1a1aa] py-4">
         © {new Date().getFullYear()} HireRight. All rights reserved.
       </div>
     </div>

@@ -1,4 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Mock prisma to avoid DATABASE_URL requirement
+vi.mock("./prisma", () => ({
+  prisma: {
+    session: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+  },
+}));
+
 import { SESSION_COOKIE } from "@/lib/auth";
 
 describe("authentication cookies", () => {
@@ -43,7 +55,6 @@ describe("authentication cookies", () => {
 
 describe("AuthUser interface", () => {
   it("defines expected fields", () => {
-    // Type-level check: ensure AuthUser has the expected shape
     const user: import("@/lib/auth").AuthUser = {
       sessionId: "session-123",
       userId: "user-456",

@@ -18,18 +18,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HireRight - Talent to Talent",
+  title: "Techcitta - Talent to Talent",
   description: "Your Journey to the Right Opportunity Starts Here. Background screening you can trust.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "HireRight",
+    statusBarStyle: "black-translucent",
+    title: "Techcitta",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4f46e5",
+  themeColor: "#09090b",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full" suppressHydrationWarning>
+      <body className="min-h-full bg-[#09090b] text-[#fafafa]" suppressHydrationWarning>
         <Providers>
           <ToastProvider />
           <CrispChat />

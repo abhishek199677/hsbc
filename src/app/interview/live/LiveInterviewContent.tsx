@@ -29,13 +29,13 @@ import SavingOverlay from "@/components/interview/live/SavingOverlay";
 // Dynamically import the LiveKit room component (no SSR — it needs browser APIs)
 const LiveKitInterviewRoom = dynamic(
   () => import("@/components/LiveKitInterviewRoom"),
-  { ssr: false, loading: () => <Loader className="animate-spin w-8 h-8 text-indigo-400" /> }
+  { ssr: false, loading: () => <Loader className="animate-spin w-8 h-8 text-[#a78bfa]" /> }
 );
 
 // Dynamically import the CodingChallenge component (no SSR — Monaco needs browser APIs)
 const CodingChallenge = dynamic(
   () => import("@/components/CodingChallenge"),
-  { ssr: false, loading: () => <Loader className="animate-spin w-8 h-8 text-indigo-400" /> }
+  { ssr: false, loading: () => <Loader className="animate-spin w-8 h-8 text-[#a78bfa]" /> }
 );
 
 const PROCTOR_INCIDENT_LABELS: Record<string, string> = {
@@ -424,7 +424,6 @@ export default function LiveInterviewContent() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
         action,
@@ -600,7 +599,6 @@ export default function LiveInterviewContent() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ interviewId }),
       });
@@ -875,7 +873,6 @@ export default function LiveInterviewContent() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           videoUrl: url,
@@ -987,22 +984,22 @@ export default function LiveInterviewContent() {
   // ──────────────────────────────────────────────────────────────────
   if (codingMode && currentChallenge && !interviewEnded) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="min-h-screen bg-[#09090b] flex flex-col">
         {/* Header */}
-        <header className="bg-gray-800 border-b border-gray-700 px-4 py-3">
+        <header className="bg-[#18181b] border-b border-[#27272a] px-4 py-3">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-1.5">
-                <img src="/logo.png" alt="HireRight" className="h-6 w-auto rounded drop-shadow-md" />
+              <div className="bg-[#1a1a1a] backdrop-blur-sm p-1.5">
+                <img src="/logo.png" alt="HireRight" className="h-6 w-auto drop-shadow-md" />
               </div>
-              <span className="px-2 py-0.5 bg-indigo-600 text-white text-xs rounded">Coding Challenge</span>
+              <span className="px-2 py-0.5 bg-[#e050b0] text-white text-xs font-mono uppercase tracking-wider">Coding Challenge</span>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-gray-300">
+              <div className="flex items-center gap-2 text-[#a1a1aa] font-mono">
                 <Clock className="w-4 h-4" />
                 <span className="font-mono">{formatTime(elapsedTime)}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-300">
+              <div className="flex items-center gap-2 text-[#a1a1aa] font-mono">
                 <FileCode className="w-4 h-4" />
                 <span className="text-sm">{messages.length} messages</span>
               </div>
@@ -1042,10 +1039,10 @@ export default function LiveInterviewContent() {
   // ──────────────────────────────────────────────────────────────────
   if (liveKitAvailable === null) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center">
-          <Loader className="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-400">Checking interview connection...</p>
+          <Loader className="animate-spin h-8 w-8 text-[#a78bfa] mx-auto mb-4" />
+          <p className="text-[#a1a1aa] font-mono">Checking interview connection...</p>
         </div>
       </div>
     );
@@ -1053,61 +1050,61 @@ export default function LiveInterviewContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <Loader className="animate-spin h-8 w-8 text-indigo-600" />
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+        <Loader className="animate-spin h-8 w-8 text-[#a78bfa]" />
       </div>
     );
   }
 
   if (interviewEnded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
         <div className="w-full max-w-2xl">
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-8 text-center">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-green-500" />
+          <div className="bg-[#18181b] overflow-hidden">
+            <div className="bg-[#4dacde] p-8 text-center">
+              <div className="w-20 h-20 bg-[#09090b] flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-[#f5c542]" />
               </div>
-              <h1 className="text-2xl font-bold text-white">Interview Complete!</h1>
-              <p className="text-white/80 mt-2">Thank you for completing the AI interview</p>
+              <h1 className="text-2xl font-bold text-white font-mono">Interview Complete!</h1>
+              <p className="text-white/80 mt-2 font-mono">Thank you for completing the AI interview</p>
             </div>
 
             <div className="p-8">
               <div className="flex items-center justify-center gap-8 mb-8">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-gray-900">{formatTime(elapsedTime)}</p>
-                  <p className="text-sm text-gray-500">Duration</p>
+                  <p className="text-3xl font-bold text-white font-mono">{formatTime(elapsedTime)}</p>
+                  <p className="text-sm text-[#a1a1aa] font-mono uppercase tracking-wider">Duration</p>
                 </div>
-                <div className="w-px h-12 bg-gray-200" />
+                <div className="w-px h-12 bg-[#2a2a2a]" />
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-gray-900">{messages.length}</p>
-                  <p className="text-sm text-gray-500">Exchanges</p>
+                  <p className="text-3xl font-bold text-white font-mono">{messages.length}</p>
+                  <p className="text-sm text-[#a1a1aa] font-mono uppercase tracking-wider">Exchanges</p>
                 </div>
               </div>
 
               {proctorReport && (
-                <div className={`mb-6 rounded-xl border p-4 ${
+                <div className={`mb-6 border p-4 ${
                   proctorReport.result === "pass"
-                    ? "border-emerald-200 bg-emerald-50"
+                    ? "border-[#4dacde]/30 bg-[#4dacde]/10"
                     : proctorReport.result === "review"
-                    ? "border-yellow-200 bg-yellow-50"
+                    ? "border-[#e050b0]/30 bg-[#e050b0]/10"
                     : proctorReport.result === "fail"
-                    ? "border-red-200 bg-red-50"
-                    : "border-gray-200 bg-gray-50"
+                    ? "border-red-500/30 bg-red-500/10"
+                    : "border-[#27272a] bg-[#18181b]"
                 }`}>
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-gray-700" />
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
+                      <ShieldCheck className="w-5 h-5 text-[#a1a1aa]" />
                       Anti-Cheating Monitor
                     </h3>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    <span className={`px-2.5 py-1 text-xs font-bold font-mono ${
                       proctorReport.result === "pass"
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-[#4dacde]/20 text-[#f5c542]"
                         : proctorReport.result === "review"
-                        ? "bg-yellow-100 text-yellow-700"
+                        ? "bg-[#e050b0]/20 text-[#a78bfa]"
                         : proctorReport.result === "fail"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-gray-200 text-gray-600"
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-[#2a2a2a] text-[#a1a1aa]"
                     }`}>
                       {proctorReport.result === "pass" ? "Clean"
                         : proctorReport.result === "review" ? "Flagged for review"
@@ -1117,7 +1114,7 @@ export default function LiveInterviewContent() {
                   </div>
                   {proctorReport.enabled ? (
                     <>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-[#a1a1aa] font-mono">
                         {proctorReport.incidents.length === 0
                           ? "No integrity violations detected. You kept facing the camera throughout."
                           : `${proctorReport.incidents.length} malpractice incident(s) were recorded during your interview.`}
@@ -1125,8 +1122,8 @@ export default function LiveInterviewContent() {
                       {proctorReport.incidents.length > 0 && (
                         <ul className="mt-3 space-y-2">
                           {proctorReport.incidents.map((inc, i) => (
-                            <li key={i} className="text-xs text-gray-700 flex items-start gap-2">
-                              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 text-red-500 flex-shrink-0" />
+                            <li key={i} className="text-xs text-[#a1a1aa] flex items-start gap-2 font-mono">
+                              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 text-[#a78bfa] flex-shrink-0" />
                               <span>
                                 <strong>{PROCTOR_INCIDENT_LABELS[inc.type] || inc.type}</strong>
                                 {inc.detail ? ` — ${inc.detail}` : ""}
@@ -1137,13 +1134,13 @@ export default function LiveInterviewContent() {
                         </ul>
                       )}
                       {proctorReport.totalLookAwayMs > 0 && (
-                        <p className="mt-2 text-xs text-gray-500">
+                        <p className="mt-2 text-xs text-[#a1a1aa] font-mono">
                           Total time looking away from the camera: {Math.round(proctorReport.totalLookAwayMs / 1000)}s
                         </p>
                       )}
                     </>
                   ) : (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[#a1a1aa] font-mono">
                       {proctorReport.reason || "Proctoring was not active for this interview."}
                     </p>
                   )}
@@ -1151,9 +1148,9 @@ export default function LiveInterviewContent() {
               )}
 
               {evaluation && typeof evaluation.integrity === "string" && evaluation.integrity !== "clean" && (
-                <div className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 flex items-start gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700">
+                <div className="mb-6 p-4 border border-red-500/30 bg-red-500/10 flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-[#a78bfa] flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-[#a78bfa] font-mono">
                     <strong>Integrity flag:</strong> {evaluation.integrity === "failed"
                       ? "This interview was marked as failed due to suspected malpractice."
                       : "The evaluator flagged suspected malpractice in this interview."}
@@ -1163,11 +1160,11 @@ export default function LiveInterviewContent() {
 
               {videoUrl && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Interview Recording</h3>
+                  <h3 className="text-lg font-semibold text-white mb-3 font-mono uppercase tracking-wider">Your Interview Recording</h3>
                   <video
                     src={buildPlaybackUrl(videoUrl, token)}
                     controls
-                    className="w-full rounded-xl bg-gray-900"
+                    className="w-full bg-[#09090b]"
                     style={{ aspectRatio: "16/9" }}
                   >
                     {captionUrl && (
@@ -1180,11 +1177,11 @@ export default function LiveInterviewContent() {
               {evaluation ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">Interview Evaluation</h3>
+                    <h3 className="text-lg font-semibold text-white font-mono uppercase tracking-wider">Interview Evaluation</h3>
                     {resultsUnlocked && (
                       <button
                         onClick={downloadReport}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#e050b0] text-white text-sm font-medium hover:bg-[#e050b0]/80 font-mono uppercase tracking-wider"
                       >
                         <FileDown className="w-4 h-4" />
                         Download PDF Report
@@ -1197,73 +1194,73 @@ export default function LiveInterviewContent() {
                       {/* Blurred preview of evaluation */}
                       <div className="blur-sm pointer-events-none select-none opacity-60">
                         {evaluation.score != null && (
-                          <div className="flex items-center gap-5 p-4 rounded-xl border border-gray-200 bg-gray-50 mb-4">
+                          <div className="flex items-center gap-5 p-4 border border-[#27272a] bg-[#18181b] mb-4">
                             <div className="relative w-20 h-20 flex-shrink-0">
                               <svg className="w-20 h-20 -rotate-90" viewBox="0 0 48 48">
-                                <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" strokeWidth="5" />
-                                <circle cx="24" cy="24" r="20" fill="none" stroke="#6366f1" strokeWidth="5" strokeLinecap="round" strokeDasharray={2 * Math.PI * 20} strokeDashoffset={2 * Math.PI * 20 * 0.3} />
+                                <circle cx="24" cy="24" r="20" fill="none" stroke="#2a2a2a" strokeWidth="5" />
+                                <circle cx="24" cy="24" r="20" fill="none" stroke="#e050b0" strokeWidth="5" strokeLinecap="round" strokeDasharray={2 * Math.PI * 20} strokeDashoffset={2 * Math.PI * 20 * 0.3} />
                               </svg>
-                              <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-900">8.5</span>
+                              <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white font-mono">8.5</span>
                             </div>
                             <div>
-                              <p className="text-sm text-gray-500">Exact Interview Score</p>
+                              <p className="text-sm text-[#a1a1aa] font-mono">Exact Interview Score</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <div className="flex items-center">
                                   {[1, 2, 3, 4, 5].map((i) => (
-                                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                                    <Star key={i} className="w-5 h-5 fill-[#e050b0] text-[#a78bfa]" />
                                   ))}
                                 </div>
-                                <span className="font-bold text-2xl text-gray-900">8.5<span className="text-sm text-gray-400 font-normal">/10</span></span>
+                                <span className="font-bold text-2xl text-white font-mono">8.5<span className="text-sm text-[#a1a1aa] font-normal">/10</span></span>
                               </div>
                             </div>
                           </div>
                         )}
-                        <div className="bg-green-50 rounded-lg p-4 mb-4">
-                          <h4 className="font-medium text-green-800 mb-2">Strengths</h4>
+                        <div className="bg-[#4dacde]/10 p-4 mb-4">
+                          <h4 className="font-medium text-[#f5c542] mb-2 font-mono">Strengths</h4>
                           <ul className="space-y-1">
-                            <li className="text-sm text-green-700 flex items-start gap-2"><CheckCircle className="w-4 h-4 mt-0.5" />Strong problem-solving skills</li>
-                            <li className="text-sm text-green-700 flex items-start gap-2"><CheckCircle className="w-4 h-4 mt-0.5" />Clear communication</li>
+                            <li className="text-sm text-[#f5c542] flex items-start gap-2 font-mono"><CheckCircle className="w-4 h-4 mt-0.5" />Strong problem-solving skills</li>
+                            <li className="text-sm text-[#f5c542] flex items-start gap-2 font-mono"><CheckCircle className="w-4 h-4 mt-0.5" />Clear communication</li>
                           </ul>
                         </div>
-                        <div className="bg-red-50 rounded-lg p-4 mb-4">
-                          <h4 className="font-medium text-red-800 mb-2">Your Weaknesses</h4>
+                        <div className="bg-[#e050b0]/10 p-4 mb-4">
+                          <h4 className="font-medium text-[#a78bfa] mb-2 font-mono">Your Weaknesses</h4>
                           <ul className="space-y-1">
-                            <li className="text-sm text-red-700">Needs improvement in system design</li>
+                            <li className="text-sm text-[#a78bfa] font-mono">Needs improvement in system design</li>
                           </ul>
                         </div>
                       </div>
 
                       {/* Paywall overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl backdrop-blur-[2px]">
-                        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-sm w-full text-center">
-                          <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Lock className="w-7 h-7 text-indigo-600" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-[#18181b]/80 backdrop-blur-[2px]">
+                        <div className="bg-[#18181b] border border-[#27272a] p-6 max-w-sm w-full text-center">
+                          <div className="w-14 h-14 bg-[#e050b0]/10 flex items-center justify-center mx-auto mb-4">
+                            <Lock className="w-7 h-7 text-[#a78bfa]" />
                           </div>
-                          <h4 className="text-lg font-bold text-gray-900 mb-2">Unlock Your Results</h4>
-                          <p className="text-sm text-gray-500 mb-1">View your score, strengths, weaknesses, feedback, and per-question breakdown.</p>
-                          <p className="text-2xl font-bold text-indigo-600 mb-4">$5.99</p>
+                          <h4 className="text-lg font-bold text-white mb-2 font-mono uppercase tracking-wider">Unlock Your Results</h4>
+                          <p className="text-sm text-[#a1a1aa] mb-1 font-mono">View your score, strengths, weaknesses, feedback, and per-question breakdown.</p>
+                          <p className="text-2xl font-bold text-[#a78bfa] mb-4 font-mono">$5.99</p>
                           <PayPalUnlockButton
                             interviewId={sessionStorage.getItem("tcInterviewId") || ""}
                             priceUsd={5.99}
                             onUnlockSuccess={() => setResultsUnlocked(true)}
                           />
-                          <p className="text-xs text-gray-400 mt-3">One-time payment. Results available forever after unlock.</p>
+                          <p className="text-xs text-[#a1a1aa] mt-3 font-mono">One-time payment. Results available forever after unlock.</p>
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {evaluation.score != null && Number.isFinite(Number(evaluation.score)) && (
-                        <div className="flex items-center gap-5 p-4 rounded-xl border border-gray-200 bg-gray-50">
+                        <div className="flex items-center gap-5 p-4 border border-[#27272a] bg-[#18181b]">
                           <div className="relative w-20 h-20 flex-shrink-0">
                             <svg className="w-20 h-20 -rotate-90" viewBox="0 0 48 48">
-                              <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" strokeWidth="5" />
+                              <circle cx="24" cy="24" r="20" fill="none" stroke="#2a2a2a" strokeWidth="5" />
                               <circle
                                 cx="24"
                                 cy="24"
                                 r="20"
                                 fill="none"
-                                stroke={Number(evaluation.score) >= 7 ? "#22c55e" : Number(evaluation.score) >= 5 ? "#f59e0b" : "#ef4444"}
+                                stroke={Number(evaluation.score) >= 7 ? "#4dacde" : Number(evaluation.score) >= 5 ? "#e050b0" : "#ef4444"}
                                 strokeWidth="5"
                                 strokeLinecap="round"
                                 strokeDasharray={2 * Math.PI * 20}
@@ -1271,19 +1268,19 @@ export default function LiveInterviewContent() {
                                 className="transition-all duration-1000"
                               />
                             </svg>
-                            <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-900">
+                            <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white font-mono">
                               {Number(evaluation.score).toFixed(1)}
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Exact Interview Score</p>
+                            <p className="text-sm text-[#a1a1aa] font-mono">Exact Interview Score</p>
                             <div className="flex items-center gap-2 mt-1">
                               <div className="flex items-center">
                                 {[1, 2, 3, 4, 5].map((i) => (
-                                  <Star key={i} className={`w-5 h-5 ${i <= Math.round(Number(evaluation.score) / 2) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                                  <Star key={i} className={`w-5 h-5 ${i <= Math.round(Number(evaluation.score) / 2) ? "fill-[#e050b0] text-[#a78bfa]" : "text-[#2a2a2a]"}`} />
                                 ))}
                               </div>
-                              <span className="font-bold text-2xl text-gray-900">
+                              <span className="font-bold text-2xl text-white font-mono">
                                 {Number(evaluation.score).toFixed(1)}
                                 <span className="text-sm text-gray-400 font-normal">/10</span>
                               </span>
@@ -1293,11 +1290,11 @@ export default function LiveInterviewContent() {
                       )}
 
                       {evaluation.strengths && (
-                        <div className="bg-green-50 rounded-lg p-4">
-                          <h4 className="font-medium text-green-800 mb-2">Strengths</h4>
+                        <div className="bg-[#4dacde]/10 p-4">
+                          <h4 className="font-medium text-[#f5c542] mb-2 font-mono">Strengths</h4>
                           <ul className="space-y-1">
                             {evaluation.strengths.map((s: string, i: number) => (
-                              <li key={i} className="text-sm text-green-700 flex items-start gap-2">
+                              <li key={i} className="text-sm text-[#f5c542] flex items-start gap-2 font-mono">
                                 <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                                 {s}
                               </li>
@@ -1307,23 +1304,23 @@ export default function LiveInterviewContent() {
                       )}
 
                       {evaluation.areasForImprovement && (
-                        <div className="bg-red-50 rounded-lg p-4">
-                          <h4 className="font-medium text-red-800 mb-2">Your Weaknesses</h4>
+                        <div className="bg-[#e050b0]/10 p-4">
+                          <h4 className="font-medium text-[#a78bfa] mb-2 font-mono">Your Weaknesses</h4>
                           <ul className="space-y-1">
                             {evaluation.areasForImprovement.map((s: string, i: number) => (
-                              <li key={i} className="text-sm text-red-700">{s}</li>
+                              <li key={i} className="text-sm text-[#a78bfa] font-mono">{s}</li>
                             ))}
                           </ul>
                         </div>
                       )}
 
                       {evaluation.topicsToLearn && evaluation.topicsToLearn.length > 0 && (
-                        <div className="bg-indigo-50 rounded-lg p-4">
-                          <h4 className="font-medium text-indigo-800 mb-2">Topics to Learn & Grow</h4>
+                        <div className="bg-[#e050b0]/10 p-4">
+                          <h4 className="font-medium text-[#a78bfa] mb-2 font-mono">Topics to Learn & Grow</h4>
                           <ul className="space-y-1">
                             {evaluation.topicsToLearn.map((s: string, i: number) => (
-                              <li key={i} className="text-sm text-indigo-700 flex items-start gap-2">
-                                <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center mt-0.5 flex-shrink-0">
+                              <li key={i} className="text-sm text-[#a78bfa] flex items-start gap-2 font-mono">
+                                <span className="w-4 h-4 bg-[#e050b0] text-white text-[10px] flex items-center justify-center mt-0.5 flex-shrink-0">
                                   {i + 1}
                                 </span>
                                 {s}
@@ -1334,9 +1331,9 @@ export default function LiveInterviewContent() {
                       )}
 
                       {evaluation.recommendation && (
-                        <div className={`rounded-lg p-4 text-center ${evaluation.recommendation === "Hire" ? "bg-green-100" : evaluation.recommendation === "Consider" ? "bg-yellow-100" : "bg-red-100"}`}>
-                          <p className="text-sm text-gray-600">Overall Recommendation</p>
-                          <p className={`text-xl font-bold ${evaluation.recommendation === "Hire" ? "text-green-700" : evaluation.recommendation === "Consider" ? "text-yellow-700" : "text-red-700"}`}>
+                        <div className={`p-4 text-center ${evaluation.recommendation === "Hire" ? "bg-[#4dacde]/10" : evaluation.recommendation === "Consider" ? "bg-[#e050b0]/10" : "bg-red-500/10"}`}>
+                          <p className="text-sm text-[#a1a1aa] font-mono uppercase tracking-wider">Overall Recommendation</p>
+                          <p className={`text-xl font-bold font-mono ${evaluation.recommendation === "Hire" ? "text-[#f5c542]" : evaluation.recommendation === "Consider" ? "text-[#a78bfa]" : "text-red-400"}`}>
                             {evaluation.recommendation === "Hire"
                               ? "Hire"
                               : evaluation.recommendation === "Consider"
@@ -1348,30 +1345,30 @@ export default function LiveInterviewContent() {
 
                       {evaluation.questionScores && evaluation.questionScores.length > 0 && (
                         <div>
-                          <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-                            <ListChecks className="w-4 h-4 text-indigo-600" />
+                          <h4 className="font-medium text-white mb-3 flex items-center gap-2 font-mono uppercase tracking-wider">
+                            <ListChecks className="w-4 h-4 text-[#a78bfa]" />
                             Per-Question Breakdown
                           </h4>
                           <div className="space-y-3">
                             {evaluation.questionScores.map((q: QuestionScore, i: number) => (
-                              <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
-                                <div className="p-3 bg-gray-50 border-b border-gray-100 flex items-start justify-between gap-3">
-                                  <p className="text-sm text-gray-800 font-medium">
-                                    <span className="text-indigo-600 font-bold">Q{i + 1}.</span> {q.question}
+                              <div key={i} className="border border-[#27272a] overflow-hidden">
+                                <div className="p-3 bg-[#18181b] border-b border-[#27272a] flex items-start justify-between gap-3">
+                                  <p className="text-sm text-white font-medium font-mono">
+                                    <span className="text-[#a78bfa] font-bold">Q{i + 1}.</span> {q.question}
                                   </p>
-                                  <span className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-bold ${
-                                    Number(q.score) >= 7 ? "bg-green-100 text-green-700" : Number(q.score) >= 5 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
+                                  <span className={`flex-shrink-0 px-2.5 py-1 text-xs font-bold font-mono ${
+                                    Number(q.score) >= 7 ? "bg-[#4dacde]/20 text-[#f5c542]" : Number(q.score) >= 5 ? "bg-[#e050b0]/20 text-[#a78bfa]" : "bg-red-500/20 text-red-400"
                                   }`}>
                                     {Number(q.score).toFixed(1)}/10
                                   </span>
                                 </div>
-                                <div className="p-3">
-                                  <p className="text-xs text-gray-500 mb-1">
-                                    <span className="font-semibold text-gray-700">Your answer:</span> {q.answer}
+                                <div className="p-3 bg-[#18181b]">
+                                  <p className="text-xs text-[#a1a1aa] mb-1 font-mono">
+                                    <span className="font-semibold text-white">Your answer:</span> {q.answer}
                                   </p>
                                   {q.feedback && (
-                                    <p className="text-xs text-gray-600 mt-2 flex items-start gap-1.5">
-                                      <Volume2 className="w-3.5 h-3.5 mt-0.5 text-indigo-500 flex-shrink-0" />
+                                    <p className="text-xs text-[#a1a1aa] mt-2 flex items-start gap-1.5 font-mono">
+                                      <Volume2 className="w-3.5 h-3.5 mt-0.5 text-[#a78bfa] flex-shrink-0" />
                                       {q.feedback}
                                     </p>
                                   )}
@@ -1386,28 +1383,28 @@ export default function LiveInterviewContent() {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <Loader className="animate-spin h-8 w-8 text-indigo-600 mx-auto" />
-                  <p className="text-gray-500 mt-2">Generating evaluation...</p>
+                  <Loader className="animate-spin h-8 w-8 text-[#a78bfa] mx-auto" />
+                  <p className="text-[#a1a1aa] mt-2 font-mono">Generating evaluation...</p>
                 </div>
               )}
 
               {pairedQa.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <ScrollText className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 font-mono uppercase tracking-wider">
+                    <ScrollText className="w-5 h-5 text-[#a78bfa]" />
                     Questions & Your Answers
                   </h3>
                   <div className="space-y-4">
                     {pairedQa.map((item, idx) => (
-                      <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
-                        <div className="p-3 bg-indigo-50 border-b border-indigo-100">
-                          <p className="text-sm text-gray-800">
-                            <span className="font-bold text-indigo-700">Q{idx + 1}.</span> {item.question}
+                      <div key={idx} className="border border-[#27272a] overflow-hidden">
+                        <div className="p-3 bg-[#e050b0]/10 border-b border-[#27272a]">
+                          <p className="text-sm text-white font-mono">
+                            <span className="font-bold text-[#a78bfa]">Q{idx + 1}.</span> {item.question}
                           </p>
                         </div>
-                        <div className="p-3">
-                          <p className="text-sm text-gray-700">
-                            <span className="font-bold text-emerald-700 mr-1">You:</span> {item.answer}
+                        <div className="p-3 bg-[#18181b]">
+                          <p className="text-sm text-white font-mono">
+                            <span className="font-bold text-[#f5c542] mr-1">You:</span> {item.answer}
                           </p>
                         </div>
                       </div>
@@ -1415,7 +1412,7 @@ export default function LiveInterviewContent() {
                   </div>
                   <button
                     onClick={downloadTranscript}
-                    className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-200 text-indigo-600 text-sm font-medium hover:bg-indigo-50"
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 border border-[#27272a] text-[#a78bfa] text-sm font-medium hover:bg-[#18181b] font-mono uppercase tracking-wider"
                   >
                     <Download className="w-4 h-4" />
                     Download full transcript (.txt)
@@ -1424,10 +1421,10 @@ export default function LiveInterviewContent() {
               )}
 
               <div className="flex gap-4 mt-8">
-                <button onClick={() => router.push("/confirmation")} className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50">
+                <button onClick={() => router.push("/confirmation")} className="flex-1 py-3 border border-[#27272a] text-white font-medium hover:bg-[#18181b] font-mono uppercase tracking-wider">
                   View Confirmation
                 </button>
-                <button onClick={() => router.push("/")} className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">
+                <button onClick={() => router.push("/")} className="flex-1 py-3 bg-[#e050b0] text-white font-medium hover:bg-[#e050b0]/80 font-mono uppercase tracking-wider">
                   Back to Home
                 </button>
               </div>
@@ -1439,7 +1436,7 @@ export default function LiveInterviewContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-[#09090b] flex flex-col">
       <InterviewHeader
         elapsedTime={elapsedTime}
         proctorStatus={proctorStatus}

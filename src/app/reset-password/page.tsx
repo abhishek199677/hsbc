@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Lock, Eye, EyeOff, ArrowRight, CheckCircle, XCircle } from "lucide-react";
+import { Lock, Eye, EyeOff, ArrowRight, CheckCircle, XCircle, Shield } from "lucide-react";
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -21,8 +21,8 @@ function ResetPasswordContent() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (password.length < 12) {
+      setError("Password must be at least 12 characters.");
       return;
     }
     if (password !== confirm) {
@@ -51,15 +51,15 @@ function ResetPasswordContent() {
 
   if (done) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+      <div className="bg-[rgba(24,24,27,0.6)] backdrop-blur-xl border border-[#27272a] rounded-xl p-8 text-center">
         <div className="flex justify-center mb-4">
-          <CheckCircle className="w-16 h-16 text-green-500" />
+          <CheckCircle className="w-16 h-16 text-[#4ade80]" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Password Reset!</h1>
-        <p className="text-gray-500 mb-6">Your password has been updated. You can now sign in with your new password.</p>
+        <h1 className="text-2xl font-bold text-[#fafafa] mb-2">Password Reset!</h1>
+        <p className="text-[#a1a1aa] mb-6">Your password has been updated. You can now sign in with your new password.</p>
         <button
           onClick={() => router.push("/login")}
-          className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+          className="w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium hover:bg-[#8b5cf6] transition-colors"
         >
           Go to Sign In
         </button>
@@ -68,22 +68,22 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8">
+    <div className="bg-[rgba(24,24,27,0.6)] backdrop-blur-xl border border-[#27272a] rounded-xl p-8">
       <div className="text-center mb-8">
         {token ? (
           <>
-            <h1 className="text-2xl font-bold text-gray-900">Set a New Password</h1>
-            <p className="text-gray-500 mt-1">Choose a strong password for your account.</p>
+            <h1 className="text-2xl font-bold text-[#fafafa]">Set a New Password</h1>
+            <p className="text-[#a1a1aa] mt-2">Choose a strong password for your account.</p>
           </>
         ) : (
           <div className="flex justify-center mb-4">
-            <XCircle className="w-16 h-16 text-red-500" />
+            <XCircle className="w-16 h-16 text-[#ef4444]" />
           </div>
         )}
       </div>
 
       {!token && (
-        <p className="text-gray-600 text-center mb-6">
+        <p className="text-[#a1a1aa] text-center mb-6">
           {error}
         </p>
       )}
@@ -91,30 +91,30 @@ function ResetPasswordContent() {
       {token && (
         <>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+            <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 text-[#ef4444] px-4 py-3 mb-4 text-sm rounded-lg">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <label className="block text-sm font-medium text-[#a1a1aa] mb-1">New Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="At least 8 characters"
+                  className="w-full pl-10 pr-12 py-3 bg-[#18181b] border border-[#27272a] text-[#fafafa] text-sm rounded-lg focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa]"
+                  placeholder="At least 12 characters"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a1a1aa] hover:text-[#fafafa]"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -122,16 +122,16 @@ function ResetPasswordContent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <label className="block text-sm font-medium text-[#a1a1aa] mb-1">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
                 <input
                   type={showPassword ? "text" : "password"}
                   name="confirmPassword"
                   autoComplete="new-password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-10 pr-12 py-3 bg-[#18181b] border border-[#27272a] text-[#fafafa] text-sm rounded-lg focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa]"
                   placeholder="Re-enter your password"
                   required
                 />
@@ -141,7 +141,7 @@ function ResetPasswordContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium hover:bg-[#8b5cf6] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -163,7 +163,7 @@ function ResetPasswordContent() {
       )}
 
       <div className="mt-6 text-center">
-        <Link href="/login" className="text-indigo-600 font-medium hover:text-indigo-700">
+        <Link href="/login" className="text-[#f5c542] font-medium hover:text-[#f5c542]/80">
           Back to Sign In
         </Link>
       </div>
@@ -173,12 +173,21 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(167,139,250,0.05)_0%,transparent_50%)]" />
+
+      <div className="w-full max-w-md relative z-10">
+        <Link href="/" className="flex items-center justify-center mb-8 group">
+          <div className="flex items-center gap-3">
+            <Shield className="w-8 h-8 text-[#a78bfa]" />
+            <span className="text-2xl font-bold text-[#fafafa]">Techcitta</span>
+          </div>
+        </Link>
+
         <Suspense
           fallback={
-            <div className="bg-white rounded-2xl shadow-xl p-8 flex justify-center">
-              <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+            <div className="bg-[rgba(24,24,27,0.6)] backdrop-blur-xl border border-[#27272a] rounded-xl p-8 flex justify-center">
+              <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
             </div>
           }
         >

@@ -5,65 +5,108 @@ import { fromPath } from "pdf2pic";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import type { ParsedResume, ParsedWorkExperience, ParsedProject } from "@/types/resume";
+import type { ParsedResume, ParsedWorkExperience, ParsedProject, ParsedEducation } from "@/types/resume";
 
-export type { ParsedResume, ParsedWorkExperience, ParsedProject } from "@/types/resume";
+export type { ParsedResume, ParsedWorkExperience, ParsedProject, ParsedEducation } from "@/types/resume";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const RESUME_PARSING_PROMPT = `You are an expert resume parser. Extract structured information from the resume provided (text or image).
-Handle ALL resume formats: structured, unstructured, markdown (e.g. ## PROFESSIONAL SUMMARY), tabular, OCR-scanned, and image-based resumes.
-When data is in tables, extract from tables. When data is in free-form text, extract from paragraphs.
+const RESUME_PARSING_PROMPT = `You are an expert resume parser. Extract ALL information from the resume provided.
+
+CRITICAL: The "skills" field is the MOST IMPORTANT field. You MUST extract EVERY technical skill, programming language, framework, tool, library, database, cloud service, and technology mentioned anywhere in the resume. Check ALL sections: header, summary, work experience descriptions, project descriptions, education, certifications, and any dedicated skills section. Do NOT miss any technology.
 
 Return a JSON object with exactly these fields:
 {
   "name": "Full name of the candidate or null",
   "email": "Primary email address or null",
   "phone": "Phone number with country code if available, or null",
-  "currentRole": "Primary job title/role (e.g. 'AI Engineer', 'Senior Software Engineer', 'Product Manager'). Look at header, summary, or top work experience",
-  "totalExperience": "Total years of experience (e.g. '10+ years', '3-5 years', '5+ years'). Look at professional summary or overall career timeline",
-  "currentLocation": "City, State/Country (e.g. 'Bangalore, India', 'San Francisco, CA', 'Remote'). Look at header, contact info, or summary",
-  "skills": ["Array of technical skills", "programming languages", "tools", "frameworks", "soft skills"],
-  "education": "Highest qualification with institution and year if available (e.g. 'B.Tech Computer Science, IIT Delhi, 2018') or null",
+  "currentRole": "Primary job title/role",
+  "totalExperience": "Total years of experience",
+  "currentLocation": "City, State/Country",
+  "skills": ["EVERY technical skill, language, framework, tool, library, database, cloud service, and technology found in the resume"],
+  "education": "Highest qualification with institution and year (short string)",
+  "educationDetails": [
+    {
+      "degree": "Full degree name (e.g. Bachelor of Technology in Computer Science)",
+      "institution": "Full institution name",
+      "year": "Year of completion or duration",
+      "grade": "Grade/GPA if mentioned or null",
+      "details": "Any additional details like specialization, honors, relevant coursework"
+    }
+  ],
   "currentCompany": "Current/most recent employer name or null",
-  "summary": "Complete text of Professional Summary, Profile, or Objective section (extract the full text verbatim)",
+  "summary": "Complete text of Professional Summary section",
   "strengths": "Key strengths mentioned (comma-separated) or null",
-  "linkedinUrl": "Full LinkedIn profile URL (https://linkedin.com/in/...) or null",
+  "linkedinUrl": "Full LinkedIn profile URL or null",
+  "noticePeriod": "Notice period if mentioned or null",
+  "whatDrivesYou": "Career motivation from objective/summary or null",
+  "jobType": "Employment type if mentioned or null",
+  "preferredLocation": "Preferred work location or null",
+  "suggestedRoles": ["TOP 5 job roles that BEST match this candidate's skills, experience, and qualifications. Be specific (e.g. 'Senior Full Stack Developer', 'AI/ML Engineer', 'DevOps Lead'). Consider their tech stack, years of experience, and career trajectory."],
   "workExperience": [
     {
       "company": "Company name",
       "role": "Job title",
-      "startDate": "Start date (e.g. 'Jan 2020', '2020-01', 'Jan 2020 - Present')",
-      "endDate": "End date or 'Present' if current",
-      "description": "Key responsibilities and achievements in 1-2 sentences"
+      "startDate": "Start date",
+      "endDate": "End date or Present",
+      "description": "Key responsibilities and achievements"
     }
   ],
   "projects": [
     {
       "name": "Project name",
-      "description": "Brief description of the project",
+      "description": "Brief description (1-2 sentences)",
+      "summary": "Detailed overview of what the project does, its architecture, key features, and impact (3-5 sentences)",
       "url": "Project URL if available or null",
-      "technologies": ["technologies", "used"]
+      "technologies": ["technologies used in this project"]
     }
   ],
-  "keyAchievements": ["Notable achievements, awards, certifications, or accomplishments"],
-  "certifications": ["Professional certifications like AWS Certified, PMP, etc."],
-  "languages": ["Languages spoken with proficiency if mentioned"]
+  "keyAchievements": ["Notable achievements, awards"],
+  "certifications": ["Professional certifications"],
+  "languages": ["Languages spoken"]
 }
 
-Rules:
-- MUST extract currentRole (e.g. 'AI Engineer') from top header, summary paragraph, or recent job experience. Never leave null if a role is mentioned!
-- MUST extract totalExperience (e.g. '10+ years') if mentioned in summary paragraph like '10+ years of experience'.
-- MUST extract currentLocation if mentioned in contact line or header.
-- Extract the FULL Professional Summary text verbatim under headings like '## PROFESSIONAL SUMMARY', 'SUMMARY', 'PROFILE', 'CAREER OBJECTIVE', or 'ABOUT ME'.
-- Extract ALL work experience entries in chronological order (most recent first).
-- Extract ALL projects mentioned in the resume.
-- For skills, include technical skills, programming languages, tools, frameworks, and domain expertise.
-- For keyAchievements, include awards, recognitions, patents, publications, and notable accomplishments.
-- If a field is not found, use null for strings, [] for arrays, and [] for arrays of objects.
-- Return ONLY valid JSON, no markdown, no other text`;
+EDUCATION EXTRACTION RULES:
+- Extract ALL education entries from schooling to highest qualification
+- Include: High School/Secondary, Higher Secondary/12th, Bachelor's degree, Master's degree, PhD if present
+- For each entry: degree name, institution name, year/duration, grade if mentioned
+- If only highest qualification is available, still extract it with full details
+- Look for sections labeled: EDUCATION, QUALIFICATION, ACADEMIC, SCHOOLING
+
+PROJECT SUMMARY RULES:
+- For each project, write a 3-5 sentence overview explaining:
+  * What the project does (purpose and functionality)
+  * Key technical architecture and design decisions
+  * Main features and capabilities
+  * Impact or scale of the project
+- Be specific about the technical implementation
+
+ROLE SUGGESTION RULES:
+- Analyze the candidate's complete profile: skills, experience, projects, education
+- Suggest 5 specific job roles that are the BEST FIT
+- Consider: technical depth, leadership potential, domain expertise
+- Be specific with titles (e.g. "Senior AI/ML Engineer" not just "Engineer")
+- Order from best fit to good fit
+
+SKILL EXTRACTION RULES (CRITICAL):
+- Scan EVERY line of the resume for technology names
+- Extract from work experience descriptions (e.g. "Built with React and Node.js" -> extract React, Node.js)
+- Extract from project tech stacks
+- Extract from skills/tech stack sections
+- Extract from certification names (e.g. "AWS Certified" -> extract AWS)
+- Include both full names and abbreviations (e.g. "Kubernetes" and "K8s")
+- Include version numbers if mentioned (e.g. "Python 3.11")
+- Include soft skills only if explicitly listed in a skills section
+- Common skills to look for: Python, Java, JavaScript, TypeScript, React, Angular, Vue, Node.js, Django, Flask, FastAPI, Spring Boot, Docker, Kubernetes, AWS, Azure, GCP, PostgreSQL, MySQL, MongoDB, Redis, Git, CI/CD, TensorFlow, PyTorch, LangChain, OpenAI, GraphQL, REST API, and ANY other technology mentioned
+
+OTHER RULES:
+- Extract ALL work experience entries
+- Extract ALL projects with their technologies and summaries
+- Extract ALL education entries from schooling to graduation
+- If a field is not found, use null for strings, [] for arrays
+- Return ONLY valid JSON, no markdown`;
 
 function getDefaultParsedResume(): ParsedResume {
   return {
@@ -75,6 +118,7 @@ function getDefaultParsedResume(): ParsedResume {
     currentLocation: null,
     skills: [],
     education: null,
+    educationDetails: [],
     currentCompany: null,
     summary: null,
     strengths: null,
@@ -84,6 +128,11 @@ function getDefaultParsedResume(): ParsedResume {
     keyAchievements: [],
     certifications: [],
     languages: [],
+    noticePeriod: null,
+    whatDrivesYou: null,
+    jobType: null,
+    preferredLocation: null,
+    suggestedRoles: [],
   };
 }
 
@@ -97,6 +146,15 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
     currentLocation: (parsed.currentLocation as string) || null,
     skills: Array.isArray(parsed.skills) ? (parsed.skills as string[]).filter(Boolean) : [],
     education: (parsed.education as string) || null,
+    educationDetails: Array.isArray(parsed.educationDetails)
+      ? (parsed.educationDetails as Record<string, unknown>[]).map((e) => ({
+          degree: (e.degree as string) || "",
+          institution: (e.institution as string) || "",
+          year: (e.year as string) || "",
+          grade: (e.grade as string) || undefined,
+          details: (e.details as string) || undefined,
+        }))
+      : [],
     currentCompany: (parsed.currentCompany as string) || null,
     summary: (parsed.summary as string) || null,
     strengths: (parsed.strengths as string) || null,
@@ -114,6 +172,7 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
       ? (parsed.projects as Record<string, unknown>[]).map((p) => ({
           name: (p.name as string) || "",
           description: (p.description as string) || "",
+          summary: (p.summary as string) || "",
           url: (p.url as string) || undefined,
           technologies: Array.isArray(p.technologies) ? (p.technologies as string[]) : undefined,
         }))
@@ -126,6 +185,13 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
       : [],
     languages: Array.isArray(parsed.languages)
       ? (parsed.languages as string[]).filter(Boolean)
+      : [],
+    noticePeriod: (parsed.noticePeriod as string) || null,
+    whatDrivesYou: (parsed.whatDrivesYou as string) || null,
+    jobType: (parsed.jobType as string) || null,
+    preferredLocation: (parsed.preferredLocation as string) || null,
+    suggestedRoles: Array.isArray(parsed.suggestedRoles)
+      ? (parsed.suggestedRoles as string[]).filter(Boolean)
       : [],
   };
 }
@@ -189,13 +255,7 @@ function extractWorkExperienceFromText(text: string, defaultRole: string, defaul
   }
 
   if (result.length === 0) {
-    result.push({
-      company: "Enterprise AI & Financial Systems",
-      role: defaultRole || "AI Engineer",
-      startDate: "2016",
-      endDate: "Present",
-      description: defaultSummary || "Leading end-to-end AI products across banking, insurance, logistics, and financial domains using multi-agent orchestration, RAG pipelines, and LLM fine-tuning.",
-    });
+    return [];
   }
 
   return result.slice(0, 4);
@@ -219,6 +279,7 @@ function extractProjectsFromText(text: string, skills: string[], defaultSummary:
           result.push({
             name: curName,
             description: curDesc.join(" ").trim() || defaultSummary,
+            summary: curDesc.join(" ").trim() || defaultSummary,
             technologies: skills.slice(0, 5),
           });
           curDesc = [];
@@ -233,24 +294,14 @@ function extractProjectsFromText(text: string, skills: string[], defaultSummary:
       result.push({
         name: curName,
         description: curDesc.join(" ").trim() || defaultSummary,
+        summary: curDesc.join(" ").trim() || defaultSummary,
         technologies: skills.slice(0, 5),
       });
     }
   }
 
   if (result.length === 0) {
-    result.push(
-      {
-        name: "Agentic AI Systems & Production RAG Pipeline Engine",
-        description: "Designed scalable, cost-efficient AI architecture using multi-agent orchestration, LLM fine-tuning, and vector search systems across banking, logistics, and financial domains.",
-        technologies: skills.slice(0, 5),
-      },
-      {
-        name: "Intelligent Enterprise Workflow Automation Platform",
-        description: "Built end-to-end AI products across cloud and open-source ecosystems — reducing manual effort, improving accuracy, and deploying production-grade LLM workflows.",
-        technologies: skills.slice(5, 10),
-      }
-    );
+    return [];
   }
 
   return result.slice(0, 4);
@@ -262,10 +313,14 @@ function parseResumeFallback(text: string): ParsedResume {
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean);
 
-  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || null;
-  const phone = text.match(/(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3,5}\)?[\s.-]?)?\d{6,10}/)?.[0]?.trim() || null;
+  const fullText = lines.join("\n");
 
-  const ignoredHeadings = /^(resume|curriculum vitae|cv|profile|professional summary|summary|contact|personal)$/i;
+  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || null;
+
+  const phoneMatch = text.match(/(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3,5}\)?[\s.-]?)?\d{6,10}/);
+  const phone = phoneMatch ? phoneMatch[0].trim() : null;
+
+  const ignoredHeadings = /^(resume|curriculum vitae|cv|profile|professional summary|summary|contact|personal|education|skills|experience|projects|certifications|references|declaration)$/i;
   const name = lines.find((line) => {
     if (ignoredHeadings.test(line) || line.includes("@") || /\d{4,}/.test(line)) return false;
     return line.length >= 3 && line.length <= 80 && /^[\p{L}][\p{L} .'-]+$/u.test(line);
@@ -274,9 +329,8 @@ function parseResumeFallback(text: string): ParsedResume {
   const linkedinMatch = text.match(/linkedin\.com\/in\/[a-zA-Z0-9._%-]+/i);
   const linkedinUrl = linkedinMatch ? `https://www.${linkedinMatch[0]}` : null;
 
-  // 1. Extract Professional Summary section verbatim
   let summary: string | null = null;
-  const summaryMatch = text.match(/(?:##\s*)?(?:PROFESSIONAL\s+SUMMARY|SUMMARY|PROFILE|CAREER\s+OBJECTIVE|ABOUT\s+ME|EXECUTIVE\s+SUMMARY|OVERVIEW)[:\s]*(?:\r?\n)+([\s\S]{15,2000}?)(?=\n\s*(?:##|[A-Z\s]{4,}:|\n[A-Z][a-z]+|\r?\n\r?\n|$))/i)
+  const summaryMatch = text.match(/(?:##\s*)?(?:PROFESSIONAL\s+SUMMARY|SUMMARY|PROFILE|CAREER\s+OBJECTIVE|ABOUT\s+ME|EXECUTIVE\s+SUMMARY|OVERVIEW|OBJECTIVE)[:\s]*(?:\r?\n)+([\s\S]{15,2000}?)(?=\n\s*(?:##|[A-Z\s]{4,}:|\n[A-Z][a-z]+|\r?\n\r?\n|$))/i)
     || text.match(/(?:##\s*)?(?:PROFESSIONAL\s+SUMMARY|SUMMARY|PROFILE)[:\s]+([^\n]+(?:\n[^\n]+){1,10})/i);
 
   if (summaryMatch && summaryMatch[1]) {
@@ -288,47 +342,92 @@ function parseResumeFallback(text: string): ParsedResume {
     }
   }
 
-  // 2. Extract Total Experience (e.g. "10+ years of experience", "10+ years", "5-7 yrs")
   const expMatch = text.match(/(\d+\+?\s*(?:-\s*\d+\s*)?(?:years|yrs)(?:\s+of\s+(?:professional\s+)?experience)?)/i);
-  const totalExperience = expMatch ? expMatch[1].trim() : "10+ years of experience";
+  const totalExperience = expMatch ? expMatch[1].trim() : null;
 
-  // 3. Extract Role (e.g. "AI Engineer", "Software Engineer", "Full Stack Developer")
   let currentRole: string | null = null;
-  const roleMatch = text.match(/(?:Senior|Junior|Lead|Principal|Staff|Head|Chief|Director|Results-driven)?\s*(?:AI|ML|GenAI|Agentic\s+AI|Software|Full\s*Stack|Frontend|Backend|Data|DevOps|System|Cloud|Solution|Product|QA|Test)\s+(?:Engineer|Developer|Manager|Architect|Analyst|Scientist|Lead|Consultant|Specialist)/i)
-    || text.match(/(?:Role|Title|Position)[:\s]*([^\n]+)/i);
-
-  if (roleMatch) {
-    const rawRole = (roleMatch[0] || roleMatch[1]).replace(/^(?:Results-driven|Experienced|Passionate)\s+/i, "").trim();
-    if (rawRole.length > 2) currentRole = rawRole;
+  const rolePatterns = [
+    /(?:Senior|Junior|Lead|Principal|Staff|Head|Chief|Director|Results-driven|Experienced|Passionate)?\s*(?:AI|ML|GenAI|Agentic\s+AI|Software|Full\s*Stack|Frontend|Backend|Data|DevOps|System|Cloud|Solution|Product|QA|Test|Platform|Infrastructure|Security|Mobile|Web)\s+(?:Engineer|Developer|Manager|Architect|Analyst|Scientist|Lead|Consultant|Specialist|Programmer)/i,
+    /(?:Role|Title|Position|Designation)[:\s]*([^\n]+)/i,
+  ];
+  for (const pattern of rolePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const rawRole = (match[0] || match[1]).replace(/^(?:Results-driven|Experienced|Passionate)\s+/i, "").trim();
+      if (rawRole.length > 2 && rawRole.length < 80) {
+        currentRole = rawRole;
+        break;
+      }
+    }
   }
-  
   if (!currentRole) {
-    const titleLine = lines.slice(0, 5).find((l) => /Engineer|Developer|Manager|Architect|Analyst|Scientist/i.test(l) && l.length < 50);
-    if (titleLine) currentRole = titleLine;
+    const titleLine = lines.slice(0, 8).find((l) => /Engineer|Developer|Manager|Architect|Analyst|Scientist|Designer|Consultant|Specialist|Programmer/i.test(l) && l.length < 60 && l.length > 5);
+    if (titleLine) currentRole = titleLine.replace(/[|•\-–]/g, "").trim();
   }
-  if (!currentRole) currentRole = "AI Engineer";
 
-  // 4. Extract Location (e.g. "Location: Bangalore, India" or city names)
   let currentLocation: string | null = null;
-  const locMatch = text.match(/(?:Location|Address|Based in|City)[:\s]*([^\n,]+(?:,\s*[^\n,]+)?)/i)
-    || text.match(/\b(Bangalore|Bengaluru|Mumbai|Delhi|NCR|Hyderabad|Chennai|Pune|Kolkata|Gurgaon|Noida|San Francisco|New York|London|Singapore|Remote|India|USA|UK|Canada|Australia|Germany)\b/i)
-    || text.match(/([A-Z][a-zA-Z\s]+,\s*[A-Z][a-zA-Z\s]+)/);
-
-  if (locMatch) {
-    currentLocation = (locMatch[1] || locMatch[0]).trim();
+  const locPatterns = [
+    /(?:Location|Address|Based in|City|Place)[:\s]*([^\n,]+(?:,\s*[^\n,]+)?)/i,
+    /\b(Bangalore|Bengaluru|Mumbai|Delhi|NCR|Hyderabad|Chennai|Pune|Kolkata|Gurgaon|Noida|San Francisco|New York|London|Singapore|Remote|India|USA|UK|Canada|Australia|Germany|France|Japan|Dubai|Abu Dhabi|Sharjah|Toronto|Berlin|Amsterdam|Sydney|Melbourne)\b/i,
+    /([A-Z][a-zA-Z\s]+,\s*[A-Z][a-zA-Z\s]+)/,
+  ];
+  for (const pattern of locPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      currentLocation = (match[1] || match[0]).trim();
+      if (currentLocation.length > 2 && currentLocation.length < 60) break;
+    }
   }
-  if (!currentLocation) currentLocation = "Bangalore, India";
 
-  // 5. Extract Technical Skills & Tech Stacks
   const knownTechKeywords = [
-    "Agentic AI", "RAG Pipelines", "RAG", "LLM", "Multi-Agent Orchestration", "Vector Search", "LLM Fine-Tuning", "Fine-Tuning", "LangChain", "LlamaIndex",
-    "Python", "TypeScript", "JavaScript", "React", "Next.js", "Node.js", "Express", "FastAPI", "Django", "Flask", "Vue.js", "Angular",
-    "Docker", "Kubernetes", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Elasticsearch", "Prisma", "Supabase",
-    "AWS", "GCP", "Azure", "Cloudflare", "DevOps", "CI/CD", "Git", "GitHub", "Linux",
-    "PyTorch", "TensorFlow", "Deep Learning", "Machine Learning", "NLP", "OpenAI", "Generative AI", "Computer Vision",
-    "REST API", "GraphQL", "WebRTC", "Tailwind CSS", "HTML", "CSS", "C++", "C#", "Java", "Go", "Rust", "SQL",
-    "System Architecture", "Microservices", "Kafka", "RabbitMQ", "Unit Testing", "Jest", "Pytest", "Pandas", "NumPy", "Scikit-Learn",
-    "Workflow Automation", "Enterprise AI", "Cloud Ecosystems", "Open-Source Ecosystems"
+    "Python", "TypeScript", "JavaScript", "Java", "C++", "C#", "Go", "Rust", "Ruby", "PHP", "Swift", "Kotlin", "Scala", "R", "MATLAB", "Perl", "Lua", "Elixir", "Clojure", "Haskell", "Objective-C",
+    "React", "React.js", "Next.js", "Vue.js", "Vue", "Angular", "Svelte", "SvelteKit", "Nuxt.js", "Nuxt", "Gatsby", "Remix", "Astro", "SolidJS", "Qwik",
+    "Node.js", "Express", "Express.js", "Fastify", "NestJS", "Koa", "Hapi",
+    "Django", "Flask", "FastAPI", "Pandas", "NumPy", "SciPy", "Matplotlib", "Seaborn", "Plotly",
+    "Spring", "Spring Boot", "Hibernate", "Maven", "Gradle", "ASP.NET", ".NET", "Entity Framework",
+    "Ruby on Rails", "Rails", "Sinatra", "Phoenix",
+    "Laravel", "Symfony", "CodeIgniter",
+    "Docker", "Kubernetes", "K8s", "Helm", "Istio", "Docker Compose",
+    "AWS", "Amazon Web Services", "EC2", "S3", "Lambda", "RDS", "DynamoDB", "CloudFront", "SQS", "SNS", "ECS", "EKS", "Fargate",
+    "Azure", "Azure DevOps", "Azure Functions", "Azure SQL",
+    "GCP", "Google Cloud", "BigQuery", "Cloud Functions", "Cloud Run", "Firestore",
+    "Cloudflare", "Cloudflare Workers", "Cloudflare R2",
+    "Terraform", "Ansible", "Puppet", "Chef", "Pulumi",
+    "PostgreSQL", "MySQL", "MariaDB", "SQLite", "MongoDB", "Redis", "Elasticsearch", "DynamoDB", "Cassandra", "CouchDB", "Neo4j", "InfluxDB", "TimescaleDB", "Supabase", "PlanetScale", "Firebase", "Prisma", "Sequelize", "TypeORM", "Mongoose", "Drizzle",
+    "Git", "GitHub", "GitLab", "Bitbucket", "CI/CD", "Jenkins", "GitHub Actions", "GitLab CI", "CircleCI", "Travis CI", "ArgoCD",
+    "PyTorch", "TensorFlow", "Keras", "Scikit-Learn", "scikit-learn", "OpenCV", "NLTK", "spaCy", "Hugging Face", "HuggingFace", "Transformers", "BERT", "GPT", "LLaMA", "Mistral",
+    "Machine Learning", "Deep Learning", "NLP", "Natural Language Processing", "Computer Vision", "Generative AI", "GenAI", "LLM", "Large Language Model", "RAG", "Retrieval Augmented Generation",
+    "LangChain", "LlamaIndex", "OpenAI", "Anthropic", "Claude", "Gemini", "Cohere", "Pinecone", "Weaviate", "ChromaDB", "Milvus", "FAISS",
+    "HTML", "CSS", "Tailwind CSS", "SASS", "SCSS", "Bootstrap", "Material UI", "MUI", "Chakra UI", "Ant Design", "Shadcn UI",
+    "REST API", "RESTful", "GraphQL", "Apollo", "gRPC", "WebSocket", "Socket.IO",
+    "Linux", "Unix", "Bash", "Shell Scripting", "PowerShell", "Zsh",
+    "Agile", "Scrum", "Kanban", "JIRA", "Confluence", "Notion", "Linear",
+    "Figma", "Adobe XD", "Photoshop", "Illustrator", "Sketch", "InVision",
+    "Kafka", "RabbitMQ", "Celery", "Bull", "Sidekiq", "ActiveMQ", "NATS", "Pulsar",
+    "Jest", "Mocha", "Chai", "Cypress", "Playwright", "Selenium", "Pytest", "unittest", "JUnit", "RSpec", "Vitest",
+    "Microservices", "Serverless", "Event-Driven", "Domain-Driven Design", "DDD", "CQRS", "Event Sourcing",
+    "OAuth", "JWT", "SAML", "SSO", "LDAP", "Active Directory",
+    "Nginx", "Apache", "HAProxy", "Traefik", "Caddy",
+    "Grafana", "Prometheus", "Datadog", "New Relic", "Sentry", "ELK Stack", "Splunk",
+    "Webpack", "Vite", "Rollup", "esbuild", "Parcel", "Turbopack", "Turborepo", "Lerna", "pnpm", "Yarn", "npm",
+    "Bun", "Deno",
+    "Redis", "Memcached", "Varnish",
+    "Rust", "Axum", "Leptos", "Actix",
+    "Go", "Gin", "Echo", "Fiber", "Chi",
+    "Svelte", "SolidJS", "Alpine.js", "HTMX",
+    "Three.js", "D3.js", "Chart.js", "Recharts", "Victory",
+    "Electron", "Tauri", "React Native", "Flutter", "SwiftUI",
+    "Unity", "Unreal Engine",
+    "Blockchain", "Solidity", "Ethereum", "Web3", "Smart Contracts",
+    "GraphQL", "Hasura", "Prisma", "tRPC",
+    "Swagger", "OpenAPI", "Postman",
+    "Contentful", "Strapi", "Sanity", "Prismic", "WordPress", "Drupal",
+    "TensorFlow.js", "ONNX", "TensorRT", "CUDA",
+    "Airflow", "Prefect", "Dagster", "Luigi", "Spark", "Hadoop", "Flink",
+    "Tableau", "Power BI", "Looker",
+    "GIS", "ArcGIS", "QGIS",
+    "Payment", "Stripe", "PayPal", "Razorpay",
+    "Twilio", "SendGrid", "Mailgun", "AWS SES",
   ];
 
   const extractedSkills = new Set<string>();
@@ -339,42 +438,81 @@ function parseResumeFallback(text: string): ParsedResume {
     }
   }
 
-  const skillsSection = text.match(/(?:##\s*)?(?:TECHNICAL\s+SKILLS|SKILLS|TECH\s+STACK|TECHNOLOGIES|TOOLING)[:\s]*\n+([\s\S]{10,800}?)(?=\n\s*(?:##|[A-Z\s]{4,}:|\n[A-Z][a-z]+|\r?\n\r?\n|$))/i);
+  const skillsSection = text.match(/(?:##\s*)?(?:TECHNICAL\s+SKILLS|SKILLS|TECH\s+STACK|TECHNOLOGIES|TOOLING|TECHNICAL\s+EXPERTISE|TECHNICAL\s+Skills|Skills\s*&\s*Tools|Tech\s*&\s*Tools|Core\s+Competencies|Key\s+Skills|Technical\s+Proficiencies|Platforms?\s*&\s*Tools)[:\s]*\n+([\s\S]{10,1200}?)(?=\n\s*(?:##|[A-Z\s]{4,}:|\n[A-Z][a-z]+|\r?\n\r?\n|$))/i);
   if (skillsSection && skillsSection[1]) {
-    const items = skillsSection[1].split(/[,•|\n\t]+/).map((s) => s.trim()).filter((s) => s.length > 1 && s.length < 40);
+    const items = skillsSection[1].split(/[,•|\n\t;]+/).map((s) => s.trim()).filter((s) => s.length > 1 && s.length < 50);
     for (const item of items) {
-      if (!/^(and|or|with|using|for|the|all|parsed|from|your|resume)$/i.test(item)) {
+      if (!/^(and|or|with|using|for|the|all|parsed|from|your|resume|include|such|as)$/i.test(item)) {
         extractedSkills.add(item);
       }
     }
   }
 
-  if (extractedSkills.size === 0) {
-    ["Agentic AI", "RAG Pipelines", "Multi-Agent Orchestration", "LLM Fine-Tuning", "Vector Search", "Python", "Docker", "AWS"].forEach((s) => extractedSkills.add(s));
-  }
-
   const skills = Array.from(extractedSkills);
 
-  // 6. Extract Education
   let education: string | null = null;
-  const eduMatch = text.match(/([^\n]*?(?:B\.Tech|M\.Tech|B\.E\.|B\.S\.|M\.S\.|Ph\.D\.|Bachelor|Master|Degree|University|IIT|Institute|College)[^\n]*)/i);
-  if (eduMatch) {
-    education = eduMatch[1].replace(/\s+/g, " ").trim();
-  }
-  if (!education) {
-    education = "B.Tech in Computer Science & AI Systems";
+  const eduPatterns = [
+    /([^\n]*?(?:B\.Tech|M\.Tech|B\.E\.|B\.S\.|M\.S\.|Ph\.D\.|Bachelor|Master|MBA|Degree|University|IIT|IIM|Institute|College|Academy)[^\n]*)/i,
+    /(?:EDUCATION|QUALIFICATION|ACADEMIC)[:\s]*\n+([^\n]+)/i,
+  ];
+  for (const pattern of eduPatterns) {
+    const match = fullText.match(pattern);
+    if (match) {
+      education = match[1].replace(/\s+/g, " ").trim();
+      if (education.length > 5 && education.length < 200) break;
+      education = null;
+    }
   }
 
-  // 7. Dynamic Work Experience & Projects Extraction
-  const workExperience = extractWorkExperienceFromText(text, currentRole, summary || "");
+  let currentCompany: string | null = null;
+  const companyPatterns = [
+    /(?:Currently\s+(?:at|working\s+at|employed\s+at)|Company(?:\s+Name)?|Employer)[:\s]*([^\n,]+)/i,
+    /(?:at|with|@)\s+([A-Z][A-Za-z\s&,.]+?)(?:\s+(?:as|since|from|–|-|\d{4}))/,
+  ];
+  for (const pattern of companyPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const company = match[1].trim();
+      if (company.length > 2 && company.length < 60 && !/engineer|developer|manager/i.test(company)) {
+        currentCompany = company;
+        break;
+      }
+    }
+  }
+
+  const workExperience = extractWorkExperienceFromText(text, currentRole || "", summary || "");
   const projects = extractProjectsFromText(text, skills, summary || "");
 
-  // 8. Extract Certifications
-  const certsMatch = text.matchAll(/(?:AWS|Google|Azure|PMP|Certified|Scrum|TensorFlow|Kubernetes)\s+[A-Za-z0-9\s\-_]+/gi);
-  const certifications = Array.from(certsMatch).map((m) => m[0].trim()).filter((c) => c.length > 5 && c.length < 60);
+  const certsMatch = text.matchAll(/(?:AWS|Google|Azure|PMP|Certified|Scrum Master|TensorFlow|Kubernetes|Oracle|Cisco|Microsoft|Adobe|Salesforce|ServiceNow|ITIL|CompTIA|Red Hat)\s+[A-Za-z0-9\s\-_]+/gi);
+  const certifications = Array.from(certsMatch).map((m) => m[0].trim()).filter((c) => c.length > 5 && c.length < 80);
+
+  let noticePeriod: string | null = null;
+  const noticeMatch = text.match(/(?:notice\s+period|available|joining|can\s+join|immediate(?:ly)?)[:\s]*(?:is\s+)?([^\n.]+)/i);
+  if (noticeMatch) {
+    noticePeriod = noticeMatch[1].trim();
+  } else if (/\bimmediate(?:ly)?\b/i.test(text)) {
+    noticePeriod = "Immediate";
+  }
+
+  let whatDrivesYou: string | null = null;
+  const drivesMatch = text.match(/(?:PASSION|MOTIVATION|DRIVE|GOAL|OBJECTIVE|WHAT\s+DRIVES)[:\s]*([^\n]+)/i);
+  if (drivesMatch) {
+    whatDrivesYou = drivesMatch[1].trim();
+  }
+
+  let jobType: string | null = null;
+  if (/\bfull[- ]?time\b/i.test(text)) jobType = "Full-time";
+  else if (/\bpart[- ]?time\b/i.test(text)) jobType = "Part-time";
+  else if (/\bcontract\b/i.test(text)) jobType = "Contract";
+  else if (/\bfreelance\b/i.test(text)) jobType = "Freelance";
+
+  let preferredLocation: string | null = null;
+  const prefLocMatch = text.match(/(?:preferred\s+location|willing\s+to\s+relocate|location\s+preference)[:\s]*([^\n]+)/i);
+  if (prefLocMatch) {
+    preferredLocation = prefLocMatch[1].trim();
+  }
 
   return {
-    ...getDefaultParsedResume(),
     name,
     email,
     phone,
@@ -385,13 +523,19 @@ function parseResumeFallback(text: string): ParsedResume {
     currentLocation,
     skills,
     education,
+    educationDetails: [],
+    currentCompany,
+    strengths: null,
     workExperience,
     projects,
-    certifications: certifications.length > 0 ? certifications : ["AWS Certified Solutions Architect", "TensorFlow Developer Certified"],
-    keyAchievements: [
-      "Reduced manual workflow effort by 40% through intelligent AI automation",
-      "Deployed enterprise-ready multi-agent RAG pipelines across financial domain ecosystems",
-    ],
+    certifications: certifications.length > 0 ? certifications : [],
+    keyAchievements: [],
+    languages: [],
+    noticePeriod,
+    whatDrivesYou,
+    jobType,
+    preferredLocation,
+    suggestedRoles: [],
   };
 }
 
@@ -434,11 +578,11 @@ async function convertPDFToImages(buffer: Buffer): Promise<string[]> {
   return images;
 }
 
-async function parseImageWithVision(base64Images: string[]): Promise<ParsedResume> {
+async function parseImageWithVision(base64Images: string[], fallbackText?: string): Promise<ParsedResume> {
   try {
     if (!process.env.OPENAI_API_KEY) {
       console.log("[resume-parser] OPENAI_API_KEY not set for Vision API, using fallback parser");
-      return parseResumeFallback("AI Engineer with 10+ years of experience specializing in Agentic AI systems, RAG pipelines, PyTorch, Docker, Next.js, and PostgreSQL.");
+      return parseResumeFallback(fallbackText || "");
     }
     console.log(`[resume-parser] Sending ${base64Images.length} images to GPT-4o Vision...`);
     const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
@@ -464,13 +608,13 @@ async function parseImageWithVision(base64Images: string[]): Promise<ParsedResum
     console.log("[resume-parser] Vision API response received");
     if (!contentText) {
       console.error("[resume-parser] Vision API returned empty response");
-      return parseResumeFallback("AI Engineer with 10+ years of experience specializing in Agentic AI systems, RAG pipelines, PyTorch, Docker, Next.js, and PostgreSQL.");
+      return parseResumeFallback(fallbackText || "");
     }
 
     const jsonMatch = contentText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error("[resume-parser] No JSON found in Vision response");
-      return parseResumeFallback("AI Engineer with 10+ years of experience specializing in Agentic AI systems, RAG pipelines, PyTorch, Docker, Next.js, and PostgreSQL.");
+      return parseResumeFallback(fallbackText || "");
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
@@ -478,48 +622,43 @@ async function parseImageWithVision(base64Images: string[]): Promise<ParsedResum
     return mapParsedResponse(parsed);
   } catch (error) {
     console.error("[resume-parser] Vision parsing failed:", error instanceof Error ? error.message : error);
-    return parseResumeFallback("AI Engineer with 10+ years of experience specializing in Agentic AI systems, RAG pipelines, PyTorch, Docker, Next.js, and PostgreSQL.");
+    return parseResumeFallback(fallbackText || "");
   }
 }
 
 async function parseTextWithAI(text: string): Promise<ParsedResume> {
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.log("[resume-parser] OPENAI_API_KEY not set, using text fallback");
-      return parseResumeFallback(text);
-    }
-    console.log(`[resume-parser] Sending ${text.length} chars to GPT-4o-mini...`);
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: RESUME_PARSING_PROMPT },
-        { role: "user", content: `Parse this resume:\n\n${text.slice(0, 12000)}` },
-      ],
-      temperature: 0.1,
-      max_tokens: 2000,
-      response_format: { type: "json_object" },
-    });
-
-    const content = response.choices[0]?.message?.content;
-    console.log("[resume-parser] Text AI response received");
-    if (!content) {
-      console.error("[resume-parser] Text AI returned empty response");
-      return parseResumeFallback(text);
-    }
-
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("[resume-parser] No JSON found in text AI response");
-      return parseResumeFallback(text);
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
-    console.log("[resume-parser] Text AI parsing successful:", JSON.stringify(parsed, null, 2).slice(0, 500));
-    return mapParsedResponse(parsed);
-  } catch (error) {
-    console.error("[resume-parser] Text AI parsing failed:", error instanceof Error ? error.message : error);
+  if (!process.env.OPENAI_API_KEY) {
+    console.log("[resume-parser] OPENAI_API_KEY not set, using text fallback");
     return parseResumeFallback(text);
   }
+  console.log(`[resume-parser] Sending ${text.length} chars to GPT-4o-mini...`);
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: RESUME_PARSING_PROMPT },
+      { role: "user", content: `Parse this resume:\n\n${text.slice(0, 12000)}` },
+    ],
+    temperature: 0.1,
+    max_tokens: 4000,
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message?.content;
+  console.log("[resume-parser] Text AI response received");
+  if (!content) {
+    console.error("[resume-parser] Text AI returned empty response");
+    throw new Error("OpenAI returned empty response");
+  }
+
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error("[resume-parser] No JSON found in text AI response");
+    throw new Error("No JSON in OpenAI response");
+  }
+
+  const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+  console.log("[resume-parser] Text AI parsing successful:", JSON.stringify(parsed, null, 2).slice(0, 500));
+  return mapParsedResponse(parsed);
 }
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
@@ -533,6 +672,19 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
 }
 
 function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedResume {
+  // Normalize and deduplicate skills
+  const normalizeSkill = (s: string) => s.trim().toLowerCase();
+  const skillCanonical = new Map<string, string>();
+  
+  const allSkills = [...(ai.skills || []), ...(fallback.skills || [])];
+  for (const skill of allSkills) {
+    if (!skill || skill.trim().length === 0) continue;
+    const normalized = normalizeSkill(skill);
+    if (!skillCanonical.has(normalized)) {
+      skillCanonical.set(normalized, skill.trim());
+    }
+  }
+  
   return {
     name: ai.name || fallback.name,
     email: ai.email || fallback.email,
@@ -540,8 +692,9 @@ function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedRes
     currentRole: ai.currentRole || fallback.currentRole,
     totalExperience: ai.totalExperience || fallback.totalExperience,
     currentLocation: ai.currentLocation || fallback.currentLocation,
-    skills: Array.from(new Set([...(ai.skills || []), ...(fallback.skills || [])])),
+    skills: Array.from(skillCanonical.values()),
     education: ai.education || fallback.education,
+    educationDetails: ai.educationDetails && ai.educationDetails.length > 0 ? ai.educationDetails : fallback.educationDetails,
     currentCompany: ai.currentCompany || fallback.currentCompany,
     summary: (ai.summary && ai.summary.length > 20) ? ai.summary : fallback.summary,
     strengths: ai.strengths || fallback.strengths,
@@ -551,6 +704,11 @@ function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedRes
     keyAchievements: ai.keyAchievements && ai.keyAchievements.length > 0 ? ai.keyAchievements : fallback.keyAchievements,
     certifications: ai.certifications && ai.certifications.length > 0 ? ai.certifications : fallback.certifications,
     languages: ai.languages && ai.languages.length > 0 ? ai.languages : fallback.languages,
+    noticePeriod: ai.noticePeriod,
+    whatDrivesYou: ai.whatDrivesYou,
+    jobType: ai.jobType,
+    preferredLocation: ai.preferredLocation,
+    suggestedRoles: ai.suggestedRoles && ai.suggestedRoles.length > 0 ? ai.suggestedRoles : fallback.suggestedRoles,
   };
 }
 
@@ -569,41 +727,70 @@ export async function parseResume(
 
   if (ext === "pdf") {
     console.log("[resume-parser] PDF detected, extracting text...");
-    const text = await extractTextFromPDF(buffer);
-    console.log(`[resume-parser] Extracted ${text.length} chars of text`);
+    let pdfText = "";
+    try {
+      pdfText = await extractTextFromPDF(buffer);
+      console.log(`[resume-parser] Extracted ${pdfText.length} chars of text`);
+    } catch (err) {
+      console.error("[resume-parser] PDF text extraction failed:", err instanceof Error ? err.message : err);
+    }
 
-    if (text.trim().length < 200) {
+    if (pdfText.trim().length < 200) {
       console.log("[resume-parser] Text too short, trying image conversion...");
-      const images = await convertPDFToImages(buffer);
-      if (images.length > 0) {
-        console.log(`[resume-parser] Converted ${images.length} pages to images, using Vision API`);
-        return parseImageWithVision(images);
+      try {
+        const images = await convertPDFToImages(buffer);
+        if (images.length > 0) {
+          console.log(`[resume-parser] Converted ${images.length} pages to images, using Vision API`);
+          return parseImageWithVision(images, pdfText);
+        }
+      } catch (err) {
+        console.error("[resume-parser] PDF image conversion failed:", err instanceof Error ? err.message : err);
       }
-      console.log("[resume-parser] Image conversion failed or produced no images");
+      console.log("[resume-parser] Image conversion failed or produced no images, using fallback with extracted text");
     }
 
     console.log("[resume-parser] Using text AI parsing");
-    const fallback = parseResumeFallback(text);
-    const ai = await parseTextWithAI(text);
-    return mergeParsedResults(ai, fallback);
+    const fallback = parseResumeFallback(pdfText);
+    try {
+      const ai = await parseTextWithAI(pdfText);
+      return mergeParsedResults(ai, fallback);
+    } catch (err) {
+      console.error("[resume-parser] AI text parsing failed, using fallback only:", err instanceof Error ? err.message : err);
+      return fallback;
+    }
   }
 
   if (ext === "docx" || ext === "doc") {
     console.log("[resume-parser] DOC/DOCX detected, extracting text...");
-    const text = await extractTextFromDOCX(buffer);
-    console.log(`[resume-parser] Extracted ${text.length} chars of text`);
+    let text = "";
+    try {
+      text = await extractTextFromDOCX(buffer);
+      console.log(`[resume-parser] Extracted ${text.length} chars of text`);
+    } catch (err) {
+      console.error("[resume-parser] DOCX text extraction failed:", err instanceof Error ? err.message : err);
+    }
 
     if (text.trim().length < 100) {
-      console.log("[resume-parser] Text too short, returning defaults");
+      console.log("[resume-parser] Text too short, returning empty parsed resume");
       return getDefaultParsedResume();
     }
 
     const fallback = parseResumeFallback(text);
-    const ai = await parseTextWithAI(text);
-    return mergeParsedResults(ai, fallback);
+    try {
+      const ai = await parseTextWithAI(text);
+      return mergeParsedResults(ai, fallback);
+    } catch (err) {
+      console.error("[resume-parser] AI text parsing failed, using fallback only:", err instanceof Error ? err.message : err);
+      return fallback;
+    }
   }
 
   console.log("[resume-parser] Unknown file type, trying text AI parsing");
   const text = buffer.toString("utf-8");
-  return parseTextWithAI(text);
+  try {
+    return await parseTextWithAI(text);
+  } catch (err) {
+    console.error("[resume-parser] AI parsing failed for unknown type, using fallback:", err instanceof Error ? err.message : err);
+    return parseResumeFallback(text);
+  }
 }

@@ -15,6 +15,61 @@ interface Message {
   content: string;
 }
 
+interface InterviewState {
+  messageCount: number;
+  difficulty: string;
+  phase: string;
+  codingCount: number;
+  skillCount: number;
+  performanceScores: number[];
+  lastWasCoding: boolean;
+}
+
+const INITIAL_STATE: InterviewState = {
+  messageCount: 0,
+  difficulty: "easy",
+  phase: "warmup",
+  codingCount: 0,
+  skillCount: 0,
+  performanceScores: [],
+  lastWasCoding: false,
+};
+
+const MAX_HISTORY_MESSAGES = 30;
+const MAX_MESSAGE_LENGTH = 5000;
+
+function validateConversationHistory(raw: unknown): Message[] {
+  if (!Array.isArray(raw)) return [];
+  const messages: Message[] = [];
+  for (const msg of raw.slice(-MAX_HISTORY_MESSAGES)) {
+    if (!msg || typeof msg !== "object") continue;
+    const { role, content } = msg as Record<string, unknown>;
+    if (role !== "system" && role !== "user" && role !== "assistant") continue;
+    if (typeof content !== "string") continue;
+    // Strip system messages from client — only allow user/assistant
+    if (role === "system") continue;
+    messages.push({
+      role: role as "user" | "assistant",
+      content: content.slice(0, MAX_MESSAGE_LENGTH).trim(),
+    });
+  }
+  return messages;
+}
+
+function parseState(raw: unknown): InterviewState {
+  if (!raw || typeof raw !== "object") return { ...INITIAL_STATE };
+  const s = raw as Record<string, unknown>;
+  return {
+    messageCount: typeof s.messageCount === "number" ? s.messageCount : INITIAL_STATE.messageCount,
+    difficulty: typeof s.difficulty === "string" ? s.difficulty : INITIAL_STATE.difficulty,
+    phase: typeof s.phase === "string" ? s.phase : INITIAL_STATE.phase,
+    codingCount: typeof s.codingCount === "number" ? s.codingCount : INITIAL_STATE.codingCount,
+    skillCount: typeof s.skillCount === "number" ? s.skillCount : INITIAL_STATE.skillCount,
+    performanceScores: Array.isArray(s.performanceScores) ? s.performanceScores.filter((x): x is number => typeof x === "number") : INITIAL_STATE.performanceScores,
+    lastWasCoding: typeof s.lastWasCoding === "boolean" ? s.lastWasCoding : INITIAL_STATE.lastWasCoding,
+  };
+}
+
 function asData(label: string, value: string): string {
   return `<${label}>\n${value}\n</${label}>`;
 }
@@ -279,7 +334,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action, userMessage, conversationHistory, proctoring, interviewState } = body;
+    const { action, userMessage, proctoring } = body;
+    // NOTE: interviewState and conversationHistory from client are IGNORED
+    // Server uses DB as source of truth for state and history
 
     if (typeof action !== "string" || !["start", "respond", "evaluate", "coding_challenge", "submit_code"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -356,6 +413,31 @@ Start with a brief intro, mention anti-cheating monitoring, then ask question 1 
       );
 
       const assistantMessage = completion.choices[0]?.message?.content;
+
+      // Persist server-side state and conversation history
+      const initialState: InterviewState = {
+        messageCount: 1,
+        difficulty: "easy",
+        phase: "warmup",
+        codingCount: 0,
+        skillCount: 1,
+        performanceScores: [],
+        lastWasCoding: false,
+      };
+      const initialHistory: Message[] = [
+        { role: "user", content: "Start the interview" },
+        ...(assistantMessage ? [{ role: "assistant" as const, content: assistantMessage }] : []),
+      ];
+
+      await prisma.interview.update({
+        where: { id: interview.id },
+        data: {
+          interviewState: JSON.stringify(initialState),
+          conversationHistory: JSON.stringify(initialHistory),
+          status: "in_progress",
+        },
+      });
+
       return NextResponse.json({
         success: true,
         message: assistantMessage,
@@ -370,17 +452,20 @@ Start with a brief intro, mention anti-cheating monitoring, then ask question 1 
 
     // ─── RESPOND ─────────────────────────────────────────────
     if (action === "respond") {
-      // Extract state from frontend
-      const state = interviewState || {};
-      const messageCount = (state.messageCount || 0) + 1;
-      const currentDifficulty = state.difficulty || "medium";
-      const codingCount = state.codingCount || 0;
-      const skillCount = state.skillCount || 0;
-      const performanceScores = state.performanceScores || [];
-      const lastWasCoding = state.lastWasCoding || false;
+      // Read state from DB — never trust client-sent state
+      const state = parseState(interview.interviewState);
+      const dbHistory = validateConversationHistory(
+        (() => { try { return JSON.parse(interview.conversationHistory || "[]"); } catch { return []; } })()
+      );
+      const messageCount = state.messageCount + 1;
+      const currentDifficulty = state.difficulty;
+      const codingCount = state.codingCount;
+      const skillCount = state.skillCount;
+      const performanceScores = state.performanceScores;
+      const lastWasCoding = state.lastWasCoding;
 
-      // Analyze previous answer
-      const analysis = analyzeAnswerQuality(conversationHistory || []);
+      // Analyze previous answer using DB history
+      const analysis = analyzeAnswerQuality(dbHistory);
       const newScores = [...performanceScores, analysis.score];
 
       // Determine next phase
@@ -391,6 +476,29 @@ Start with a brief intro, mention anti-cheating monitoring, then ask question 1 
       const shouldCode = phase === "coding" && codingCount < 2;
 
       if (shouldCode) {
+        // Update DB state
+        const newState: InterviewState = {
+          messageCount,
+          difficulty: nextDifficulty,
+          phase: "coding",
+          codingCount,
+          skillCount: skillCount + 1,
+          performanceScores: newScores,
+          lastWasCoding: true,
+        };
+        // Append user message to history
+        const updatedHistory = [
+          ...dbHistory,
+          ...(userMessage ? [{ role: "user" as const, content: String(userMessage).slice(0, MAX_MESSAGE_LENGTH) }] : []),
+        ];
+        await prisma.interview.update({
+          where: { id: interview.id },
+          data: {
+            interviewState: JSON.stringify(newState),
+            conversationHistory: JSON.stringify(updatedHistory),
+          },
+        });
+
         return NextResponse.json({
           success: true,
           message: "Let's switch to a coding challenge. You'll see a problem on your screen — take your time to solve it. Ready?",
@@ -461,7 +569,7 @@ ${INJECTION_GUARD}`;
 
       const messages: Message[] = [
         { role: "system", content: systemPrompt },
-        { role: "system", content: asData("conversation_history", (conversationHistory || []).map((m: Message) => `${m.role}: ${m.content}`).join("\n")) },
+        { role: "system", content: asData("conversation_history", dbHistory.map((m: Message) => `${m.role}: ${m.content}`).join("\n")) },
         { role: "user", content: asData("user_message", typeof userMessage === "string" ? userMessage : "") },
       ];
 
@@ -495,6 +603,29 @@ ${INJECTION_GUARD}`;
 
       const isComplete = messageCount >= 10;
 
+      // Persist updated state and conversation history to DB
+      const updatedState: InterviewState = {
+        messageCount,
+        difficulty,
+        phase: detectedPhase,
+        codingCount: shouldCode ? codingCount + 1 : codingCount,
+        skillCount: shouldCode ? skillCount : skillCount + (phase === "skill" ? 1 : 0),
+        performanceScores: newScores,
+        lastWasCoding: shouldCode,
+      };
+      const updatedHistory = [
+        ...dbHistory,
+        ...(userMessage ? [{ role: "user" as const, content: String(userMessage).slice(0, MAX_MESSAGE_LENGTH) }] : []),
+        ...(assistantMessage ? [{ role: "assistant" as const, content: assistantMessage.slice(0, MAX_MESSAGE_LENGTH) }] : []),
+      ];
+      await prisma.interview.update({
+        where: { id: interview.id },
+        data: {
+          interviewState: JSON.stringify(updatedState),
+          conversationHistory: JSON.stringify(updatedHistory),
+        },
+      });
+
       return NextResponse.json({
         success: true,
         message: assistantMessage,
@@ -513,7 +644,7 @@ ${INJECTION_GUARD}`;
     // ─── CODING CHALLENGE ────────────────────────────────────
     if (action === "coding_challenge") {
       const { difficulty: requestedDifficulty } = body;
-      const state = interviewState || {};
+      const state = parseState(interview.interviewState);
       const role = effectiveProfile.currentRole.toLowerCase();
 
       let language = "javascript";
@@ -678,7 +809,10 @@ Provide brief feedback (3-4 sentences) on code quality, correctness, and suggest
     }
 
     // ─── EVALUATE ────────────────────────────────────────────
-    const history = (conversationHistory || []) as Message[];
+    // Read conversation history from DB — never trust client
+    const history: Message[] = validateConversationHistory(
+      (() => { try { return JSON.parse(interview.conversationHistory || "[]"); } catch { return []; } })()
+    );
     const validatedProctoring = proctoring && typeof proctoring === "object"
       ? await validateProctoringReport(interview.id, proctoring) : null;
     const proctoringStatus = validatedProctoring?.tampered ? "fail"

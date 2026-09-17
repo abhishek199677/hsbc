@@ -53,9 +53,7 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
       if (email) params.set("email", email);
       if (filterSuccess !== "all") params.set("success", filterSuccess);
 
-      const res = await fetch(`/api/admin/login-logs?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`/api/admin/login-logs?${params}`);
       const data = await res.json();
       if (data.success) {
         setMetrics(data.metrics);
@@ -76,7 +74,6 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
         if (filterSuccess !== "all") params.set("success", filterSuccess);
 
         const res = await fetch(`/api/admin/login-logs?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
         });
         const data = await res.json();
@@ -135,30 +132,30 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
   };
 
   const getDeviceIcon = (device: string | null) => {
-    if (!device) return <Monitor className="h-4 w-4 text-gray-400" />;
-    if (device === "Mobile") return <Smartphone className="h-4 w-4 text-blue-500" />;
+    if (!device) return <Monitor className="h-4 w-4 text-[#a1a1aa]" />;
+    if (device === "Mobile") return <Smartphone className="h-4 w-4 text-[#3b82f6]" />;
     if (device === "Tablet") return <Tablet className="h-4 w-4 text-purple-500" />;
-    return <Monitor className="h-4 w-4 text-green-500" />;
+    return <Monitor className="h-4 w-4 text-[#22c55e]" />;
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Login Logs</h2>
-          <p className="text-sm text-gray-500">Track user login activity and authentication attempts</p>
+          <h2 className="text-2xl font-bold text-[#fafafa]">Login Logs</h2>
+          <p className="text-sm text-[#a1a1aa]">Track user login activity and authentication attempts</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => void fetchLogs()}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg hover:bg-[#27272a]"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
           </button>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6]"
           >
             <Download className="h-4 w-4" />
             Export CSV
@@ -169,43 +166,43 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
       {/* Summary Cards */}
       {metrics && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Logins</p>
-                <p className="text-3xl font-bold text-gray-900">{metrics.summary.totalLogins}</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Total Logins</p>
+                <p className="text-3xl font-bold text-[#fafafa]">{metrics.summary.totalLogins}</p>
               </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Monitor className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 bg-[#3b82f6]/10 rounded-lg flex items-center justify-center">
+                <Monitor className="h-6 w-6 text-[#3b82f6]" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Successful</p>
-                <p className="text-3xl font-bold text-green-600">{metrics.summary.successfulLogins}</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Successful</p>
+                <p className="text-3xl font-bold text-[#22c55e]">{metrics.summary.successfulLogins}</p>
               </div>
               <CheckCircle className="h-12 w-12 text-green-100" />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Failed</p>
-                <p className="text-3xl font-bold text-red-600">{metrics.summary.failedLogins}</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Failed</p>
+                <p className="text-3xl font-bold text-[#ef4444]">{metrics.summary.failedLogins}</p>
               </div>
               <XCircle className="h-12 w-12 text-red-100" />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Success Rate</p>
-                <p className="text-3xl font-bold text-indigo-600">{metrics.summary.successRate}%</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Success Rate</p>
+                <p className="text-3xl font-bold text-[#a78bfa]">{metrics.summary.successRate}%</p>
               </div>
               <div className="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-bold text-indigo-600">%</span>
+                <span className="text-2xl font-bold text-[#a78bfa]">%</span>
               </div>
             </div>
           </div>
@@ -213,14 +210,14 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Period:</label>
+            <label className="text-sm font-medium text-[#a1a1aa]">Period:</label>
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa]"
             >
               <option value="24h">Last 24 hours</option>
               <option value="7d">Last 7 days</option>
@@ -229,11 +226,11 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Status:</label>
+            <label className="text-sm font-medium text-[#a1a1aa]">Status:</label>
             <select
               value={filterSuccess}
               onChange={(e) => setFilterSuccess(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa]"
             >
               <option value="all">All</option>
               <option value="true">Successful</option>
@@ -247,13 +244,13 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
               value={searchEmail}
               onChange={(e) => setSearchEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="flex-1 px-3 py-2 border border-[#27272a] rounded-lg text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-[#a78bfa]"
             />
             <button
               onClick={handleSearch}
-              className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              className="px-3 py-2 bg-[#27272a] rounded-lg hover:bg-[#27272a]"
             >
-              <Search className="h-4 w-4 text-gray-600" />
+              <Search className="h-4 w-4 text-[#a1a1aa]" />
             </button>
           </div>
         </div>
@@ -261,83 +258,83 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
 
       {/* Daily Login Chart */}
       {metrics && metrics.dailyLogins.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Login Activity</h3>
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-lg font-semibold text-[#fafafa] mb-4">Daily Login Activity</h3>
           <div className="space-y-2">
             {metrics.dailyLogins.slice(0, 14).map((day) => (
               <div key={day.date} className="flex items-center gap-4">
-                <span className="text-sm text-gray-600 w-24">
+                <span className="text-sm text-[#a1a1aa] w-24">
                   {new Date(day.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
                 <div className="flex-1 flex items-center gap-1">
                   <div
-                    className="h-6 bg-green-400 rounded"
+                    className="h-6 bg-[#22c55e] rounded"
                     style={{ width: `${(day.successful / Math.max(...metrics.dailyLogins.map((d) => d.total), 1)) * 100}%` }}
                   />
                   <div
-                    className="h-6 bg-red-400 rounded"
+                    className="h-6 bg-[#ef4444] rounded"
                     style={{ width: `${(day.failed / Math.max(...metrics.dailyLogins.map((d) => d.total), 1)) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm text-gray-500 w-20 text-right">{day.total} total</span>
+                <span className="text-sm text-[#a1a1aa] w-20 text-right">{day.total} total</span>
               </div>
             ))}
           </div>
           <div className="flex items-center gap-4 mt-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-400 rounded" />
-              <span className="text-gray-600">Successful</span>
+              <div className="w-3 h-3 bg-[#22c55e] rounded" />
+              <span className="text-[#a1a1aa]">Successful</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-400 rounded" />
-              <span className="text-gray-600">Failed</span>
+              <div className="w-3 h-3 bg-[#ef4444] rounded" />
+              <span className="text-[#a1a1aa]">Failed</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Recent Logins Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Login Activity</h3>
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#27272a]">
+          <h3 className="text-lg font-semibold text-[#fafafa]">Recent Login Activity</h3>
         </div>
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+            <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent rounded-full" />
           </div>
         ) : metrics?.recentLogins.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">No login logs found</div>
+          <div className="text-center py-12 text-[#a1a1aa]">No login logs found</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-[#27272a]">
+              <thead className="bg-[#18181b]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Browser</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OS</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#a1a1aa]">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#a1a1aa]">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#a1a1aa]">Device</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#a1a1aa]">Browser</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#a1a1aa]">OS</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#a1a1aa]">IP Address</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#a1a1aa]">Date & Time</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[#18181b] divide-y divide-[#27272a]">
                 {metrics?.recentLogins.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
+                  <tr key={log.id} className="hover:bg-[#27272a]">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{log.userName || "Unknown"}</p>
-                        <p className="text-sm text-gray-500">{log.email}</p>
+                        <p className="text-sm font-medium text-[#fafafa]">{log.userName || "Unknown"}</p>
+                        <p className="text-sm text-[#a1a1aa]">{log.email}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {log.success ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#22c55e]/10 text-[#22c55e]">
                           <CheckCircle className="h-3 w-3" />
                           Success
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#ef4444]/10 text-[#ef4444]">
                           <XCircle className="h-3 w-3" />
                           Failed
                           {log.failureReason && `: ${log.failureReason}`}
@@ -347,17 +344,17 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {getDeviceIcon(log.device)}
-                        <span className="text-sm text-gray-900">{log.device || "Unknown"}</span>
+                        <span className="text-sm text-[#fafafa]">{log.device || "Unknown"}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.browser || "Unknown"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.os || "Unknown"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.ipAddress || "N/A"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#fafafa]">{log.browser || "Unknown"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#fafafa]">{log.os || "Unknown"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#a1a1aa]">{log.ipAddress || "N/A"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-[#fafafa]">
                         {new Date(log.createdAt).toLocaleDateString()}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-[#a1a1aa]">
                         {new Date(log.createdAt).toLocaleTimeString()}
                       </div>
                     </td>
@@ -371,20 +368,20 @@ export default function LoginLogsTab({ token }: { token: string | null }) {
 
       {/* Top Users */}
       {metrics && metrics.topUsers.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Active Users</h3>
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-lg font-semibold text-[#fafafa] mb-4">Most Active Users</h3>
           <div className="space-y-3">
             {metrics.topUsers.map((user) => (
-              <div key={user.email} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={user.email} className="flex items-center justify-between p-3 bg-[#18181b] rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-indigo-600">
+                    <span className="text-sm font-medium text-[#a78bfa]">
                       {user.email.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">{user.email}</span>
+                  <span className="text-sm font-medium text-[#fafafa]">{user.email}</span>
                 </div>
-                <span className="text-sm text-gray-500">{user.loginCount} logins</span>
+                <span className="text-sm text-[#a1a1aa]">{user.loginCount} logins</span>
               </div>
             ))}
           </div>

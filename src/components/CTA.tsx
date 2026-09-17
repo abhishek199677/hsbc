@@ -1,91 +1,151 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Star, CheckCircle } from "lucide-react";
-import { useGlare } from "@/lib/useGlare";
+import { ArrowRight, CheckCircle, Shield, Zap, Clock, Users } from "lucide-react";
+
+const plans = [
+  {
+    name: "Starter",
+    description: "For small teams getting started",
+    price: "Free",
+    period: "forever",
+    features: [
+      "Up to 50 verifications/month",
+      "Basic AI screening",
+      "Email support",
+      "Standard integrations",
+    ],
+    cta: "Start Free",
+    highlighted: false,
+  },
+  {
+    name: "Professional",
+    description: "For growing teams",
+    price: "$499",
+    period: "/month",
+    features: [
+      "Up to 500 verifications/month",
+      "Advanced AI + human review",
+      "Priority support",
+      "Custom integrations",
+      "Analytics dashboard",
+    ],
+    cta: "Start Free Trial",
+    highlighted: true,
+  },
+  {
+    name: "Enterprise",
+    description: "For large organizations",
+    price: "Custom",
+    period: "pricing",
+    features: [
+      "Unlimited verifications",
+      "Dedicated account manager",
+      "Custom API integrations",
+      "SLA guarantees",
+      "On-premise option",
+      "White-label available",
+    ],
+    cta: "Talk to Sales",
+    highlighted: false,
+  },
+];
 
 export default function CTA() {
-  const { onMouseMove } = useGlare<HTMLDivElement>();
   return (
-    <section className="py-24 bg-[#0a0a1a] relative overflow-hidden">
+    <section className="py-28 bg-[#06060a] relative overflow-hidden">
+      {/* Background */}
       <div className="absolute inset-0">
-        <div className="absolute top-10 left-10 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] aura" />
-        <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] aura" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1e1e28] to-transparent" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-[#a78bfa]/[0.02] rounded-full blur-[160px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="glass-card rounded-3xl p-8 lg:p-12 border border-white/10 overflow-hidden relative">
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 pointer-events-none" />
+        {/* Header */}
+        <div className="max-w-2xl mx-auto text-center mb-16">
+          <h2 className="text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
+            <span className="text-[#f8f8fc]">Simple, transparent</span>
+            <br />
+            <span className="bg-gradient-to-r from-[#a78bfa] to-[#f5c542] bg-clip-text text-transparent">pricing for every team</span>
+          </h2>
+          <p className="text-[#8b8ba0] text-lg leading-relaxed">
+            Start free, scale as you grow. No hidden fees, no surprises.
+          </p>
+        </div>
 
-          <div className="grid lg:grid-cols-2 gap-10 items-center relative">
-            <div>
-              <h2 className="text-3xl lg:text-5xl font-bold mb-4">
-                <span className="text-white">Take the </span>
-                <span className="gradient-text-warm">Right</span>
-                <span className="text-white"> Step Today</span>
-              </h2>
-              <p className="text-gray-400 mb-8 text-lg leading-relaxed">
-                Join millions of job seekers who trust HireRight for their career journey.
-                Get verified, get matched, get hired.
-              </p>
-              <div className="space-y-4 mb-10">
-                {[
-                  "AI-powered matching with the right roles",
-                  "100% secure & privacy-first",
-                  "Trusted by top companies globally",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
-                    <span className="text-gray-300">{item}</span>
-                  </div>
-                ))}
+        {/* Pricing cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          {plans.map((plan) => (
+            <div
+              key={plan.name}
+              className={`relative bg-[#13131a] border rounded-2xl p-8 transition-all duration-500 ${
+                plan.highlighted
+                  ? 'border-[#a78bfa]/30 shadow-[0_0_40px_rgba(167,139,250,0.08)]'
+                  : 'border-[#1e1e28] hover:border-[#a78bfa]/20'
+              }`}
+            >
+              {plan.highlighted && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="px-4 py-1 bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] text-[#06060a] text-xs font-semibold rounded-full">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold text-[#f8f8fc] mb-2">{plan.name}</h3>
+                <p className="text-sm text-[#8b8ba0]">{plan.description}</p>
               </div>
+
+              <div className="mb-8">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-[#f8f8fc]">{plan.price}</span>
+                  {plan.period !== "forever" && plan.period !== "pricing" && (
+                    <span className="text-sm text-[#8b8ba0]">{plan.period}</span>
+                  )}
+                </div>
+              </div>
+
+              <ul className="space-y-4 mb-8">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <CheckCircle className="w-4 h-4 text-[#22c55e] mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-[#8b8ba0]">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
               <Link
-                href="/signup"
-                className="glare glare-light inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-4 rounded-full font-bold hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25"
+                href={plan.name === "Enterprise" ? "/enterprise" : "/signup"}
+                className={`block text-center py-3.5 px-6 rounded-lg font-semibold text-sm transition-all duration-300 ${
+                  plan.highlighted
+                    ? 'bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] text-[#06060a] hover:shadow-[0_0_32px_rgba(167,139,250,0.3)]'
+                    : 'bg-[#0f0f16] border border-[#1e1e28] text-[#f8f8fc] hover:border-[#a78bfa]/30 hover:bg-[#1a1a24]'
+                }`}
               >
-                Get Started Free
-                <ArrowRight className="w-5 h-5" />
+                {plan.cta}
               </Link>
             </div>
+          ))}
+        </div>
 
-            <div className="space-y-6" onMouseMove={onMouseMove}>
-              <div className="glass-card card-glare rounded-2xl p-6">
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold gradient-text">4.9</p>
-                    <div className="flex items-center gap-0.5 mt-1">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="h-12 w-px bg-white/10" />
-                  <div>
-                    <p className="text-white font-medium">Job Seeker Rating</p>
-                    <p className="text-gray-400 text-sm">Based on 10,000+ reviews</p>
-                  </div>
-                </div>
-              </div>
-              <div className="glass-card card-glare rounded-2xl p-6">
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold gradient-text">4.8</p>
-                    <div className="flex items-center gap-0.5 mt-1">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="h-12 w-px bg-white/10" />
-                  <div>
-                    <p className="text-white font-medium">Employer Rating</p>
-                    <p className="text-gray-400 text-sm">Trusted by 1000+ companies</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Trust indicators */}
+        <div className="flex flex-wrap items-center justify-center gap-8 text-[#8b8ba0]">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-[#22c55e]" />
+            <span className="text-sm">SOC 2 Certified</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#f5c542]" />
+            <span className="text-sm">99.9% Uptime SLA</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#a78bfa]" />
+            <span className="text-sm">48hr Turnaround</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#60a5fa]" />
+            <span className="text-sm">24/7 Enterprise Support</span>
           </div>
         </div>
       </div>

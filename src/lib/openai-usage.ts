@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { withRetry } from "./retry";
 
 // OpenAI pricing (per 1M tokens) as of 2024
 // Source: https://openai.com/pricing
@@ -31,7 +32,7 @@ export function calculateCost(model: string, promptTokens: number, completionTok
   const promptCost = (promptTokens / 1_000_000) * pricing.prompt;
   const completionCost = (completionTokens / 1_000_000) * pricing.completion;
 
-  return Math.round((promptCost + completionCost) * 1_000_000) / 1_000_000; // Round to 6 decimal places
+  return Math.round((promptCost + completionCost) * 1_000_000) / 1_000_000;
 }
 
 /**
@@ -58,15 +59,14 @@ export async function logOpenAIUsage(params: UsageLogParams): Promise<void> {
       },
     });
   } catch (error) {
-    // Don't let logging errors break the main flow
     console.error("Failed to log OpenAI usage:", error);
   }
 }
 
 /**
- * Wrapper for OpenAI chat completions that automatically logs usage.
+ * Wrapper for OpenAI calls that adds retry logic and automatically logs usage.
  */
-export async function trackedChatCompletion<T>(
+async function trackedOpenAICall<T>(
   openaiCall: () => Promise<T>,
   params: {
     model: string;
@@ -74,6 +74,7 @@ export async function trackedChatCompletion<T>(
     organizationId?: string | null;
     userId?: string | null;
     interviewId?: string | null;
+    extractUsage?: (result: T) => { promptTokens: number; completionTokens: number } | null;
   }
 ): Promise<T> {
   const startTime = Date.now();
@@ -82,7 +83,7 @@ export async function trackedChatCompletion<T>(
   let result: T | null = null;
 
   try {
-    result = await openaiCall();
+    result = await withRetry(openaiCall, { maxRetries: 2, baseDelayMs: 1500 });
     return result;
   } catch (error) {
     success = false;
@@ -91,10 +92,12 @@ export async function trackedChatCompletion<T>(
   } finally {
     const latencyMs = Date.now() - startTime;
 
-    // Extract usage from the result if it's an OpenAI response
     if (result) {
-      const response = result as Record<string, unknown>;
-      const usage = response?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined;
+      const usage = params.extractUsage?.(result) ?? (() => {
+        const response = result as Record<string, unknown>;
+        const u = response?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined;
+        return u ? { promptTokens: u.prompt_tokens || 0, completionTokens: u.completion_tokens || 0 } : null;
+      })();
 
       if (usage) {
         await logOpenAIUsage({
@@ -102,8 +105,8 @@ export async function trackedChatCompletion<T>(
           userId: params.userId,
           model: params.model,
           endpoint: params.endpoint,
-          promptTokens: usage.prompt_tokens || 0,
-          completionTokens: usage.completion_tokens || 0,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
           latencyMs,
           success,
           errorMessage,
@@ -115,7 +118,23 @@ export async function trackedChatCompletion<T>(
 }
 
 /**
- * Wrapper for OpenAI embeddings that automatically logs usage.
+ * Wrapper for OpenAI chat completions with retry and usage logging.
+ */
+export async function trackedChatCompletion<T>(
+  openaiCall: () => Promise<T>,
+  params: {
+    model: string;
+    endpoint: string;
+    organizationId?: string | null;
+    userId?: string | null;
+    interviewId?: string | null;
+  }
+): Promise<T> {
+  return trackedOpenAICall(openaiCall, params);
+}
+
+/**
+ * Wrapper for OpenAI embeddings with retry and usage logging.
  */
 export async function trackedEmbedding<T>(
   openaiCall: () => Promise<T>,
@@ -126,39 +145,12 @@ export async function trackedEmbedding<T>(
     userId?: string | null;
   }
 ): Promise<T> {
-  const startTime = Date.now();
-  let success = true;
-  let errorMessage: string | null = null;
-  let result: T | null = null;
-
-  try {
-    result = await openaiCall();
-    return result;
-  } catch (error) {
-    success = false;
-    errorMessage = error instanceof Error ? error.message : "Unknown error";
-    throw error;
-  } finally {
-    const latencyMs = Date.now() - startTime;
-
-    // Extract usage from the result if it's an OpenAI response
-    if (result) {
+  return trackedOpenAICall(openaiCall, {
+    ...params,
+    extractUsage: (result) => {
       const response = result as Record<string, unknown>;
-      const usage = response?.usage as { prompt_tokens?: number } | undefined;
-
-      if (usage) {
-        await logOpenAIUsage({
-          organizationId: params.organizationId,
-          userId: params.userId,
-          model: params.model,
-          endpoint: params.endpoint,
-          promptTokens: usage.prompt_tokens || 0,
-          completionTokens: 0,
-          latencyMs,
-          success,
-          errorMessage,
-        });
-      }
-    }
-  }
+      const u = response?.usage as { prompt_tokens?: number } | undefined;
+      return u ? { promptTokens: u.prompt_tokens || 0, completionTokens: 0 } : null;
+    },
+  });
 }

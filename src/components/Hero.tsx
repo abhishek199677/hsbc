@@ -1,150 +1,253 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Play, Shield, Zap, Lock, X, Sparkles } from "lucide-react";
-import { useGlare } from "@/lib/useGlare";
+import { ArrowRight, Play, Shield, Zap, Lock, X, Sparkles, CheckCircle2, Building2, Users, TrendingUp } from "lucide-react";
+
+function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const duration = 2000;
+    const steps = 60;
+    const increment = target / steps;
+    let current = 0;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        setCount(target);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(current));
+      }
+    }, duration / steps);
+
+    return () => clearInterval(timer);
+  }, [target]);
+
+  return (
+    <span className="tabular-nums">
+      {count.toLocaleString()}{suffix}
+    </span>
+  );
+}
 
 export default function Hero() {
   const [showVideo, setShowVideo] = useState(false);
-  const { onMouseMove } = useGlare<HTMLDivElement>();
+  const [imgError, setImgError] = useState(false);
 
   return (
-    <section className="relative bg-[#0a0a1a] overflow-hidden">
-      {/* Ambient glow orbs */}
+    <section className="relative bg-[#06060a] overflow-hidden min-h-[90vh] flex items-center">
+      {/* Refined ambient gradients */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-[10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] aura" />
-        <div className="absolute bottom-10 right-[5%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] aura" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/5 rounded-full blur-[150px]" />
+        <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-[#a78bfa]/[0.03] rounded-full blur-[160px]" />
+        <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-[#f5c542]/[0.02] rounded-full blur-[120px]" />
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-30" />
       </div>
 
-      {/* Grid overlay */}
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 relative">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-2 mb-8">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span className="text-sm text-gray-300">AI-Powered Background Screening</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 relative w-full">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+          {/* Left - Content */}
+          <div className="max-w-xl">
+            {/* Enterprise badge */}
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 mb-8 rounded-full bg-[#13131a] border border-[#1e1e28]">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22c55e]"></span>
+              </span>
+              <span className="text-sm text-[#8b8ba0] font-medium">Trusted by 1,200+ enterprises globally</span>
             </div>
 
-            {/* Headline */}
-            <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
-              <span className="text-white">Your Dream Job</span>
+            {/* Headline - Bolder, more impactful */}
+            <h1 className="text-[3.25rem] lg:text-[4.5rem] font-bold leading-[1.05] tracking-[-0.02em]">
+              <span className="text-[#f8f8fc]">Hire with</span>
               <br />
-              <span className="text-white">Deserves the </span>
-              <span className="gradient-text-warm">Right</span>
+              <span className="text-[#f8f8fc]">confidence.</span>
               <br />
-              <span className="text-white">Start.</span>
+              <span className="bg-gradient-to-r from-[#a78bfa] via-[#c4b5fd] to-[#f5c542] bg-clip-text text-transparent">
+                Verify with certainty.
+              </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="mt-8 text-lg text-gray-400 max-w-lg leading-relaxed">
-              AI-powered background screening you can trust.
-              Confidence you can carry into your future.
-              Verified by top employers globally.
+            {/* Subtitle - Clearer enterprise value */}
+            <p className="mt-8 text-lg text-[#8b8ba0] max-w-md leading-[1.7]">
+              AI-powered background screening and talent verification platform built for enterprises that make hiring decisions at scale.
             </p>
 
             {/* CTA buttons */}
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 href="/signup"
-                className="glare glare-light inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50"
+                className="inline-flex items-center gap-2.5 bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] text-[#06060a] px-8 py-4 font-semibold rounded-lg hover:shadow-[0_0_32px_rgba(167,139,250,0.3)] transition-all duration-300 text-sm tracking-wide"
               >
-                Get Started Free
+                Start Free Trial
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <button
                 onClick={() => setShowVideo(true)}
-                className="glare glass inline-flex items-center gap-2 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/5 transition-all"
+                className="inline-flex items-center gap-2.5 bg-transparent border border-[#1e1e28] text-[#f8f8fc] px-8 py-4 font-medium rounded-lg hover:bg-[#13131a] hover:border-[#a78bfa]/30 transition-all duration-300 text-sm"
               >
-                <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                  <Play className="w-4 h-4 ml-0.5" />
+                <div className="w-7 h-7 border border-[#1e1e28] rounded-md flex items-center justify-center bg-[#13131a]">
+                  <Play className="w-3.5 h-3.5 ml-0.5 text-[#a78bfa]" />
                 </div>
-                Watch Demo
+                Watch 2-min demo
               </button>
             </div>
 
-            {/* Social proof */}
-            <div className="mt-12 flex items-center gap-6">
-              <div className="flex -space-x-3">
-                {["A", "B", "C", "D", "E"].map((letter, i) => (
-                  <div
-                    key={i}
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 border-2 border-[#0a0a1a] flex items-center justify-center text-white text-xs font-medium"
-                  >
-                    {letter}
-                  </div>
-                ))}
+            {/* Enterprise metrics bar */}
+            <div className="mt-14 grid grid-cols-3 gap-8">
+              <div>
+                <p className="text-3xl lg:text-4xl font-bold text-[#f8f8fc] tracking-tight">
+                  <AnimatedCounter target={10} suffix="M+" />
+                </p>
+                <p className="text-sm text-[#8b8ba0] mt-1.5">Verified candidates</p>
               </div>
               <div>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-sm text-gray-400 mt-1">
-                  <span className="font-semibold text-white">4.9/5</span> from 10,000+ users
+                <p className="text-3xl lg:text-4xl font-bold text-[#f8f8fc] tracking-tight">
+                  <AnimatedCounter target={99} suffix=".7%" />
                 </p>
+                <p className="text-sm text-[#8b8ba0] mt-1.5">Accuracy rate</p>
+              </div>
+              <div>
+                <p className="text-3xl lg:text-4xl font-bold text-[#f8f8fc] tracking-tight">
+                  <AnimatedCounter target={48} suffix="hr" />
+                </p>
+                <p className="text-sm text-[#8b8ba0] mt-1.5">Avg. turnaround</p>
               </div>
             </div>
           </div>
 
-          {/* Right side — floating glass cards */}
-          <div className="relative hidden lg:block" onMouseMove={onMouseMove}>
-            <div className="relative w-full h-[520px] rounded-3xl overflow-hidden card-glare glass">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10" />
-              <img
-                src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&h=500&fit=crop"
-                alt="Professional woman"
-                className="w-full h-full object-cover opacity-80"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a1a] via-transparent to-transparent" />
+          {/* Right - Product Preview */}
+          <div className="relative hidden lg:block">
+            {/* Main product card */}
+            <div className="relative w-full h-[560px] bg-[#13131a] border border-[#1e1e28] overflow-hidden rounded-2xl shadow-2xl">
+              {/* Top bar */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1e1e28] bg-[#0f0f16]">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#ef4444]/80" />
+                  <div className="w-3 h-3 rounded-full bg-[#f59e0b]/80" />
+                  <div className="w-3 h-3 rounded-full bg-[#22c55e]/80" />
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#13131a] rounded-md border border-[#1e1e28]">
+                  <Lock className="w-3 h-3 text-[#22c55e]" />
+                  <span className="text-xs text-[#8b8ba0] font-mono">app.techcitta.com/dashboard</span>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-[#06060a]">TC</span>
+                </div>
+              </div>
+
+              {/* Dashboard content */}
+              <div className="p-5">
+                {/* Welcome header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="text-sm text-[#8b8ba0]">Good morning,</p>
+                    <p className="text-lg font-semibold text-[#f8f8fc]">HSBC Talent Team</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1.5 bg-[#22c55e]/10 text-[#22c55e] text-xs font-medium rounded-full border border-[#22c55e]/20">Enterprise</span>
+                  </div>
+                </div>
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  {[
+                    { label: "Active Candidates", value: "2,847", change: "+12%", color: "#a78bfa" },
+                    { label: "Verified Today", value: "156", change: "+8%", color: "#22c55e" },
+                    { label: "Pending Review", value: "43", change: "-5%", color: "#f59e0b" },
+                  ].map((stat) => (
+                    <div key={stat.label} className="bg-[#0f0f16] border border-[#1e1e28] rounded-lg p-3">
+                      <p className="text-[11px] text-[#8b8ba0] mb-1">{stat.label}</p>
+                      <p className="text-xl font-bold text-[#f8f8fc]">{stat.value}</p>
+                      <p className="text-[10px] mt-1" style={{ color: stat.color }}>{stat.change} this week</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Candidate list */}
+                <div className="bg-[#0f0f16] border border-[#1e1e28] rounded-lg overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[#1e1e28] flex items-center justify-between">
+                    <p className="text-sm font-medium text-[#f8f8fc]">Recent Verifications</p>
+                    <span className="text-[11px] text-[#a78bfa]">View all</span>
+                  </div>
+                  {[
+                    { name: "Priya Sharma", role: "Sr. Software Engineer", status: "Verified", score: 98 },
+                    { name: "Rahul Mehta", role: "Product Manager", status: "In Progress", score: null },
+                    { name: "Ananya Patel", role: "Data Scientist", status: "Verified", score: 95 },
+                  ].map((candidate, i) => (
+                    <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-[#1e1e28] last:border-0 hover:bg-[#13131a] transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#a78bfa]/20 to-[#8b5cf6]/20 flex items-center justify-center text-[11px] font-semibold text-[#a78bfa]">
+                          {candidate.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#f8f8fc]">{candidate.name}</p>
+                          <p className="text-[11px] text-[#8b8ba0]">{candidate.role}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {candidate.score && (
+                          <span className="text-sm font-semibold text-[#a78bfa]">{candidate.score}</span>
+                        )}
+                        <span className={`text-[10px] font-medium px-2 py-1 rounded-full ${
+                          candidate.status === 'Verified'
+                            ? 'bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20'
+                            : 'bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20'
+                        }`}>
+                          {candidate.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#06060a] via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* Floating card 1 */}
+            {/* Floating card 1 - Security */}
             <div
-              className="absolute -top-6 -right-6 glass-card rounded-2xl p-5 flex items-center gap-4 animate-float"
+              className="absolute -top-4 -right-4 bg-[#13131a] border border-[#1e1e28] p-4 flex items-center gap-3 rounded-xl shadow-xl animate-float"
               style={{ animationDelay: "0s" }}
             >
-              <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                <Zap className="w-6 h-6 text-green-400" />
+              <div className="w-10 h-10 bg-[#22c55e]/10 flex items-center justify-center rounded-lg border border-[#22c55e]/20">
+                <Shield className="w-5 h-5 text-[#22c55e]" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Fast & Secure</p>
-                <p className="text-xs text-gray-400">Quick turnaround</p>
+                <p className="text-sm font-semibold text-[#f8f8fc]">SOC 2 Compliant</p>
+                <p className="text-[11px] text-[#8b8ba0]">Enterprise-grade security</p>
               </div>
             </div>
 
-            {/* Floating card 2 */}
+            {/* Floating card 2 - Speed */}
             <div
-              className="absolute top-1/2 -right-10 glass-card rounded-2xl p-5 flex items-center gap-4 animate-float"
-              style={{ animationDelay: "1s" }}
+              className="absolute top-1/2 -right-6 bg-[#13131a] border border-[#1e1e28] p-4 flex items-center gap-3 rounded-xl shadow-xl animate-float"
+              style={{ animationDelay: "1.5s" }}
             >
-              <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-blue-400" />
+              <div className="w-10 h-10 bg-[#a78bfa]/10 flex items-center justify-center rounded-lg border border-[#a78bfa]/20">
+                <Zap className="w-5 h-5 text-[#a78bfa]" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Trusted by</p>
-                <p className="text-xs text-gray-400">Top Employers</p>
+                <p className="text-sm font-semibold text-[#f8f8fc]">48hr Turnaround</p>
+                <p className="text-[11px] text-[#8b8ba0]">Industry-leading speed</p>
               </div>
             </div>
 
-            {/* Floating card 3 */}
+            {/* Floating card 3 - Scale */}
             <div
-              className="absolute -bottom-6 left-1/4 glass-card rounded-2xl p-5 flex items-center gap-4 animate-float"
-              style={{ animationDelay: "2s" }}
+              className="absolute -bottom-4 left-1/4 bg-[#13131a] border border-[#1e1e28] p-4 flex items-center gap-3 rounded-xl shadow-xl animate-float"
+              style={{ animationDelay: "3s" }}
             >
-              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                <Lock className="w-6 h-6 text-purple-400" />
+              <div className="w-10 h-10 bg-[#f5c542]/10 flex items-center justify-center rounded-lg border border-[#f5c542]/20">
+                <TrendingUp className="w-5 h-5 text-[#f5c542]" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Your Privacy</p>
-                <p className="text-xs text-gray-400">Always Protected</p>
+                <p className="text-sm font-semibold text-[#f8f8fc]">99.7% Accuracy</p>
+                <p className="text-[11px] text-[#8b8ba0]">AI-verified results</p>
               </div>
             </div>
           </div>
@@ -153,15 +256,15 @@ export default function Hero() {
 
       {/* Video Modal */}
       {showVideo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-4xl">
             <button
               onClick={() => setShowVideo(false)}
-              className="absolute -top-12 right-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              className="absolute -top-12 right-0 w-10 h-10 bg-[#13131a] border border-[#1e1e28] rounded-lg flex items-center justify-center text-[#8b8ba0] hover:text-[#f8f8fc] hover:border-[#a78bfa]/30 transition-all duration-200"
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="rounded-2xl overflow-hidden shadow-2xl glass">
+            <div className="bg-[#13131a] border border-[#1e1e28] overflow-hidden rounded-xl">
               <video
                 className="w-full aspect-video"
                 src="/videos/demo.mp4"

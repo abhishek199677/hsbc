@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // pgvector extension for vector similarity search
@@ -124,10 +125,12 @@ model Profile {
   // Extended Resume Data
   linkedinUrl     String?
   workExperience  String? // JSON: [{company, role, startDate, endDate, description}]
-  projects        String? // JSON: [{name, description, url?, technologies?}]
+  projects        String? // JSON: [{name, description, summary, url?, technologies?}]
   keyAchievements String? // JSON: ["achievement1", "achievement2"]
   certifications  String? // JSON: ["cert1", "cert2"]
-  languages       String? // JSON: ["English - Fluent", "Hindi - Native"]
+  languages       String? // Comma-separated: "English - Fluent, Hindi - Native"
+  educationDetails String? // JSON: [{degree, institution, year, grade?, details?}]
+  suggestedRoles  String? // JSON: ["Senior Full Stack Developer", "AI/ML Engineer"]
 
   // Preferences
   jobType           String?
@@ -168,6 +171,10 @@ model Session {
   expiresAt      DateTime
   revokedAt      DateTime?
   createdAt      DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model Interview {
@@ -217,11 +224,18 @@ model Interview {
   resultsUnlocked  Boolean @default(false)
   resultsPaymentId String? // PayPal order ID for audit
 
+  // Server-side interview state (anti-manipulation)
+  interviewState      String @default("{}") // JSON: {messageCount, difficulty, phase, codingCount, skillCount, performanceScores, lastWasCoding}
+  conversationHistory String @default("[]") // JSON: [{role, content}]
+
   // ML training data
   metrics InterviewMetrics?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([evaluationScore])
 }
 
 model Feedback {
@@ -235,6 +249,10 @@ model Feedback {
   page           String?
   status         String        @default("open")
   createdAt      DateTime      @default(now())
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Job {
@@ -349,10 +367,10 @@ model LoginLog {
   location       String?
   createdAt      DateTime @default(now())
 
-  @@index([userId])
   @@index([organizationId])
-  @@index([createdAt])
   @@index([email])
+  @@index([createdAt])
+  @@index([success])
   @@map("login_logs")
 }
 

@@ -65,14 +65,14 @@ const COLORS = {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
+    <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
       <div className="flex items-center justify-between">
         <div className="space-y-3 flex-1">
-          <div className="h-3.5 bg-gray-200 rounded w-24" />
-          <div className="h-8 bg-gray-200 rounded w-20" />
-          <div className="h-3 bg-gray-100 rounded w-28" />
+          <div className="h-3.5 bg-[#27272a] rounded w-24" />
+          <div className="h-8 bg-[#27272a] rounded w-20" />
+          <div className="h-3 bg-[#27272a] rounded w-28" />
         </div>
-        <div className="w-12 h-12 bg-gray-200 rounded-xl ml-4" />
+        <div className="w-12 h-12 bg-[#27272a] rounded-xl ml-4" />
       </div>
     </div>
   );
@@ -80,22 +80,22 @@ function SkeletonCard() {
 
 function SkeletonChart() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-      <div className="h-5 bg-gray-200 rounded w-44 mb-6" />
-      <div className="h-56 bg-gray-100 rounded-lg" />
+    <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+      <div className="h-5 bg-[#27272a] rounded w-44 mb-6" />
+      <div className="h-56 bg-[#27272a] rounded-lg" />
     </div>
   );
 }
 
 function SkeletonList() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-      <div className="h-5 bg-gray-200 rounded w-36 mb-6" />
+    <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+      <div className="h-5 bg-[#27272a] rounded w-36 mb-6" />
       <div className="space-y-3">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex items-center justify-between">
-            <div className="h-4 bg-gray-200 rounded w-32" />
-            <div className="h-5 bg-gray-200 rounded-full w-10" />
+            <div className="h-4 bg-[#27272a] rounded w-32" />
+            <div className="h-5 bg-[#27272a] rounded-full w-10" />
           </div>
         ))}
       </div>
@@ -107,8 +107,8 @@ function SkeletonLoading() {
   return (
     <div className="space-y-6">
       <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-2" />
-        <div className="h-4 bg-gray-100 rounded w-64" />
+        <div className="h-8 bg-[#27272a] rounded w-48 mb-2" />
+        <div className="h-4 bg-[#27272a] rounded w-64" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <SkeletonCard />
@@ -143,16 +143,16 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white px-4 py-3 rounded-lg shadow-lg border border-gray-100">
-      <p className="text-xs font-medium text-gray-500 mb-1.5">{label}</p>
+    <div className="bg-[#18181b] px-4 py-3 rounded-lg shadow-lg border border-[#27272a]">
+      <p className="text-xs font-medium text-[#a1a1aa] mb-1.5">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">
           <span
             className="w-2.5 h-2.5 rounded-full flex-shrink-0"
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-gray-600">{entry.name}:</span>
-          <span className="font-semibold text-gray-900">{entry.value}</span>
+          <span className="text-[#a1a1aa]">{entry.name}:</span>
+          <span className="font-semibold text-[#fafafa]">{entry.value}</span>
         </div>
       ))}
     </div>
@@ -179,23 +179,23 @@ function MetricCard({
   trendLabel?: string;
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
+    <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-gray-500">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
+          <p className="text-sm font-medium text-[#a1a1aa]">{label}</p>
+          <p className="text-3xl font-bold text-[#fafafa] tracking-tight">{value}</p>
           {(trend || trendLabel) && (
             <div className="flex items-center gap-1.5 mt-1.5">
-              {trend === "up" && <TrendingUp className="w-3.5 h-3.5 text-green-500" />}
-              {trend === "down" && <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+              {trend === "up" && <TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" />}
+              {trend === "down" && <TrendingDown className="w-3.5 h-3.5 text-[#ef4444]" />}
               {trendLabel && (
                 <span
                   className={`text-xs font-medium ${
                     trend === "up"
-                      ? "text-green-600"
+                      ? "text-[#22c55e]"
                       : trend === "down"
-                      ? "text-red-600"
-                      : "text-gray-500"
+                      ? "text-[#ef4444]"
+                      : "text-[#a1a1aa]"
                   }`}
                 >
                   {trendLabel}
@@ -204,7 +204,7 @@ function MetricCard({
             </div>
           )}
           {subtitle && !trendLabel && (
-            <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
+            <p className="text-xs text-[#a1a1aa] mt-1">{subtitle}</p>
           )}
         </div>
         <div
@@ -230,12 +230,8 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
     async function fetchData() {
       try {
         const [statsRes, analyticsRes] = await Promise.all([
-          fetch("/api/admin/stats", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch("/api/admin/analytics", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          fetch("/api/admin/stats"),
+          fetch("/api/admin/analytics"),
         ]);
 
         if (statsRes.status === 401 || statsRes.status === 403) {
@@ -279,17 +275,17 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Overview</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-[#fafafa]">Overview</h1>
+          <p className="text-sm text-[#a1a1aa] mt-1">
             Dashboard summary and analytics
           </p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-16 text-center">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-6 h-6 text-red-500" />
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-16 text-center">
+          <div className="w-12 h-12 bg-[#ef4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-6 h-6 text-[#ef4444]" />
           </div>
-          <p className="text-gray-600 font-medium">{error}</p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-[#a1a1aa] font-medium">{error}</p>
+          <p className="text-sm text-[#a1a1aa] mt-1">
             Please try refreshing the page.
           </p>
         </div>
@@ -357,8 +353,8 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Overview</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-[#fafafa]">Overview</h1>
+        <p className="text-sm text-[#a1a1aa] mt-1">
           Dashboard summary and analytics
         </p>
       </div>
@@ -370,7 +366,7 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
           value={stats.totalUsers}
           icon={Users}
           iconBg="bg-blue-50"
-          iconColor="text-blue-500"
+          iconColor="text-[#3b82f6]"
           trend={stats.totalUsers > 0 ? "up" : "neutral"}
           trendLabel={`${stats.totalProfiles} profiles`}
         />
@@ -379,7 +375,7 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
           value={analytics.totalCompleted}
           icon={CheckCircle}
           iconBg="bg-green-50"
-          iconColor="text-green-500"
+          iconColor="text-[#22c55e]"
           trend={monthTrend >= 0 ? "up" : "down"}
           trendLabel={`${monthTrend >= 0 ? "+" : ""}${Math.round(monthTrend)}% vs last month`}
         />
@@ -388,8 +384,8 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
           value={analytics.avgScore}
           subtitle="out of 10"
           icon={BarChart3}
-          iconBg="bg-indigo-50"
-          iconColor="text-indigo-500"
+          iconBg="bg-[#a78bfa]/10"
+          iconColor="text-[#a78bfa]"
         />
         <MetricCard
           label="Hire Rate"
@@ -403,15 +399,15 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
 
       {/* Row 2: Interview Pipeline & Score Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5">
             Interview Pipeline
           </h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={interviewPipelineData} barSize={40}>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="#f1f5f9"
+                stroke="#27272a"
                 vertical={false}
               />
               <XAxis
@@ -425,7 +421,7 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
                 tickLine={false}
                 tick={{ fontSize: 12, fill: "#64748b" }}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f8fafc" }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#18181b" }} />
               <Bar
                 dataKey="count"
                 name="Interviews"
@@ -436,8 +432,8 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5">
             Score Distribution
           </h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -450,7 +446,7 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="#f1f5f9"
+                stroke="#27272a"
                 vertical={false}
               />
               <XAxis
@@ -464,7 +460,7 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
                 tickLine={false}
                 tick={{ fontSize: 12, fill: "#64748b" }}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f8fafc" }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#18181b" }} />
               <Bar
                 dataKey="count"
                 name="Candidates"
@@ -478,8 +474,8 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
 
       {/* Row 3: Hiring Recommendations & Interview Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5">
             Hiring Recommendations
           </h3>
           <div className="flex items-center justify-center">
@@ -510,11 +506,11 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
                           )
                         : 0;
                     return (
-                      <div className="bg-white px-4 py-3 rounded-lg shadow-lg border border-gray-100">
-                        <p className="text-sm font-semibold text-gray-900">
+                      <div className="bg-[#18181b] px-4 py-3 rounded-lg shadow-lg border border-[#27272a]">
+                        <p className="text-sm font-semibold text-[#fafafa]">
                           {data.name}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-[#a1a1aa] mt-0.5">
                           {data.value} candidates ({pct}%)
                         </p>
                       </div>
@@ -531,17 +527,17 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
                   className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: entry.color }}
                 />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-[#a1a1aa]">
                   {entry.name}{" "}
-                  <span className="font-medium text-gray-900">{entry.value}</span>
+                  <span className="font-medium text-[#fafafa]">{entry.value}</span>
                 </span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5">
             Interview Activity
           </h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -554,7 +550,7 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="#f1f5f9"
+                stroke="#27272a"
                 vertical={false}
               />
               <XAxis
@@ -591,13 +587,13 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
 
       {/* Row 4: Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
-            <ThumbsUp className="w-4.5 h-4.5 text-green-500" />
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5 flex items-center gap-2">
+            <ThumbsUp className="w-4.5 h-4.5 text-[#22c55e]" />
             Top Strengths
           </h3>
           {analytics.topStrengths.length === 0 ? (
-            <p className="text-sm text-gray-400">No data yet</p>
+            <p className="text-sm text-[#a1a1aa]">No data yet</p>
           ) : (
             <div className="space-y-2.5">
               {analytics.topStrengths.map((s, i) => (
@@ -605,8 +601,8 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
                   key={i}
                   className="flex items-center justify-between py-1.5"
                 >
-                  <span className="text-sm text-gray-700">{s.name}</span>
-                  <span className="text-xs font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                  <span className="text-sm text-[#a1a1aa]">{s.name}</span>
+                  <span className="text-xs font-semibold bg-[#22c55e]/10 text-[#22c55e] px-2.5 py-1 rounded-full">
                     {s.count}
                   </span>
                 </div>
@@ -615,13 +611,13 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5 flex items-center gap-2">
             <AlertTriangle className="w-4.5 h-4.5 text-amber-500" />
             Top Weaknesses
           </h3>
           {analytics.topWeaknesses.length === 0 ? (
-            <p className="text-sm text-gray-400">No data yet</p>
+            <p className="text-sm text-[#a1a1aa]">No data yet</p>
           ) : (
             <div className="space-y-2.5">
               {analytics.topWeaknesses.map((w, i) => (
@@ -629,8 +625,8 @@ export default function OverviewDashboard({ token }: OverviewDashboardProps) {
                   key={i}
                   className="flex items-center justify-between py-1.5"
                 >
-                  <span className="text-sm text-gray-700">{w.name}</span>
-                  <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">
+                  <span className="text-sm text-[#a1a1aa]">{w.name}</span>
+                  <span className="text-xs font-semibold bg-[#f59e0b]/10 text-[#f59e0b] px-2.5 py-1 rounded-full">
                     {w.count}
                   </span>
                 </div>

@@ -9,8 +9,17 @@ export interface ParsedWorkExperience {
 export interface ParsedProject {
   name: string;
   description: string;
+  summary: string;
   url?: string;
   technologies?: string[];
+}
+
+export interface ParsedEducation {
+  degree: string;
+  institution: string;
+  year: string;
+  grade?: string;
+  details?: string;
 }
 
 export interface ParsedResume {
@@ -22,6 +31,7 @@ export interface ParsedResume {
   currentLocation: string | null;
   skills: string[];
   education: string | null;
+  educationDetails: ParsedEducation[];
   currentCompany: string | null;
   summary: string | null;
   strengths: string | null;
@@ -31,4 +41,9 @@ export interface ParsedResume {
   keyAchievements: string[];
   certifications: string[];
   languages: string[];
+  noticePeriod: string | null;
+  whatDrivesYou: string | null;
+  jobType: string | null;
+  preferredLocation: string | null;
+  suggestedRoles: string[];
 }

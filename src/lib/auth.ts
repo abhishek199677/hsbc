@@ -64,10 +64,19 @@ function getBearerToken(request: Request): string | null {
   return m?.[1]?.trim() || null;
 }
 
+// Tokens are randomBytes(32).toString("base64url") = exactly 43 chars
+const VALID_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
+
 function getTokenCandidates(request: Request): string[] {
   const bearer = getBearerToken(request);
   const cookie = getCookieToken(request);
-  return [...new Set([bearer, cookie].filter((t): t is string => Boolean(t)))];
+  const tokens: string[] = [];
+  for (const t of [bearer, cookie]) {
+    if (t && t !== "cookie-session" && VALID_TOKEN_RE.test(t)) {
+      tokens.push(t);
+    }
+  }
+  return [...new Set(tokens)];
 }
 
 export function getTokenFromRequest(request: Request): string | null {
@@ -75,26 +84,51 @@ export function getTokenFromRequest(request: Request): string | null {
 }
 
 async function resolveSession(token: string): Promise<AuthUser | null> {
-  const session = await prisma.session.findUnique({
-    where: { tokenHash: hashToken(token) },
-    select: {
-      id: true,
-      userId: true,
-      organizationId: true,
-      expiresAt: true,
-      revokedAt: true,
-      user: { select: { email: true } },
-    },
-  });
+  try {
+    // Add timeout to prevent slow DB queries from blocking
+    const result = await Promise.race([
+      prisma.session.findUnique({
+        where: { tokenHash: hashToken(token) },
+        select: {
+          id: true,
+          userId: true,
+          organizationId: true,
+          expiresAt: true,
+          revokedAt: true,
+          user: { select: { email: true } },
+        },
+      }),
+      new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("Session lookup timeout")), 3000)
+      ),
+    ]);
 
-  if (!session || session.revokedAt || session.expiresAt <= new Date()) return null;
+    if (!result) return null;
+    
+    const session = result as {
+      id: string;
+      userId: string;
+      organizationId: string;
+      expiresAt: Date;
+      revokedAt: Date | null;
+      user: { email: string };
+    };
 
-  return {
-    sessionId: session.id,
-    userId: session.userId,
-    email: session.user.email,
-    organizationId: session.organizationId,
-  };
+    if (session.revokedAt || session.expiresAt <= new Date()) return null;
+
+    return {
+      sessionId: session.id,
+      userId: session.userId,
+      email: session.user.email,
+      organizationId: session.organizationId,
+    };
+  } catch (error) {
+    // Log timeout errors but don't block the request
+    if (error instanceof Error && error.message === "Session lookup timeout") {
+      console.warn("Session lookup timed out for token");
+    }
+    return null;
+  }
 }
 
 export async function getUserFromRequest(request: Request): Promise<AuthUser | null> {

@@ -213,25 +213,25 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">Loading interview...</p>
+          <p className="text-[#a1a1aa]">Loading interview...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#09090b] flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+      <div className="bg-[#18181b] border-b border-[#27272a] px-4 py-3">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <Brain className="h-5 w-5 text-indigo-600" />
-              <span className="font-semibold text-gray-900">AI Interview</span>
-              <span className="text-sm text-gray-500">
+              <Brain className="h-5 w-5 text-[#a78bfa]" />
+              <span className="font-semibold text-white">AI Interview</span>
+              <span className="text-sm text-[#a1a1aa]">
                 Q{currentQuestion?.questionNumber || 0}/{totalQuestions}
               </span>
             </div>
@@ -246,7 +246,7 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
               </div>
               <button
                 onClick={handleEndInterview}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-[#a1a1aa] hover:text-gray-700"
               >
                 End Interview
               </button>
@@ -256,7 +256,7 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
           {/* Timeline */}
           <div className="relative">
             {/* Timeline bar background */}
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-2 bg-[#27272a] rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-1000 ${
                   timeRemaining < 60 ? "bg-red-500" :
@@ -279,9 +279,9 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Question Progress */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-[#27272a]">
         <div className="max-w-3xl mx-auto">
-          <div className="h-1 bg-gray-200">
+          <div className="h-1 bg-[#27272a]">
             <div
               className="h-1 bg-indigo-600 transition-all duration-300"
               style={{ width: `${((currentQuestion?.questionNumber || 0) / totalQuestions) * 100}%` }}
@@ -297,8 +297,8 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                 msg.role === "user"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-white border border-gray-200 text-gray-900"
+                  ? "bg-[#a78bfa] text-white"
+                  : "bg-white border border-[#27272a] text-white"
               }`}>
                 {msg.role === "ai" && msg.category && (
                   <div className="flex items-center gap-2 mb-2">
@@ -330,7 +330,7 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
           ))}
           {sending && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
+              <div className="bg-white border border-[#27272a] rounded-2xl px-4 py-3">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                   <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -345,7 +345,7 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
 
       {/* Input Area */}
       {!completed && (
-        <div className="bg-white border-t border-gray-200 px-4 py-4">
+        <div className="bg-white border-t border-[#27272a] px-4 py-4">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-end gap-3">
               <textarea
@@ -355,13 +355,13 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
                 onKeyDown={handleKeyDown}
                 placeholder="Type your answer..."
                 rows={2}
-                className="flex-1 resize-none border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="flex-1 resize-none border border-[#27272a] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#a78bfa] focus:border-transparent bg-[#18181b] text-white placeholder-[#a1a1aa]"
                 disabled={sending}
               />
               <button
                 onClick={handleSend}
                 disabled={!answer.trim() || sending}
-                className="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#a78bfa] text-white p-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="h-5 w-5" />
               </button>

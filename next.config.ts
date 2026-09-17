@@ -6,7 +6,7 @@ const ContentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' https://*.cloudflare.com https://*.r2.cloudflarestorage.com https://*.vercel.app https://vercel.com data: blob:",
   "font-src 'self' https://fonts.gstatic.com",
-  `connect-src 'self' https://*.cloudflare.com https://api.openai.com https://*.upstash.io https://*.sentry.io wss://*.livekit.cloud https://*.livekit.cloud https://api.stripe.com`,
+  `connect-src 'self' https://*.cloudflare.com https://api.openai.com https://*.upstash.io https://*.sentry.io wss://*.livekit.cloud https://*.livekit.cloud wss://livekit.hireright.com https://api.stripe.com${process.env.NODE_ENV !== "production" ? " http://localhost:* ws://localhost:*" : ""}`,
   `media-src 'self' blob: https://*.r2.cloudflarestorage.com`,
   "worker-src 'self' blob:",
   "child-src 'self' blob:",
@@ -40,7 +40,7 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value: "camera=(self), microphone=(self), geolocation=()",
+    value: "camera=(self), microphone=(self), geolocation=(), screen-share=(self)",
   },
   {
     key: "Strict-Transport-Security",
@@ -50,9 +50,26 @@ const securityHeaders = [
     key: "X-XSS-Protection",
     value: "1; mode=block",
   },
+  {
+    key: "X-Permitted-Cross-Domain-Policies",
+    value: "none",
+  },
+  {
+    key: "Cross-Origin-Embedder-Policy",
+    value: "require-corp",
+  },
+  {
+    key: "Cross-Origin-Opener-Policy",
+    value: "same-origin",
+  },
+  {
+    key: "Cross-Origin-Resource-Policy",
+    value: "same-origin",
+  },
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     remotePatterns: [
       {
@@ -80,7 +97,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.NEXT_PUBLIC_APP_URL || "*",
+            value: process.env.NEXT_PUBLIC_APP_URL || "https://techcitta.com",
           },
           {
             key: "Access-Control-Allow-Methods",

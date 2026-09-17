@@ -60,12 +60,12 @@ interface CandidateData {
 }
 
 const FUNNEL_COLORS = {
-  registered: { bg: "bg-blue-500", light: "bg-blue-100", text: "text-blue-700", fill: "#3b82f6" },
-  profileComplete: { bg: "bg-indigo-500", light: "bg-indigo-100", text: "text-indigo-700", fill: "#6366f1" },
-  interviewScheduled: { bg: "bg-purple-500", light: "bg-purple-100", text: "text-purple-700", fill: "#a855f7" },
-  interviewCompleted: { bg: "bg-green-500", light: "bg-green-100", text: "text-green-700", fill: "#22c55e" },
-  highScore: { bg: "bg-emerald-500", light: "bg-emerald-100", text: "text-emerald-700", fill: "#10b981" },
-  recommended: { bg: "bg-green-600", light: "bg-green-100", text: "text-green-800", fill: "#16a34a" },
+  registered: { bg: "bg-[#3b82f6]", light: "bg-[#3b82f6]/10", text: "text-[#3b82f6]", fill: "#3b82f6" },
+  profileComplete: { bg: "bg-[#a78bfa]/100", light: "bg-indigo-100", text: "text-[#a78bfa]", fill: "#6366f1" },
+  interviewScheduled: { bg: "bg-[#a855f7]", light: "bg-[#a855f7]/10", text: "text-[#a855f7]", fill: "#a855f7" },
+  interviewCompleted: { bg: "bg-[#22c55e]", light: "bg-[#22c55e]/10", text: "text-[#22c55e]", fill: "#22c55e" },
+  highScore: { bg: "bg-[#10b981]", light: "bg-[#10b981]/10", text: "text-[#10b981]", fill: "#10b981" },
+  recommended: { bg: "bg-green-600", light: "bg-[#22c55e]/10", text: "text-[#22c55e]", fill: "#16a34a" },
 };
 
 function parseExperience(exp: string | null): number {
@@ -98,46 +98,46 @@ function SkeletonLoading() {
   return (
     <div className="space-y-6">
       <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-64 mb-2" />
-        <div className="h-4 bg-gray-100 rounded w-80" />
+        <div className="h-8 bg-[#27272a] rounded w-64 mb-2" />
+        <div className="h-4 bg-[#27272a] rounded w-80" />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-        <div className="h-5 bg-gray-200 rounded w-40 mb-6" />
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+        <div className="h-5 bg-[#27272a] rounded w-40 mb-6" />
         <div className="space-y-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="flex items-center gap-4">
-              <div className="h-10 bg-gray-200 rounded-lg flex-1" />
-              <div className="h-6 bg-gray-200 rounded w-16" />
+              <div className="h-10 bg-[#27272a] rounded-lg flex-1" />
+              <div className="h-6 bg-[#27272a] rounded w-16" />
             </div>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-          <div className="h-5 bg-gray-200 rounded w-44 mb-6" />
-          <div className="h-64 bg-gray-100 rounded-lg" />
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+          <div className="h-5 bg-[#27272a] rounded w-44 mb-6" />
+          <div className="h-64 bg-[#27272a] rounded-lg" />
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-          <div className="h-5 bg-gray-200 rounded w-36 mb-6" />
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+          <div className="h-5 bg-[#27272a] rounded w-36 mb-6" />
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-200 rounded-full" />
-                <div className="flex-1 h-4 bg-gray-200 rounded" />
-                <div className="h-5 bg-gray-200 rounded w-12" />
+                <div className="w-8 h-8 bg-[#27272a] rounded-full" />
+                <div className="flex-1 h-4 bg-[#27272a] rounded" />
+                <div className="h-5 bg-[#27272a] rounded w-12" />
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-        <div className="h-5 bg-gray-200 rounded w-48 mb-6" />
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+        <div className="h-5 bg-[#27272a] rounded w-48 mb-6" />
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 bg-gray-200 rounded-lg" />
+            <div key={i} className="h-12 bg-[#27272a] rounded-lg" />
           ))}
         </div>
       </div>
@@ -149,17 +149,17 @@ function ScatterTooltip({ active, payload }: { active?: boolean; payload?: Array
   if (!active || !payload?.length) return null;
   const data = payload[0].payload;
   const rec = data.recommendation;
-  const recColor = rec === "hire" ? "text-green-600" : rec === "consider" ? "text-yellow-600" : rec === "reject" ? "text-red-600" : "text-gray-500";
+  const recColor = rec === "hire" ? "text-[#22c55e]" : rec === "consider" ? "text-[#f59e0b]" : rec === "reject" ? "text-[#ef4444]" : "text-[#a1a1aa]";
 
   return (
-    <div className="bg-white px-4 py-3 rounded-lg shadow-lg border border-gray-100 max-w-xs">
-      <p className="text-sm font-semibold text-gray-900 truncate">{data.user.name || data.user.email}</p>
+    <div className="bg-[#18181b] px-4 py-3 rounded-lg shadow-lg border border-[#27272a] max-w-xs">
+      <p className="text-sm font-semibold text-[#fafafa] truncate">{data.user.name || data.user.email}</p>
       <div className="mt-1.5 space-y-0.5">
-        <p className="text-xs text-gray-500">
-          Score: <span className="font-medium text-gray-700">{data.score ?? "N/A"}</span>
+        <p className="text-xs text-[#a1a1aa]">
+          Score: <span className="font-medium text-[#a1a1aa]">{data.score ?? "N/A"}</span>
         </p>
-        <p className="text-xs text-gray-500">
-          Experience: <span className="font-medium text-gray-700">{data.yearsExp} yrs</span>
+        <p className="text-xs text-[#a1a1aa]">
+          Experience: <span className="font-medium text-[#a1a1aa]">{data.yearsExp} yrs</span>
         </p>
         <p className={`text-xs font-medium capitalize ${recColor}`}>
           {rec === "pending" ? "Not yet interviewed" : rec}
@@ -171,27 +171,27 @@ function ScatterTooltip({ active, payload }: { active?: boolean; payload?: Array
 
 function ScoreBar({ score, max = 10 }: { score: number | null; max?: number }) {
   if (score === null || score === undefined) {
-    return <span className="text-xs text-gray-400">N/A</span>;
+    return <span className="text-xs text-[#a1a1aa]">N/A</span>;
   }
   const pct = Math.min((score / max) * 100, 100);
-  const color = score >= 8 ? "bg-green-500" : score >= 5 ? "bg-yellow-500" : "bg-red-500";
+  const color = score >= 8 ? "bg-[#22c55e]" : score >= 5 ? "bg-[#f59e0b]" : "bg-[#ef4444]";
 
   return (
     <div className="flex items-center gap-2 min-w-[120px]">
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-[#27272a] rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-semibold text-gray-700 w-8 text-right">{score}</span>
+      <span className="text-xs font-semibold text-[#a1a1aa] w-8 text-right">{score}</span>
     </div>
   );
 }
 
 function RecommendationBadge({ recommendation }: { recommendation: string }) {
   const styles: Record<string, string> = {
-    hire: "bg-green-100 text-green-700 border-green-200",
-    consider: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    reject: "bg-red-100 text-red-700 border-red-200",
-    pending: "bg-gray-100 text-gray-500 border-gray-200",
+    hire: "bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/30",
+    consider: "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/30",
+    reject: "bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/30",
+    pending: "bg-[#27272a] text-[#a1a1aa] border-[#27272a]",
   };
 
   const labels: Record<string, string> = {
@@ -210,12 +210,12 @@ function RecommendationBadge({ recommendation }: { recommendation: string }) {
 
 function ProfileBadge({ isComplete }: { isComplete: boolean }) {
   return isComplete ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/30">
       <CheckCircle className="w-3 h-3" />
       Complete
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#f97316]/10 text-[#f97316] border border-[#f97316]/30">
       Incomplete
     </span>
   );
@@ -235,9 +235,7 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
 
     async function fetchData() {
       try {
-        const res = await fetch("/api/admin/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch("/api/admin/users");
 
         if (res.status === 401 || res.status === 403) {
           if (!cancelled) setError("Unauthorized. Please log in again.");
@@ -371,15 +369,15 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Candidate Pipeline</h1>
-          <p className="text-sm text-gray-500 mt-1">Hiring funnel and candidate analytics</p>
+          <h1 className="text-2xl font-bold text-[#fafafa]">Candidate Pipeline</h1>
+          <p className="text-sm text-[#a1a1aa] mt-1">Hiring funnel and candidate analytics</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-16 text-center">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-6 h-6 text-red-500" />
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-16 text-center">
+          <div className="w-12 h-12 bg-[#ef4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-6 h-6 text-[#ef4444]" />
           </div>
-          <p className="text-gray-600 font-medium">{error}</p>
-          <p className="text-sm text-gray-400 mt-1">Please try refreshing the page.</p>
+          <p className="text-[#a1a1aa] font-medium">{error}</p>
+          <p className="text-sm text-[#a1a1aa] mt-1">Please try refreshing the page.</p>
         </div>
       </div>
     );
@@ -388,16 +386,16 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Candidate Pipeline</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-[#fafafa]">Candidate Pipeline</h1>
+        <p className="text-sm text-[#a1a1aa] mt-1">
           Hiring funnel overview and candidate analytics
         </p>
       </div>
 
       {/* Row 1: Hiring Funnel */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-6 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-500" />
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+        <h3 className="text-base font-semibold text-[#fafafa] mb-6 flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-[#a78bfa]" />
           Hiring Funnel
         </h3>
 
@@ -410,7 +408,7 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
               <div key={stage.label} className="relative">
                 {i > 0 && stage.dropOff > 0 && (
                   <div className="absolute left-1/2 -translate-x-1/2 -top-3 z-10">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-600 border border-red-100">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-[#ef4444] border border-[#ef4444]/20">
                       <TrendingDown className="w-3 h-3" />
                       -{stage.dropOff} ({stage.dropOffPct}%)
                     </span>
@@ -426,7 +424,7 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-lg font-bold text-white">{stage.count}</span>
-                      <span className="text-xs text-white/80 bg-white/20 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-white/80 bg-[#18181b]/20 px-2 py-0.5 rounded-full">
                         {stage.percentage}%
                       </span>
                     </div>
@@ -441,19 +439,19 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
       {/* Row 2: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Left: Score vs Experience Scatter */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
-            <Award className="w-5 h-5 text-indigo-500" />
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5 flex items-center gap-2">
+            <Award className="w-5 h-5 text-[#a78bfa]" />
             Score vs Experience
           </h3>
           {scatterData.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+            <div className="h-64 flex items-center justify-center text-[#a1a1aa] text-sm">
               No scored candidates with experience data
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                 <XAxis
                   type="number"
                   dataKey="yearsExp"
@@ -487,32 +485,32 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
           )}
           <div className="flex items-center justify-center gap-5 mt-4">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-              <span className="text-xs text-gray-600">Hire</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
+              <span className="text-xs text-[#a1a1aa]">Hire</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-              <span className="text-xs text-gray-600">Consider</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
+              <span className="text-xs text-[#a1a1aa]">Consider</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-              <span className="text-xs text-gray-600">Reject</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
+              <span className="text-xs text-[#a1a1aa]">Reject</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-              <span className="text-xs text-gray-600">Pending</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#64748b]" />
+              <span className="text-xs text-[#a1a1aa]">Pending</span>
             </div>
           </div>
         </div>
 
         {/* Right: Top Candidates */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5 flex items-center gap-2">
             <Star className="w-5 h-5 text-amber-500" />
             Top Candidates
           </h3>
           {topCandidates.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+            <div className="h-64 flex items-center justify-center text-[#a1a1aa] text-sm">
               No scored candidates yet
             </div>
           ) : (
@@ -520,16 +518,16 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
               {topCandidates.map((c, i) => {
                 const isExpanded = expandedCandidate === c.user.id;
                 return (
-                  <div key={c.user.id} className="border border-gray-100 rounded-lg overflow-hidden transition-all duration-200 hover:border-gray-200">
+                  <div key={c.user.id} className="border border-[#27272a] rounded-lg overflow-hidden transition-all duration-200 hover:border-[#27272a]">
                     <button
                       onClick={() => setExpandedCandidate(isExpanded ? null : c.user.id)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#27272a] transition-colors text-left"
                     >
-                      <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      <span className="w-7 h-7 rounded-full bg-indigo-100 text-[#a78bfa] flex items-center justify-center text-xs font-bold flex-shrink-0">
                         {i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-[#fafafa] truncate">
                           {c.user.name || c.user.email}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -538,43 +536,43 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
                       </div>
                       <RecommendationBadge recommendation={c.recommendation} />
                       {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <ChevronUp className="w-4 h-4 text-[#a1a1aa] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="w-4 h-4 text-[#a1a1aa] flex-shrink-0" />
                       )}
                     </button>
 
                     {isExpanded && (
-                      <div className="px-3 pb-3 pt-1 border-t border-gray-100 bg-gray-50/50 space-y-3 animate-in slide-in-from-top-1">
+                      <div className="px-3 pb-3 pt-1 border-t border-[#27272a] bg-[#18181b]/50 space-y-3 animate-in slide-in-from-top-1">
                         <div className="grid grid-cols-2 gap-3 text-xs">
                           <div>
-                            <span className="text-gray-500 block mb-1">Profile</span>
+                            <span className="text-[#a1a1aa] block mb-1">Profile</span>
                             <ProfileBadge isComplete={c.user.profile?.isComplete === true} />
                           </div>
                           <div>
-                            <span className="text-gray-500 block mb-1">Experience</span>
-                            <span className="text-gray-700 font-medium">{c.user.profile?.totalExperience || "N/A"}</span>
+                            <span className="text-[#a1a1aa] block mb-1">Experience</span>
+                            <span className="text-[#a1a1aa] font-medium">{c.user.profile?.totalExperience || "N/A"}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block mb-1">Role</span>
-                            <span className="text-gray-700 font-medium">{c.user.profile?.currentRole || "N/A"}</span>
+                            <span className="text-[#a1a1aa] block mb-1">Role</span>
+                            <span className="text-[#a1a1aa] font-medium">{c.user.profile?.currentRole || "N/A"}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block mb-1">Location</span>
-                            <span className="text-gray-700 font-medium">{c.user.profile?.currentLocation || "N/A"}</span>
+                            <span className="text-[#a1a1aa] block mb-1">Location</span>
+                            <span className="text-[#a1a1aa] font-medium">{c.user.profile?.currentLocation || "N/A"}</span>
                           </div>
                         </div>
                         {c.skills.length > 0 && (
                           <div>
-                            <span className="text-gray-500 text-xs block mb-1">Skills</span>
+                            <span className="text-[#a1a1aa] text-xs block mb-1">Skills</span>
                             <div className="flex flex-wrap gap-1">
                               {c.skills.slice(0, 6).map((skill, si) => (
-                                <span key={si} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                <span key={si} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-[#3b82f6] border border-[#3b82f6]/20">
                                   {skill}
                                 </span>
                               ))}
                               {c.skills.length > 6 && (
-                                <span className="text-[10px] text-gray-400 self-center">+{c.skills.length - 6} more</span>
+                                <span className="text-[10px] text-[#a1a1aa] self-center">+{c.skills.length - 6} more</span>
                               )}
                             </div>
                           </div>
@@ -590,26 +588,26 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
       </div>
 
       {/* Row 3: Candidates by Status */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-500" />
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] overflow-hidden">
+        <div className="p-4 border-b border-[#27272a]">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-[#a78bfa]" />
             Candidates by Status
           </h3>
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 overflow-x-auto">
+          <div className="flex items-center gap-1 bg-[#27272a] rounded-lg p-1 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap ${
                   activeTab === tab.id
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-[#18181b] text-[#fafafa] shadow-sm"
+                    : "text-[#a1a1aa] hover:text-[#a1a1aa]"
                 }`}
               >
                 {tab.label}
                 <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.id ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"
+                  activeTab === tab.id ? "bg-indigo-100 text-[#a78bfa]" : "bg-[#27272a] text-[#a1a1aa]"
                 }`}>
                   {tab.count}
                 </span>
@@ -621,33 +619,33 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Profile</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Score</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Recommendation</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Experience</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+              <tr className="bg-[#18181b] border-b border-[#27272a]">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#a1a1aa]">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#a1a1aa]">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#a1a1aa]">Profile</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#a1a1aa]">Score</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#a1a1aa]">Recommendation</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#a1a1aa]">Experience</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#a1a1aa]">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#27272a]">
               {filteredCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-16 text-center text-[#a1a1aa]">
                     <div className="flex flex-col items-center gap-2">
-                      <Users className="w-8 h-8 text-gray-300" />
+                      <Users className="w-8 h-8 text-[#a1a1aa]" />
                       <p className="text-sm font-medium">No candidates in this category</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredCandidates.map((c) => (
-                  <tr key={c.user.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={c.user.id} className="hover:bg-[#27272a] transition-colors">
                     <td className="px-4 py-3">
-                      <span className="font-medium text-gray-900">{c.user.name || "—"}</span>
+                      <span className="font-medium text-[#fafafa]">{c.user.name || "—"}</span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{c.user.email}</td>
+                    <td className="px-4 py-3 text-[#a1a1aa]">{c.user.email}</td>
                     <td className="px-4 py-3">
                       <ProfileBadge isComplete={c.user.profile?.isComplete === true} />
                     </td>
@@ -657,14 +655,14 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
                     <td className="px-4 py-3">
                       <RecommendationBadge recommendation={c.recommendation} />
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
+                    <td className="px-4 py-3 text-[#a1a1aa] text-xs">
                       {c.user.profile?.totalExperience || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setSelectedUser(c.user)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          className="p-1.5 rounded-md text-[#a1a1aa] hover:text-[#a78bfa] hover:bg-[#a78bfa]/10 transition-colors"
                           title="View Profile"
                         >
                           <Eye className="w-4 h-4" />
@@ -674,7 +672,7 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
                             href={c.user.interview.videoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1.5 rounded-md text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+                            className="p-1.5 rounded-md text-[#a1a1aa] hover:text-[#a855f7] hover:bg-purple-50 transition-colors"
                             title="Watch Interview"
                           >
                             <Play className="w-4 h-4" />
@@ -692,14 +690,14 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
 
       {/* Row 4: Skills Gap Analysis */}
       {skillsGap.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-indigo-500" />
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h3 className="text-base font-semibold text-[#fafafa] mb-5 flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-[#a78bfa]" />
             Skills Gap Analysis
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={skillsGap} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
               <XAxis
                 dataKey="skill"
                 axisLine={false}
@@ -717,10 +715,10 @@ export default function CandidatePipeline({ token }: CandidatePipelineProps) {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#fff",
-                  border: "1px solid #e5e7eb",
+                  backgroundColor: "#18181b",
+                  border: "1px solid #27272a",
                   borderRadius: "8px",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.3)",
                   fontSize: "12px",
                 }}
               />

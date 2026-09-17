@@ -97,7 +97,7 @@ export function AIChatbot({ user }: ChatbotProps) {
       {/* Chat Toggle Button */}
       <button
         onClick={toggleChat}
-        className="chat-toggle bg-indigo-600 text-white rounded-full p-2 hover:bg-indigo-700 transition-colors"
+        className="chat-toggle bg-[#a78bfa] text-white rounded-full p-2 hover:bg-[#8b5cf6] transition-colors shadow-lg"
         aria-label="Toggle chat"
       >
         <Users className="w-5 h-5" />
@@ -105,22 +105,22 @@ export function AIChatbot({ user }: ChatbotProps) {
 
       {/* Chat Window */}
       {showChat && (
-        <div className="chat-window fixed bottom-6 right-6 w-80 max-w-full bg-white rounded-2xl border border-white/10 shadow-2xl z-50 max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="chat-window fixed bottom-6 right-6 w-80 max-w-full bg-[#18181b] rounded-2xl border border-[#27272a] shadow-2xl z-50 max-h-[80vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-white/10">
+          <div className="p-4 border-b border-[#27272a]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg font-semibold text-indigo-600">AI</span>
+                <div className="w-10 h-10 bg-[#a78bfa]/20 rounded-full flex items-center justify-center">
+                  <span className="text-lg font-semibold text-[#a78bfa]">AI</span>
                 </div>
-                <h3 className="font-medium text-indigo-600">AI Assistant</h3>
+                <h3 className="font-medium text-[#fafafa]">AI Assistant</h3>
               </div>
               <button
                 onClick={toggleChat}
-                className="p-1 rounded hover:bg-white/5 transition-colors"
+                className="p-1 rounded-lg hover:bg-[#27272a] transition-colors"
                 aria-label="Close chat"
               >
-                <X className="w-4 h-4 text-slate-400" />
+                <X className="w-4 h-4 text-[#a1a1aa]" />
               </button>
             </div>
           </div>
@@ -132,19 +132,19 @@ export function AIChatbot({ user }: ChatbotProps) {
                 key={msg.timestamp}
                 className={`max-w-xs ${
                   msg.role === "user"
-                    ? "self-end bg-indigo-100 rounded-lg p-3"
-                    : "self-start bg-slate-100 rounded-lg p-3"
+                    ? "self-end bg-[#a78bfa] text-white rounded-xl p-3"
+                    : "self-start bg-[#27272a] text-[#fafafa] rounded-xl p-3"
                 }`}
               >
                 <p className="text-sm line-clamp-5">{msg.content}</p>
-                <p className="text-xs text-slate-500 mt-1 opacity-80">
+                <p className={`text-xs mt-1 opacity-80 ${msg.role === "user" ? "text-white/70" : "text-[#a1a1aa]"}`}>
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
             ))}
 
             {isLoading && (
-              <div className="self-start bg-slate-100 rounded-lg p-3 max-w-xs">
+              <div className="self-start bg-[#27272a] text-[#fafafa] rounded-xl p-3 max-w-xs">
                 <p className="text-sm animate-pulse line-clamp-5">
                   <Loader className="w-3 h-3 me-2 align-middle" /> Thinking...
                 </p>
@@ -153,7 +153,7 @@ export function AIChatbot({ user }: ChatbotProps) {
           </div>
 
           {/* Input Area */}
-          <div className="p-3 border-t border-white/10">
+          <div className="p-3 border-t border-[#27272a]">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -161,13 +161,13 @@ export function AIChatbot({ user }: ChatbotProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
-                className="flex-1 rounded-lg border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-[#27272a] border border-[#27272a] text-[#fafafa] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#a78bfa] disabled:opacity-50 text-sm"
                 disabled={isLoading}
                 aria-label="Message input"
               />
               <button
                 onClick={() => sendMessage(input)}
-                className="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="bg-[#a78bfa] text-white rounded-lg px-4 py-2 hover:bg-[#8b5cf6] transition-colors disabled:opacity-50 text-sm font-medium"
                 disabled={isLoading || !input.trim()}
                 aria-label="Send message"
               >

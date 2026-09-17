@@ -19,62 +19,74 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const users = await prisma.user.findMany({
-      where: { organizationId: requester.organizationId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-        createdAt: true,
-        profile: {
-          select: {
-            isComplete: true,
-            resumeUrl: true,
-            resumeFileName: true,
-            aboutYou: true,
-            whatDrivesYou: true,
-            strengths: true,
-            currentRole: true,
-            totalExperience: true,
-            currentLocation: true,
-            noticePeriod: true,
-            skills: true,
-            currentCompany: true,
-            education: true,
-            jobType: true,
-            salaryRange: true,
-            preferredLocation: true,
-            workMode: true,
-            timezone: true,
-            step: true,
+    // Pagination params
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: { organizationId: requester.organizationId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          createdAt: true,
+          profile: {
+            select: {
+              isComplete: true,
+              resumeUrl: true,
+              resumeFileName: true,
+              aboutYou: true,
+              whatDrivesYou: true,
+              strengths: true,
+              currentRole: true,
+              totalExperience: true,
+              currentLocation: true,
+              noticePeriod: true,
+              skills: true,
+              currentCompany: true,
+              education: true,
+              jobType: true,
+              salaryRange: true,
+              preferredLocation: true,
+              workMode: true,
+              timezone: true,
+              step: true,
+            },
+          },
+          interview: {
+            select: {
+              date: true,
+              time: true,
+              timezone: true,
+              status: true,
+              mode: true,
+              type: true,
+              duration: true,
+              videoUrl: true,
+              captionUrl: true,
+              transcript: true,
+              evaluationScore: true,
+              evaluation: true,
+              proctoringStatus: true,
+              proctoringFlags: true,
+              proctoringReport: true,
+            },
           },
         },
-        interview: {
-          select: {
-            date: true,
-            time: true,
-            timezone: true,
-            status: true,
-            mode: true,
-            type: true,
-            duration: true,
-            videoUrl: true,
-            captionUrl: true,
-            transcript: true,
-            evaluationScore: true,
-            evaluation: true,
-            proctoringStatus: true,
-            proctoringFlags: true,
-            proctoringReport: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({
+        where: { organizationId: requester.organizationId },
+      }),
+    ]);
 
     // Resolve stored video path to a short-lived presigned URL for playback.
-    // Captions stay same-origin (served via /api/files) so the <track> loads without CORS.
     const resolved = await Promise.all(
       users.map(async (user) => ({
         ...user,
@@ -87,7 +99,16 @@ export async function GET(request: Request) {
       }))
     );
 
-    return NextResponse.json({ success: true, users: resolved });
+    return NextResponse.json({
+      success: true,
+      users: resolved,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error("Get users error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

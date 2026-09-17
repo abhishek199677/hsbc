@@ -88,9 +88,7 @@ export default function AnalyticsDashboard() {
 
     (async () => {
       try {
-        const res = await fetch("/api/admin/analytics", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch("/api/admin/analytics");
         if (res.status === 401 || res.status === 403) {
           setError("Unauthorized");
           return;

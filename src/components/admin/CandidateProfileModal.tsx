@@ -91,13 +91,13 @@ function Badge({ children, className }: { children: React.ReactNode; className: 
 
 function StatusBadge({ status }: { status: string | null }) {
   const styles: Record<string, string> = {
-    completed: "bg-green-100 text-green-700 border-green-200",
-    scheduled: "bg-blue-100 text-blue-700 border-blue-200",
-    in_progress: "bg-purple-100 text-purple-700 border-purple-200",
-    cancelled: "bg-red-100 text-red-700 border-red-200",
+    completed: "bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/30",
+    scheduled: "bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/30",
+    in_progress: "bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/30",
+    cancelled: "bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/30",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status || ""] || "bg-gray-100 text-gray-500 border-gray-200"}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status || ""] || "bg-[#27272a] text-[#a1a1aa] border-[#27272a]"}`}>
       {(status || "None").replace("_", " ")}
     </span>
   );
@@ -106,18 +106,18 @@ function StatusBadge({ status }: { status: string | null }) {
 function ProctoringBadge({ status, flags }: { status: string | null; flags: number | null }) {
   if (!status) return null;
   const styles: Record<string, string> = {
-    pass: "bg-green-100 text-green-700 border-green-200",
-    review: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    fail: "bg-red-100 text-red-700 border-red-200",
-    off: "bg-gray-100 text-gray-600 border-gray-200",
+    pass: "bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/30",
+    review: "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/30",
+    fail: "bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/30",
+    off: "bg-[#27272a] text-[#a1a1aa] border-[#27272a]",
   };
   return (
     <div>
-      <Badge className={`border ${styles[status] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+      <Badge className={`border ${styles[status] || "bg-[#27272a] text-[#a1a1aa] border-[#27272a]"}`}>
         {status === "pass" ? "Proctoring: Clean" : status === "review" ? "Proctoring: Review" : status === "fail" ? "Proctoring: Failed" : "Proctoring: Off"}
       </Badge>
       {flags && flags > 0 && (
-        <p className="text-xs text-red-500 mt-1">{flags} incident(s)</p>
+        <p className="text-xs text-[#ef4444] mt-1">{flags} incident(s)</p>
       )}
     </div>
   );
@@ -134,38 +134,38 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
     value: string | null | undefined
   ) => (
     <div className="flex items-start gap-2 text-sm">
-      <span className="text-gray-400 flex-shrink-0 mt-0.5">{icon}</span>
+      <span className="text-[#a1a1aa] flex-shrink-0 mt-0.5">{icon}</span>
       <div className="min-w-0">
-        <span className="text-gray-500 text-xs block">{label}</span>
-        <span className="text-gray-800 font-medium block break-words">{value || "—"}</span>
+        <span className="text-[#a1a1aa] text-xs block">{label}</span>
+        <span className="text-[#fafafa] font-medium block break-words">{value || "—"}</span>
       </div>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 overflow-y-auto p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 overflow-y-auto p-4">
+      <div className="bg-[#18181b] rounded-xl shadow-2xl border border-[#27272a] w-full max-w-3xl my-8" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-6 border-b flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-xl font-semibold text-indigo-700">
+              <span className="text-xl font-semibold text-[#a78bfa]">
                 {(user.name || user.email).charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-gray-900">{user.name || "Unnamed Candidate"}</h2>
+                <h2 className="text-xl font-bold text-[#fafafa]">{user.name || "Unnamed Candidate"}</h2>
                 {profile?.isComplete ? (
-                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                  <Badge className="bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/30">
                     <CheckCircle className="w-3 h-3" /> Profile Complete
                   </Badge>
                 ) : (
-                  <Badge className="bg-orange-100 text-orange-700 border-orange-200">Profile Incomplete</Badge>
+                  <Badge className="bg-[#f97316]/10 text-[#f97316] border-[#f97316]/30">Profile Incomplete</Badge>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-0.5">{profile?.currentRole || "Candidate"}</p>
-              <div className="flex items-center gap-3 text-sm text-gray-500 mt-1.5 flex-wrap">
+              <p className="text-sm text-[#a1a1aa] mt-0.5">{profile?.currentRole || "Candidate"}</p>
+              <div className="flex items-center gap-3 text-sm text-[#a1a1aa] mt-1.5 flex-wrap">
                 <span className="flex items-center gap-1"><Mail className="w-4 h-4" /> {user.email}</span>
                 {user.phone && <span className="flex items-center gap-1"><Phone className="w-4 h-4" /> {user.phone}</span>}
               </div>
@@ -173,7 +173,7 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="p-2 text-[#a1a1aa] hover:text-[#a1a1aa] rounded-lg hover:bg-[#27272a] transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -182,8 +182,8 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
         <div className="p-6 space-y-6">
           {/* Snapshot */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-indigo-500" /> Current Snapshot
+            <h3 className="text-sm font-semibold text-[#a1a1aa] mb-3 flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-[#a78bfa]" /> Current Snapshot
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {infoRow(<Briefcase className="w-4 h-4" />, "Current Role", profile?.currentRole)}
@@ -196,45 +196,45 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
 
           {/* Skills */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Award className="w-4 h-4 text-indigo-500" /> Skills
+            <h3 className="text-sm font-semibold text-[#a1a1aa] mb-2 flex items-center gap-2">
+              <Award className="w-4 h-4 text-[#a78bfa]" /> Skills
             </h3>
             {skills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {skills.map((s, i) => (
-                  <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-lg border border-indigo-100">
+                  <span key={i} className="px-2.5 py-1 bg-[#a78bfa]/10 text-[#a78bfa] text-xs font-medium rounded-lg border border-[#a78bfa]/20">
                     {s}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">No skills listed yet.</p>
+              <p className="text-sm text-[#a1a1aa]">No skills listed yet.</p>
             )}
           </div>
 
           {/* Education */}
           {profile?.education && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-indigo-500" /> Education
+              <h3 className="text-sm font-semibold text-[#a1a1aa] mb-2 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-[#a78bfa]" /> Education
               </h3>
-              <p className="text-sm text-gray-600 whitespace-pre-line">{profile.education}</p>
+              <p className="text-sm text-[#a1a1aa] whitespace-pre-line">{profile.education}</p>
             </div>
           )}
 
           {/* About */}
           {(profile?.aboutYou || profile?.whatDrivesYou || profile?.strengths) && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-500" /> About
+              <h3 className="text-sm font-semibold text-[#a1a1aa] mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#a78bfa]" /> About
               </h3>
-              <div className="space-y-2 text-sm text-gray-600">
+              <div className="space-y-2 text-sm text-[#a1a1aa]">
                 {profile?.aboutYou && <p>{profile.aboutYou}</p>}
                 {profile?.whatDrivesYou && (
-                  <p><span className="font-medium text-gray-700">What drives them: </span>{profile.whatDrivesYou}</p>
+                  <p><span className="font-medium text-[#a1a1aa]">What drives them: </span>{profile.whatDrivesYou}</p>
                 )}
                 {profile?.strengths && (
-                  <p><span className="font-medium text-gray-700">Strengths: </span>{profile.strengths}</p>
+                  <p><span className="font-medium text-[#a1a1aa]">Strengths: </span>{profile.strengths}</p>
                 )}
               </div>
             </div>
@@ -242,8 +242,8 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
 
           {/* Preferences */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-indigo-500" /> Preferences
+            <h3 className="text-sm font-semibold text-[#a1a1aa] mb-3 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#a78bfa]" /> Preferences
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {infoRow(<Briefcase className="w-4 h-4" />, "Job Type", profile?.jobType)}
@@ -260,7 +260,7 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
               href={profile.resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#a78bfa] border border-[#a78bfa]/30 rounded-lg hover:bg-[#a78bfa]/10 transition-colors"
             >
               <FileText className="w-4 h-4" />
               {profile.resumeFileName || "View Resume"}
@@ -268,16 +268,16 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
           )}
 
           {/* Interview */}
-          <div className="bg-gray-50 rounded-xl p-5 space-y-4">
+          <div className="bg-[#18181b] rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-500" /> Interview
+              <h3 className="text-sm font-semibold text-[#a1a1aa] flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#a78bfa]" /> Interview
               </h3>
               <StatusBadge status={interview?.status ?? null} />
             </div>
 
             {!interview ? (
-              <p className="text-sm text-gray-500">No interview scheduled for this candidate.</p>
+              <p className="text-sm text-[#a1a1aa]">No interview scheduled for this candidate.</p>
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -294,15 +294,15 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
 
                 {interview?.evaluationScore !== null && interview?.evaluationScore !== undefined && (
                   <div>
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                    <div className="flex items-center justify-between text-sm text-[#a1a1aa] mb-1">
                       <span>Interview Score</span>
-                      <span className={`font-bold ${interview.evaluationScore >= 8 ? "text-green-600" : interview.evaluationScore >= 5 ? "text-yellow-600" : "text-red-600"}`}>
+                      <span className={`font-bold ${interview.evaluationScore >= 8 ? "text-[#22c55e]" : interview.evaluationScore >= 5 ? "text-[#f59e0b]" : "text-[#ef4444]"}`}>
                         {interview.evaluationScore.toFixed(1)} / 10
                       </span>
                     </div>
-                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-[#27272a] rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${interview.evaluationScore >= 8 ? "bg-green-500" : interview.evaluationScore >= 5 ? "bg-yellow-500" : "bg-red-500"}`}
+                        className={`h-full rounded-full ${interview.evaluationScore >= 8 ? "bg-[#22c55e]" : interview.evaluationScore >= 5 ? "bg-[#f59e0b]" : "bg-[#ef4444]"}`}
                         style={{ width: `${Math.min((interview.evaluationScore / 10) * 100, 100)}%` }}
                       />
                     </div>
@@ -311,8 +311,8 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
 
                 {interview?.evaluation && (
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1.5">AI Evaluation</h4>
-                    <div className="text-sm text-gray-600 whitespace-pre-line bg-white rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <h4 className="text-sm font-semibold text-[#a1a1aa] mb-1.5">AI Evaluation</h4>
+                    <div className="text-sm text-[#a1a1aa] whitespace-pre-line bg-[#18181b] rounded-lg p-3 max-h-48 overflow-y-auto">
                       {interview.evaluation}
                     </div>
                   </div>
@@ -320,8 +320,8 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
 
                 {interview?.transcript && (
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1.5">Transcript</h4>
-                    <div className="text-sm text-gray-600 bg-white rounded-lg p-3 max-h-48 overflow-y-auto whitespace-pre-line">
+                    <h4 className="text-sm font-semibold text-[#a1a1aa] mb-1.5">Transcript</h4>
+                    <div className="text-sm text-[#a1a1aa] bg-[#18181b] rounded-lg p-3 max-h-48 overflow-y-auto whitespace-pre-line">
                       {interview.transcript}
                     </div>
                   </div>
@@ -329,13 +329,13 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
 
                 {interview?.videoUrl && (
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1.5">Interview Recording</h4>
+                    <h4 className="text-sm font-semibold text-[#a1a1aa] mb-1.5">Interview Recording</h4>
                     <video src={interview.videoUrl} controls className="w-full rounded-xl bg-black" />
                   </div>
                 )}
 
                 {!interview?.videoUrl && interview?.status === "completed" && (
-                  <p className="text-xs text-gray-400">Recording unavailable.</p>
+                  <p className="text-xs text-[#a1a1aa]">Recording unavailable.</p>
                 )}
               </>
             )}
@@ -349,7 +349,7 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
               href={`/interview/live?userId=${user.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#a78bfa] hover:bg-[#8b5cf6] rounded-lg transition-colors"
             >
               <Play className="w-4 h-4" />
               {interview?.status === "scheduled" ? "Start Interview" : "Schedule Interview"}
@@ -357,7 +357,7 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
           )}
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-[#a1a1aa] hover:text-[#fafafa] border border-[#27272a] rounded-lg hover:bg-[#27272a] transition-colors"
           >
             Close
           </button>

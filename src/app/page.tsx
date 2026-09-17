@@ -2,22 +2,20 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import CompanyLogos from "@/components/CompanyLogos";
 import Features from "@/components/Features";
-import HowItWorks from "@/components/HowItWorks";
+import Enterprise from "@/components/Enterprise";
 import Testimonials from "@/components/Testimonials";
-import VideoSection from "@/components/VideoSection";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#06060a]">
       <Navbar />
       <Hero />
       <CompanyLogos />
       <Features />
-      <HowItWorks />
+      <Enterprise />
       <Testimonials />
-      <VideoSection />
       <CTA />
       <Footer />
     </main>

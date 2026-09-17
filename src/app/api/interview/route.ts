@@ -77,8 +77,12 @@ export async function POST(request: Request) {
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
 
+    // Count interviews per organization (not per user) to enforce org-level limits
     const interviewsThisMonth = await prisma.interview.count({
-      where: { userId: user.userId, createdAt: { gte: monthStart } },
+      where: {
+        user: { organizationId: user.organizationId },
+        createdAt: { gte: monthStart },
+      },
     });
 
     if (interviewsThisMonth >= limits.interviewsPerMonth) {
@@ -98,6 +102,42 @@ export async function POST(request: Request) {
     if (!date || !time) {
       return NextResponse.json(
         { error: "Date and time are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (typeof date !== "string" || !dateRegex.test(date)) {
+      return NextResponse.json(
+        { error: "Invalid date format. Use YYYY-MM-DD" },
+        { status: 400 }
+      );
+    }
+
+    // Validate time format (HH:MM, 24h)
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (typeof time !== "string" || !timeRegex.test(time)) {
+      return NextResponse.json(
+        { error: "Invalid time format. Use HH:MM (24-hour)" },
+        { status: 400 }
+      );
+    }
+
+    // Reject past dates
+    const interviewDate = new Date(`${date}T${time}:00`);
+    if (interviewDate <= new Date()) {
+      return NextResponse.json(
+        { error: "Cannot schedule interviews in the past" },
+        { status: 400 }
+      );
+    }
+
+    // Reject weekends (0 = Sunday, 6 = Saturday)
+    const dayOfWeek = interviewDate.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return NextResponse.json(
+        { error: "Interviews cannot be scheduled on weekends" },
         { status: 400 }
       );
     }

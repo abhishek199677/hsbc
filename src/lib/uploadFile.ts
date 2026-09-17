@@ -50,7 +50,6 @@ async function uploadViaFormData(
   formData.append("file", file);
   const res = await fetchWithRetry("/api/upload", {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
   const data = await res.json();
@@ -72,7 +71,6 @@ export async function uploadFile(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           filename: file.name,

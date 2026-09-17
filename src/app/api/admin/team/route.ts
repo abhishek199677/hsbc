@@ -4,6 +4,7 @@ import { requireOrganizationRole } from "@/lib/authorization";
 import { revokeUserSessions } from "@/lib/auth";
 import { generateVerificationToken, hashToken, tokenExpiryDate } from "@/lib/tokens";
 import { sendEmail, getAppBaseUrl } from "@/lib/email";
+import { logAdminEvent } from "@/lib/audit";
 
 export async function GET(request: Request) {
   try {
@@ -158,6 +159,13 @@ export async function POST(request: Request) {
       `,
     });
 
+    // Audit log (non-blocking)
+    logAdminEvent(requester.organizationId, "admin.user_invited", {
+      userId: requester.id,
+      targetUserId: newUser.id,
+      metadata: { email, role: assignedRole },
+    });
+
     return NextResponse.json({ success: true, teamMember, inviteUrl });
   } catch (error) {
     console.error("Invite team member error:", error);
@@ -212,6 +220,13 @@ export async function PATCH(request: Request) {
     // Revoke all sessions for the user whose role changed
     await revokeUserSessions(updated.userId);
 
+    // Audit log
+    logAdminEvent(requester.organizationId, "admin.team_role_changed", {
+      userId: requester.id,
+      targetUserId: updated.userId,
+      metadata: { from: teamMember.role, to: role },
+    });
+
     return NextResponse.json({ success: true, teamMember: updated });
   } catch (error) {
     console.error("Update team member error:", error);
@@ -259,6 +274,13 @@ export async function DELETE(request: Request) {
 
     // Revoke all sessions for the removed user
     await revokeUserSessions(teamMember.userId);
+
+    // Audit log
+    logAdminEvent(requester.organizationId, "admin.user_removed", {
+      userId: requester.id,
+      targetUserId: teamMember.userId,
+      metadata: { role: teamMember.role },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -155,12 +155,12 @@ function getIncidentLabel(type: string): string {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
+    <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-gray-200 rounded-xl" />
+        <div className="w-12 h-12 bg-[#27272a] rounded-xl" />
         <div className="flex-1">
-          <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-          <div className="h-8 bg-gray-200 rounded w-16" />
+          <div className="h-4 bg-[#27272a] rounded w-24 mb-2" />
+          <div className="h-8 bg-[#27272a] rounded w-16" />
         </div>
       </div>
     </div>
@@ -169,20 +169,20 @@ function SkeletonCard() {
 
 function SkeletonChart() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-      <div className="h-6 bg-gray-200 rounded w-40 mb-6" />
-      <div className="h-64 bg-gray-200 rounded" />
+    <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+      <div className="h-6 bg-[#27272a] rounded w-40 mb-6" />
+      <div className="h-64 bg-[#27272a] rounded" />
     </div>
   );
 }
 
 function SkeletonTable() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-      <div className="h-6 bg-gray-200 rounded w-48 mb-6" />
+    <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 animate-pulse">
+      <div className="h-6 bg-[#27272a] rounded w-48 mb-6" />
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+          <div key={i} className="h-14 bg-[#27272a] rounded-lg" />
         ))}
       </div>
     </div>
@@ -205,9 +205,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
       }
 
       try {
-        const res = await fetch("/api/admin/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch("/api/admin/users");
 
         if (!res.ok) {
           throw new Error(`Failed to fetch data: ${res.statusText}`);
@@ -371,7 +369,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-10 bg-gray-200 rounded w-80 animate-pulse" />
+        <div className="h-10 bg-[#27272a] rounded w-80 animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {[...Array(4)].map((_, i) => (
             <SkeletonCard key={i} />
@@ -390,10 +388,10 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center text-gray-500">
-          <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Dashboard</h2>
-          <p className="text-gray-600">{error}</p>
+        <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-12 text-center text-[#a1a1aa]">
+          <AlertOctagon className="w-16 h-16 text-[#ef4444] mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-[#fafafa] mb-2">Unable to Load Dashboard</h2>
+          <p className="text-[#a1a1aa]">{error}</p>
         </div>
       </div>
     );
@@ -402,67 +400,67 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-          <Shield className="w-8 h-8 text-blue-600" />
+        <h1 className="text-2xl font-bold text-[#fafafa] flex items-center gap-3">
+          <Shield className="w-8 h-8 text-[#3b82f6]" />
           Proctoring Integrity Dashboard
         </h1>
-        <p className="text-gray-500 mt-1">Monitor interview integrity and proctoring violations</p>
+        <p className="text-[#a1a1aa] mt-1">Monitor interview integrity and proctoring violations</p>
       </div>
 
       {/* Row 1: Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
+                <Users className="w-6 h-6 text-[#3b82f6]" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Monitored</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalMonitored}</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Total Monitored</p>
+                <p className="text-3xl font-bold text-[#fafafa]">{stats.totalMonitored}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+                <CheckCircle className="w-6 h-6 text-[#22c55e]" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Clean Pass</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Clean Pass</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-bold text-gray-900">{stats.passCount}</p>
-                  <span className="text-sm text-green-600 font-medium">{stats.passPercent}%</span>
+                  <p className="text-3xl font-bold text-[#fafafa]">{stats.passCount}</p>
+                  <span className="text-sm text-[#22c55e] font-medium">{stats.passPercent}%</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-yellow-600" />
+                <AlertTriangle className="w-6 h-6 text-[#f59e0b]" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Needs Review</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Needs Review</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-bold text-gray-900">{stats.reviewCount}</p>
-                  <span className="text-sm text-yellow-600 font-medium">{stats.reviewPercent}%</span>
+                  <p className="text-3xl font-bold text-[#fafafa]">{stats.reviewCount}</p>
+                  <span className="text-sm text-[#f59e0b] font-medium">{stats.reviewPercent}%</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6 transition-all hover:shadow-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-red-600" />
+                <XCircle className="w-6 h-6 text-[#ef4444]" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Failed</p>
+                <p className="text-sm font-medium text-[#a1a1aa]">Failed</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-bold text-gray-900">{stats.failCount}</p>
-                  <span className="text-sm text-red-600 font-medium">{stats.failPercent}%</span>
+                  <p className="text-3xl font-bold text-[#fafafa]">{stats.failCount}</p>
+                  <span className="text-sm text-[#ef4444] font-medium">{stats.failPercent}%</span>
                 </div>
               </div>
             </div>
@@ -472,8 +470,8 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
       {/* Row 2: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Integrity Distribution Pie Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Integrity Distribution</h2>
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+            <h2 className="text-lg font-semibold text-[#fafafa] mb-6">Integrity Distribution</h2>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -493,10 +491,10 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e7eb",
+                      backgroundColor: "#18181b",
+                      border: "1px solid #27272a",
                       borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.3)",
                     }}
                     formatter={(value) => [value, "Count"]}
                   />
@@ -507,7 +505,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
               {pieData.map((entry) => (
                 <div key={entry.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-[#a1a1aa]">
                     {entry.name} ({entry.value})
                   </span>
                 </div>
@@ -516,12 +514,12 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
           </div>
 
           {/* Violation Types Bar Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Violation Types</h2>
+          <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+            <h2 className="text-lg font-semibold text-[#fafafa] mb-6">Violation Types</h2>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={violationData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 12, fill: "#6b7280" }} />
                   <YAxis
                     type="category"
@@ -531,10 +529,10 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e7eb",
+                      backgroundColor: "#18181b",
+                      border: "1px solid #27272a",
                       borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.3)",
                     }}
                     formatter={(value) => [value, "Count"]}
                   />
@@ -550,67 +548,67 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
       </div>
 
       {/* Row 3: Flagged Sessions Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] overflow-hidden">
+          <div className="p-6 border-b border-[#27272a]">
+            <h2 className="text-lg font-semibold text-[#fafafa] flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-[#f59e0b]" />
               Flagged Sessions
             </h2>
           </div>
           {flaggedSessions.length === 0 ? (
             <div className="p-12 text-center">
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-              <p className="text-gray-500">No flagged sessions found</p>
+              <CheckCircle className="w-12 h-12 text-[#22c55e] mx-auto mb-3" />
+              <p className="text-[#a1a1aa]">No flagged sessions found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Candidate</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Incidents</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Look Away Time</th>
-                    <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                  <tr className="bg-[#18181b]">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">Candidate</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">Date</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">Status</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">Incidents</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-[#a1a1aa]">Look Away Time</th>
+                    <th className="text-right px-6 py-3 text-xs font-semibold text-[#a1a1aa]">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[#27272a]">
                   {flaggedSessions.map((item) => (
-                    <tr key={item.interview.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={item.interview.id} className="hover:bg-[#27272a] transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4 text-gray-500" />
+                          <div className="w-9 h-9 bg-[#27272a] rounded-full flex items-center justify-center">
+                            <User className="w-4 h-4 text-[#a1a1aa]" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{item.interview.candidateName}</p>
-                            <p className="text-xs text-gray-500">{item.interview.candidateEmail}</p>
+                            <p className="font-medium text-[#fafafa] text-sm">{item.interview.candidateName}</p>
+                            <p className="text-xs text-[#a1a1aa]">{item.interview.candidateEmail}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{formatDate(item.interview.scheduledAt)}</td>
+                      <td className="px-6 py-4 text-sm text-[#a1a1aa]">{formatDate(item.interview.scheduledAt)}</td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             item.report.result === "fail"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-yellow-100 text-yellow-800"
+                              ? "bg-[#ef4444]/10 text-[#ef4444]"
+                              : "bg-[#f59e0b]/10 text-[#f59e0b]"
                           }`}
                         >
                           {item.report.result === "fail" ? "Failed" : "Review"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-[#a1a1aa]">
                         {item.report.incidents?.length || 0}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-[#a1a1aa]">
                         {formatDuration(item.report.totalLookAwayMs || 0)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => openModal(item)}
-                          className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                          className="inline-flex items-center gap-1.5 text-sm text-[#3b82f6] hover:text-blue-800 font-medium transition-colors"
                         >
                           View Report
                           <ChevronRight className="w-4 h-4" />
@@ -625,15 +623,15 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
         </div>
 
       {/* Row 4: Recent Incidents Timeline */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+      <div className="bg-[#18181b] rounded-xl shadow-sm border border-[#27272a] p-6">
+          <h2 className="text-lg font-semibold text-[#fafafa] mb-6 flex items-center gap-2">
             <Activity className="w-5 h-5 text-purple-500" />
             Recent Incidents Timeline
           </h2>
           {recentIncidents.length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500">No recent incidents</p>
+              <Clock className="w-10 h-10 text-[#a1a1aa] mx-auto mb-2" />
+              <p className="text-[#a1a1aa]">No recent incidents</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2">
@@ -650,7 +648,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                 return (
                   <div
                     key={`${entry.interviewId}-${idx}`}
-                    className={`flex items-start gap-4 p-4 rounded-lg border-l-4 bg-gray-50 hover:bg-gray-100 transition-colors ${borderColor}`}
+                    className={`flex items-start gap-4 p-4 rounded-lg border-l-4 bg-[#18181b] hover:bg-[#27272a] transition-colors ${borderColor}`}
                   >
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -666,8 +664,8 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-gray-900 text-sm">{entry.candidateName}</span>
-                        <span className="text-gray-400">&middot;</span>
+                        <span className="font-medium text-[#fafafa] text-sm">{entry.candidateName}</span>
+                        <span className="text-[#a1a1aa]">&middot;</span>
                         <span
                           className="text-xs font-medium px-2 py-0.5 rounded-full"
                           style={{ backgroundColor: `${color}20`, color }}
@@ -675,7 +673,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                           {getIncidentLabel(entry.incident.type)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 mt-1 text-xs text-[#a1a1aa]">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {formatTimestamp(entry.incident.timestamp)}
@@ -693,36 +691,36 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
       {/* Modal */}
       {modalOpen && selectedInterview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
+          <div className="relative bg-[#18181b] rounded-xl shadow-2xl border border-[#27272a] max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-[#27272a]">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Proctoring Report</h3>
-                <p className="text-sm text-gray-500">{selectedInterview.interview.candidateName}</p>
+                <h3 className="text-lg font-semibold text-[#fafafa]">Proctoring Report</h3>
+                <p className="text-sm text-[#a1a1aa]">{selectedInterview.interview.candidateName}</p>
               </div>
               <button
                 onClick={closeModal}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#27272a] transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-[#a1a1aa]" />
               </button>
             </div>
 
             <div className="overflow-y-auto p-6 space-y-6">
               {/* Duration */}
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-[#18181b] rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Interview Duration</span>
+                  <Clock className="w-4 h-4 text-[#a1a1aa]" />
+                  <span className="text-sm font-medium text-[#a1a1aa]">Interview Duration</span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-[#fafafa]">
                   {formatDuration(selectedInterview.report.durationMs)}
                 </p>
               </div>
 
               {/* Incident Counts */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Incident Summary</h4>
+                <h4 className="text-sm font-semibold text-[#a1a1aa] mb-3">Incident Summary</h4>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: "Look Away", count: selectedInterview.report.lookAwayCount, icon: Eye, color: "#f59e0b" },
@@ -730,7 +728,7 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                     { label: "Multiple Faces", count: selectedInterview.report.multipleFacesCount, icon: Users, color: "#dc2626" },
                     { label: "Eyes Closed", count: selectedInterview.report.eyesClosedCount, icon: Eye, color: "#f97316" },
                   ].map((item) => (
-                    <div key={item.label} className="bg-white border border-gray-200 rounded-lg p-3 flex items-center gap-3">
+                    <div key={item.label} className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 flex items-center gap-3">
                       <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: `${item.color}15` }}
@@ -738,8 +736,8 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
                         <item.icon className="w-5 h-5" style={{ color: item.color }} />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">{item.label}</p>
-                        <p className="text-lg font-bold text-gray-900">{item.count}</p>
+                        <p className="text-xs text-[#a1a1aa]">{item.label}</p>
+                        <p className="text-lg font-bold text-[#fafafa]">{item.count}</p>
                       </div>
                     </div>
                   ))}
@@ -748,26 +746,26 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
 
               {/* Risk Assessment */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Risk Assessment</h4>
+                <h4 className="text-sm font-semibold text-[#a1a1aa] mb-3">Risk Assessment</h4>
                 <div className={`rounded-xl p-4 ${
                   selectedInterview.report.result === "fail"
-                    ? "bg-red-50 border border-red-200"
-                    : "bg-yellow-50 border border-yellow-200"
+                    ? "bg-red-50 border border-[#ef4444]/30"
+                    : "bg-yellow-50 border border-[#f59e0b]/30"
                 }`}>
                   <div className="flex items-center gap-3">
                     {selectedInterview.report.result === "fail" ? (
-                      <XCircle className="w-8 h-8 text-red-600 flex-shrink-0" />
+                      <XCircle className="w-8 h-8 text-[#ef4444] flex-shrink-0" />
                     ) : (
-                      <AlertTriangle className="w-8 h-8 text-yellow-600 flex-shrink-0" />
+                      <AlertTriangle className="w-8 h-8 text-[#f59e0b] flex-shrink-0" />
                     )}
                     <div>
                       <p className={`font-semibold ${
-                        selectedInterview.report.result === "fail" ? "text-red-800" : "text-yellow-800"
+                        selectedInterview.report.result === "fail" ? "text-[#ef4444]" : "text-[#f59e0b]"
                       }`}>
                         {selectedInterview.report.result === "fail" ? "High Risk - Failed" : "Medium Risk - Needs Review"}
                       </p>
                       <p className={`text-sm mt-0.5 ${
-                        selectedInterview.report.result === "fail" ? "text-red-600" : "text-yellow-600"
+                        selectedInterview.report.result === "fail" ? "text-[#ef4444]" : "text-[#f59e0b]"
                       }`}>
                         {selectedInterview.report.incidents?.length || 0} total incidents detected during the interview session
                       </p>
@@ -779,26 +777,26 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
               {/* Timeline */}
               {selectedInterview.report.incidents && selectedInterview.report.incidents.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Incident Timeline</h4>
+                  <h4 className="text-sm font-semibold text-[#a1a1aa] mb-3">Incident Timeline</h4>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {selectedInterview.report.incidents.map((incident, idx) => {
                       const color = INCIDENT_COLORS[incident.type] || "#6b7280";
                       return (
                         <div
                           key={idx}
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                          className="flex items-center gap-3 p-3 bg-[#18181b] rounded-lg"
                         >
                           <div
                             className="w-2 h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: color }}
                           />
-                          <span className="text-sm font-medium text-gray-800 flex-1">
+                          <span className="text-sm font-medium text-[#fafafa] flex-1">
                             {getIncidentLabel(incident.type)}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-[#a1a1aa]">
                             {formatTimestamp(incident.timestamp)}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-[#a1a1aa]">
                             {formatDuration(incident.duration)}
                           </span>
                         </div>
@@ -809,10 +807,10 @@ export default function ProctoringDashboard({ token }: ProctoringDashboardProps)
               )}
             </div>
 
-            <div className="border-t border-gray-100 p-4 flex justify-end">
+            <div className="border-t border-[#27272a] p-4 flex justify-end">
               <button
                 onClick={closeModal}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-[#27272a] hover:bg-[#27272a] text-[#a1a1aa] rounded-lg text-sm font-medium transition-colors"
               >
                 Close
               </button>

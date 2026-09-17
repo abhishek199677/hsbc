@@ -93,8 +93,8 @@ export default function SettingsPage() {
     (async () => {
       try {
         const [meRes, profileRes] = await Promise.all([
-          fetch("/api/account/me", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/account/me"),
+          fetch("/api/profile"),
         ]);
         const me = await meRes.json();
         const profile = await profileRes.json();
@@ -129,7 +129,6 @@ export default function SettingsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
         },
         body: JSON.stringify({ email: user?.email || "" }),
       });
@@ -151,7 +150,6 @@ export default function SettingsPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ timezone }),
       });
@@ -170,7 +168,6 @@ export default function SettingsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
         },
         body: JSON.stringify({ plan, currency }),
       });
@@ -196,7 +193,6 @@ export default function SettingsPage() {
     try {
       const response = await fetch("/api/billing/portal", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token || ""}` },
       });
       const data = await response.json();
       if (data.billingDisabled) {
@@ -216,9 +212,7 @@ export default function SettingsPage() {
 
   const handleExport = async () => {
     try {
-      const response = await fetch("/api/account/export", {
-        headers: { Authorization: `Bearer ${token || ""}` },
-      });
+      const response = await fetch("/api/account/export");
       if (!response.ok) {
         throw new Error("Export failed");
       }
@@ -246,7 +240,6 @@ export default function SettingsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
         },
         body: JSON.stringify({ confirmation: "DELETE" }),
       });
@@ -264,8 +257,8 @@ export default function SettingsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
+        <div className="animate-spin h-8 w-8 border-4 border-[#a78bfa] border-t-transparent" />
       </div>
     );
   }
@@ -278,27 +271,27 @@ export default function SettingsPage() {
   const planStatus = info?.organization?.planStatus;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#09090b]">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Account Settings</h1>
-          <p className="text-gray-500 mt-1">Manage verification, billing, and your data.</p>
+          <h1 className="text-3xl font-bold text-white">Account Settings</h1>
+          <p className="text-[#a1a1aa] mt-1">Manage verification, billing, and your data.</p>
         </div>
 
         {/* Email verification */}
-        <section className="bg-white rounded-2xl border p-6 mb-6">
+        <section className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <Mail className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Email Verification</h2>
+            <Mail className="w-6 h-6 text-[#a78bfa]" />
+            <h2 className="text-lg font-semibold text-[#fafafa]">Email Verification</h2>
           </div>
           {emailVerified ? (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-[#22c55e] bg-[#22c55e]/10 p-4 rounded-lg">
               <CheckCircle className="w-5 h-5" />
               <span className="text-sm font-medium">{info?.user?.email || user.email} is verified.</span>
             </div>
           ) : (
             <div>
-              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-2 text-[#f59e0b] bg-[#f59e0b]/10 p-4 rounded-lg mb-4">
                 <XCircle className="w-5 h-5" />
                 <span className="text-sm font-medium">
                   Your email is not verified yet. Verify it to unlock the full experience.
@@ -307,39 +300,39 @@ export default function SettingsPage() {
               <button
                 onClick={handleResendVerification}
                 disabled={verificationBusy}
-                className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="bg-[#a78bfa] text-white px-5 py-2.5 text-sm font-medium hover:bg-[#8b5cf6] transition-colors disabled:opacity-50 rounded-lg"
               >
                 {verificationBusy ? "Sending..." : "Resend Verification Email"}
               </button>
               {verificationMsg && (
-                <p className="text-sm text-gray-600 mt-3">{verificationMsg}</p>
+                <p className="text-sm text-[#a1a1aa] mt-3">{verificationMsg}</p>
               )}
             </div>
           )}
         </section>
 
         {/* Billing */}
-        <section className="bg-white rounded-2xl border p-6 mb-6">
+        <section className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <CreditCard className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Plan & Billing</h2>
+            <CreditCard className="w-6 h-6 text-[#a78bfa]" />
+            <h2 className="text-lg font-semibold text-[#fafafa]">Plan & Billing</h2>
           </div>
 
           <div className="flex items-center gap-2 mb-6">
-            <span className="text-sm text-gray-500">Current plan:</span>
-            <span className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-700 bg-indigo-50 rounded-full px-3 py-1 capitalize">
+            <span className="text-sm text-[#a1a1aa]">Current plan:</span>
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#a78bfa] bg-[#a78bfa]/10 px-3 py-1 rounded-lg capitalize">
               {plan}
               {planStatus && planStatus !== "active" && plan !== "starter" && (
-                <span className="text-xs text-red-500 lowercase">({planStatus})</span>
+                <span className="text-xs text-[#ef4444] lowercase">({planStatus})</span>
               )}
             </span>
           </div>
 
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-            <p className="text-xs text-gray-500">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border border-[#27272a] bg-[#27272a] px-4 py-3 rounded-lg">
+            <p className="text-xs text-[#a1a1aa]">
               Prices shown in your currency. Billed by Stripe in the plan&apos;s currency.
             </p>
-            <CurrencySelector className="bg-white rounded-lg border border-gray-200 px-2 py-1" />
+            <CurrencySelector className="bg-[#18181b] border border-[#27272a] px-2 py-1 rounded-lg" />
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
@@ -348,29 +341,29 @@ export default function SettingsPage() {
               return (
                 <div
                   key={p.id}
-                  className={`rounded-xl border p-5 ${p.highlighted ? "border-indigo-300 bg-indigo-50/50" : "border-gray-200"}`}
+                  className={`border p-5 rounded-xl ${p.highlighted ? "border-[#a78bfa] bg-[#a78bfa]/5" : "border-[#27272a] bg-[#27272a]"}`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-1">
+                    <h3 className="font-semibold text-[#fafafa] flex items-center gap-1">
                       {p.name}
-                      {p.highlighted && <Sparkles className="w-4 h-4 text-indigo-500" />}
+                      {p.highlighted && <Sparkles className="w-4 h-4 text-[#a78bfa]" />}
                     </h3>
                     {isCurrent && (
-                      <span className="text-xs font-medium text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                      <span className="text-xs font-medium text-[#22c55e] bg-[#22c55e]/10 px-2 py-0.5 rounded-lg">
                         Current
                       </span>
                     )}
                   </div>
                   <div className="mb-3">
-                    <span className="text-2xl font-bold text-gray-900">
+                    <span className="text-2xl font-bold text-[#fafafa]">
                       {formatPrice(PLAN_PRICES_USD[p.id].monthly, currency)}
                     </span>
-                    <span className="text-sm text-gray-500">{p.period}</span>
+                    <span className="text-sm text-[#a1a1aa]">{p.period}</span>
                   </div>
                   <ul className="space-y-1 mb-4">
                     {p.features.map((f) => (
-                      <li key={f} className="text-sm text-gray-600 flex items-center gap-1.5">
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <li key={f} className="text-sm text-[#a1a1aa] flex items-center gap-1.5">
+                        <CheckCircle className="w-4 h-4 text-[#22c55e] flex-shrink-0" />
                         {f}
                       </li>
                     ))}
@@ -379,7 +372,7 @@ export default function SettingsPage() {
                     <button
                       onClick={() => handleCheckout(p.id)}
                       disabled={billingBusy}
-                      className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                      className="w-full bg-[#a78bfa] text-white py-2.5 text-sm font-medium hover:bg-[#8b5cf6] transition-colors disabled:opacity-50 rounded-lg"
                     >
                       Upgrade to {p.name}
                     </button>
@@ -388,7 +381,7 @@ export default function SettingsPage() {
                     <button
                       onClick={handlePortal}
                       disabled={billingBusy}
-                      className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      className="w-full border border-[#27272a] text-[#a1a1aa] py-2.5 text-sm font-medium hover:bg-[#27272a] transition-colors disabled:opacity-50 rounded-lg"
                     >
                       Manage Subscription
                     </button>
@@ -398,32 +391,32 @@ export default function SettingsPage() {
             })}
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-[#a1a1aa]">
             Start free on the Starter plan (3 interviews / month). Upgrade anytime to unlock more interviews,
             video analytics, and longer retention.
           </p>
 
           {billingError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mt-4 p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 text-[#ef4444] text-sm rounded-lg">
               {billingError}
             </div>
           )}
         </section>
 
         {/* Timezone */}
-        <section className="bg-white rounded-2xl border p-6 mb-6">
+        <section className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <Clock className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Timezone</h2>
+            <Clock className="w-6 h-6 text-[#a78bfa]" />
+            <h2 className="text-lg font-semibold text-[#fafafa]">Timezone</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-[#a1a1aa] mb-4">
             Your interview schedule and reminders will be shown in this timezone.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="bg-[#27272a] border border-[#27272a] p-2.5 text-sm text-[#fafafa] rounded-lg focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa]"
             >
               {TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>{tz}</option>
@@ -432,39 +425,39 @@ export default function SettingsPage() {
             <button
               onClick={handleSaveTimezone}
               disabled={timezoneSaving}
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              className="bg-[#a78bfa] text-white px-5 py-2.5 text-sm font-medium hover:bg-[#8b5cf6] transition-colors disabled:opacity-50 rounded-lg"
             >
               {timezoneSaving ? "Saving..." : "Save Timezone"}
             </button>
-            {tzMessage && <span className="text-sm text-gray-600">{tzMessage}</span>}
+            {tzMessage && <span className="text-sm text-[#a1a1aa]">{tzMessage}</span>}
           </div>
         </section>
 
         {/* Privacy */}
-        <section className="bg-white rounded-2xl border p-6">
+        <section className="bg-[#18181b] border border-[#27272a] rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Shield className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Your Data (GDPR)</h2>
+            <Shield className="w-6 h-6 text-[#a78bfa]" />
+            <h2 className="text-lg font-semibold text-[#fafafa]">Your Data (GDPR)</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-[#a1a1aa] mb-4">
             You can download everything we store about you, or permanently delete your account and all
             associated data (profile, resume, interview recordings, and evaluations).
           </p>
           <div className="flex flex-wrap gap-3 mb-4">
             <button
               onClick={handleExport}
-              className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 border border-[#27272a] text-[#a1a1aa] px-5 py-2.5 text-sm font-medium hover:bg-[#27272a] transition-colors rounded-lg"
             >
               <Download className="w-4 h-4" />
               Export My Data
             </button>
           </div>
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-sm font-medium text-red-700 mb-2 flex items-center gap-1.5">
+          <div className="bg-[#ef4444]/5 border border-[#ef4444]/30 p-4 rounded-xl">
+            <p className="text-sm font-medium text-[#ef4444] mb-2 flex items-center gap-1.5">
               <Trash2 className="w-4 h-4" />
               Delete Account
             </p>
-            <p className="text-xs text-red-600 mb-3">
+            <p className="text-xs text-[#ef4444]/80 mb-3">
               This permanently deletes your account and all associated data. This cannot be undone.
             </p>
             <div className="flex flex-wrap items-center gap-3">
@@ -473,23 +466,23 @@ export default function SettingsPage() {
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
                 placeholder='Type DELETE to confirm'
-                className="border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="bg-[#27272a] border border-[#27272a] p-2.5 text-sm text-[#fafafa] rounded-lg focus:border-[#ef4444] focus:ring-1 focus:ring-[#ef4444]"
               />
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 bg-[#ef4444] text-white px-5 py-2.5 text-sm font-medium hover:bg-[#dc2626] transition-colors disabled:opacity-50 rounded-lg"
               >
                 <Trash2 className="w-4 h-4" />
                 {deleting ? "Deleting..." : "Permanently Delete"}
               </button>
             </div>
-            {deleteError && <p className="text-sm text-red-700 mt-3">{deleteError}</p>}
+            {deleteError && <p className="text-sm text-[#ef4444] mt-3">{deleteError}</p>}
           </div>
         </section>
 
         <div className="mt-8 text-center">
-          <Link href="/profile" className="text-indigo-600 font-medium hover:text-indigo-700 inline-flex items-center gap-1">
+          <Link href="/profile" className="text-[#f5c542] font-medium hover:text-[#f5c542]/80 inline-flex items-center gap-1">
             Back to profile <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

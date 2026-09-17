@@ -70,37 +70,37 @@ const plans = [
 export default function EnterprisePage() {
   const { currency } = useCurrency();
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#09090b]">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 py-20 relative overflow-hidden">
+      <section className="bg-[#18181b] py-20 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-10 left-10 w-64 h-64 bg-[#a78bfa]/10 blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-80 h-80 bg-[#f5c542]/10 blur-3xl" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
-              <Building2 className="w-4 h-4 text-indigo-400" />
-              <span className="text-sm text-white/90">Enterprise-Grade Solutions</span>
+            <div className="inline-flex items-center gap-2 bg-[#a78bfa]/10 border border-[#a78bfa]/30 px-4 py-2 mb-6 rounded-lg">
+              <Building2 className="w-4 h-4 text-[#a78bfa]" />
+              <span className="text-sm text-[#fafafa]">Enterprise-Grade Solutions</span>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold text-white mb-6">
-              Enterprise <span className="text-indigo-400">Solutions</span>
+            <h1 className="text-4xl lg:text-5xl font-bold text-[#fafafa] mb-6">
+              Enterprise <span className="text-[#a78bfa]">Solutions</span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8">
-              Scalable, secure, and customizable background verification solutions for large organizations 
+            <p className="text-xl text-[#a1a1aa] mb-8">
+              Scalable, secure, and customizable background verification solutions for large organizations
               and enterprises.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-full font-medium hover:bg-indigo-700 transition-colors"
+                className="inline-flex items-center gap-2 bg-[#a78bfa] text-white px-8 py-4 font-medium hover:bg-[#8b5cf6] transition-colors rounded-lg text-sm"
               >
                 Request Demo
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 border border-white/30 text-white px-8 py-4 rounded-full font-medium hover:bg-white/10 transition-colors"
+                className="inline-flex items-center gap-2 border border-[#27272a] text-[#fafafa] px-8 py-4 font-medium hover:bg-[#27272a] transition-colors rounded-lg text-sm"
               >
                 Contact Sales
               </Link>
@@ -113,19 +113,19 @@ export default function EnterprisePage() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Built for Enterprise</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-[#fafafa] mb-4">Built for Enterprise</h2>
+            <p className="text-[#a1a1aa] max-w-2xl mx-auto">
               Everything you need to scale your hiring process with confidence
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature) => (
-              <div key={feature.title} className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-xl transition-shadow">
-                <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6">
-                  <feature.icon className="w-7 h-7 text-indigo-600" />
+              <div key={feature.title} className="bg-[#18181b] p-8 border border-[#27272a] rounded-xl hover:border-[#a78bfa] transition-colors">
+                <div className="w-14 h-14 bg-[#a78bfa]/10 flex items-center justify-center mb-6 rounded-xl">
+                  <feature.icon className="w-7 h-7 text-[#a78bfa]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-xl font-bold text-[#fafafa] mb-3">{feature.title}</h3>
+                <p className="text-[#a1a1aa]">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -133,51 +133,51 @@ export default function EnterprisePage() {
       </section>
 
       {/* Pricing */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[#18181b]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-[#fafafa] mb-4">Simple, Transparent Pricing</h2>
+            <p className="text-[#a1a1aa] max-w-2xl mx-auto">
               Choose the plan that fits your organization&apos;s needs
             </p>
             <div className="mt-6 flex justify-center">
-              <CurrencySelector className="rounded-lg border border-gray-200 bg-white px-2 py-1" />
+              <CurrencySelector className="bg-[#27272a] border border-[#27272a] px-2 py-1 rounded-lg" />
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`bg-white rounded-2xl p-8 border-2 ${
-                  plan.popular ? "border-indigo-600 shadow-xl" : "border-gray-100"
+                className={`bg-[#18181b] p-8 border-2 rounded-xl ${
+                  plan.popular ? "border-[#a78bfa]" : "border-[#27272a]"
                 } relative`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-medium">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#a78bfa] text-white px-4 py-1 text-sm font-medium rounded-lg">
                     Most Popular
                   </div>
                 )}
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                <h3 className="text-xl font-bold text-[#fafafa] mb-2">{plan.name}</h3>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">
+                  <span className="text-4xl font-bold text-[#fafafa]">
                     {plan.custom ? "Custom" : formatPrice(plan.usd!, currency)}
                   </span>
-                  <span className="text-gray-500">{plan.period}</span>
+                  <span className="text-[#a1a1aa]">{plan.period}</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <span className="text-gray-600">{feature}</span>
+                      <CheckCircle className="w-5 h-5 text-[#22c55e]" />
+                      <span className="text-[#a1a1aa]">{feature}</span>
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/signup"
-                  className={`block text-center py-3 rounded-full font-medium transition-colors ${
+                  className={`block text-center py-3 font-medium transition-colors text-sm rounded-lg ${
                     plan.popular
-                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                      : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                      ? "bg-[#a78bfa] text-white hover:bg-[#8b5cf6]"
+                      : "bg-[#27272a] text-[#fafafa] hover:bg-[#3f3f46]"
                   }`}
                 >
                   {plan.cta}
@@ -189,7 +189,7 @@ export default function EnterprisePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-r from-indigo-600 to-purple-600">
+      <section className="py-20 bg-[#a78bfa]">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Scale Your Hiring?</h2>
           <p className="text-white/80 mb-8">
@@ -197,7 +197,7 @@ export default function EnterprisePage() {
           </p>
           <Link
             href="/signup"
-            className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-4 rounded-full font-bold hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center gap-2 bg-[#09090b] text-[#fafafa] px-8 py-4 font-bold hover:bg-[#18181b] transition-colors rounded-lg"
           >
             Get Started Today
             <ArrowRight className="w-5 h-5" />
