@@ -9,7 +9,7 @@
     "dev:evaluator": "cd evaluator && npm run dev",
     "dev:ml": "cd ml && python server.py",
     "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:agent\" \"npm run dev:evaluator\" \"npm run dev:ml\" \"npm run dev\"",
-    "build": "npx prisma generate && next build",
+    "build": "npm install && npx prisma generate && npx prisma db push --skip-generate && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
