@@ -56,17 +56,26 @@ export async function POST(request: Request) {
       },
     });
 
-    // Send reset email
-    await sendEmail({
-      to: user.email,
-      subject: "Reset your Techcitta password",
-      html: generatePasswordResetEmail(
-        user.name || "there",
-        `${getAppBaseUrl()}/reset-password?token=${resetToken}`
-      ),
-    });
-
-    return successResponse;
+    // Send reset email (or return token directly if SMTP not configured)
+    if (process.env.SMTP_USER) {
+      await sendEmail({
+        to: user.email,
+        subject: "Reset your Techcitta password",
+        html: generatePasswordResetEmail(
+          user.name || "there",
+          `${getAppBaseUrl()}/reset-password?token=${resetToken}`
+        ),
+      });
+      return successResponse;
+    } else {
+      // Dev mode: return token directly when SMTP is not configured
+      return NextResponse.json({
+        success: true,
+        message: "Password reset token generated (email not configured).",
+        resetToken,
+        resetUrl: `${getAppBaseUrl()}/reset-password?token=${resetToken}`,
+      });
+    }
   } catch (error) {
     console.error("Forgot password error:", error);
     // Return generic error to prevent information leakage
