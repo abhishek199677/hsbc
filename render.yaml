@@ -3,6 +3,24 @@
 # Usage: Connect repo to Render → New Blueprint → select this file
 
 services:
+  # ─── Frontend (Next.js) ──────────────────────────
+  - type: web
+    name: hireright-frontend
+    runtime: node
+    plan: free
+    buildCommand: npx prisma generate && next build
+    startCommand: next start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    autoDeploy: true
+
   # ─── Backend (FastAPI) ───────────────────────────
   - type: web
     name: hireright-backend
@@ -11,7 +29,7 @@ services:
     plan: free
     envVars:
       - key: DATABASE_URL
-        sync: false  # Set manually in Render dashboard
+        sync: false
       - key: OPENAI_API_KEY
         sync: false
       - key: JWT_SECRET
