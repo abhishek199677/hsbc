@@ -8,9 +8,9 @@ services:
     name: hireright-frontend
     runtime: node
     plan: free
-    buildCommand: npx prisma generate && npx prisma db push --skip-generate && next build
+    buildCommand: npm install && ./node_modules/.bin/prisma generate && ./node_modules/.bin/prisma db push --skip-generate && npm run build
     startCommand: next start -p $PORT
-    nodeVersion: "20"
+    nodeVersion: "22"
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
