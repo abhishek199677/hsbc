@@ -17,17 +17,17 @@ const companies = [
 
 export default function CompanyLogos() {
   return (
-    <section className="py-20 bg-[#06060a] relative border-y border-[#1e1e28]">
+    <section className="py-20 bg-background relative border-y border-border">
       {/* Background */}
       <div className="absolute inset-0 bg-grid-pattern opacity-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Header */}
         <div className="text-center mb-12">
-          <p className="text-sm text-[#8b8ba0] font-medium tracking-wide uppercase">
+          <p className="text-sm text-muted-foreground font-medium tracking-wide uppercase">
             Powering hiring decisions at
           </p>
-          <p className="text-2xl font-bold text-[#f8f8fc] mt-2">
+          <p className="text-2xl font-bold text-foreground mt-2">
             1,200+ leading enterprises
           </p>
         </div>
@@ -35,8 +35,8 @@ export default function CompanyLogos() {
         {/* Marquee container */}
         <div className="relative">
           {/* Fade edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#06060a] to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#06060a] to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
 
           {/* Scrolling track */}
           <div className="flex animate-marquee">
@@ -46,7 +46,7 @@ export default function CompanyLogos() {
                 key={`${company.name}-${i}`}
                 className="flex-shrink-0 mx-4"
               >
-                <div className="bg-[#13131a] border border-[#1e1e28] rounded-xl px-8 py-5 flex items-center justify-center hover:border-[#a78bfa]/20 transition-all duration-500 group min-w-[160px]">
+                <div className="bg-surface border border-border rounded-xl px-8 py-5 flex items-center justify-center hover:border-primary/20 transition-all duration-500 group min-w-[160px]">
                   <span
                     className="text-xl font-bold opacity-25 group-hover:opacity-90 transition-all duration-500 group-hover:scale-105 tracking-tight"
                     style={{ color: company.color }}
@@ -61,8 +61,8 @@ export default function CompanyLogos() {
 
         {/* Trust statement */}
         <div className="text-center mt-12">
-          <p className="text-sm text-[#8b8ba0]">
-            <span className="text-[#f8f8fc] font-medium">Fortune 500</span> &bull; <span className="text-[#f8f8fc] font-medium">Global Banks</span> &bull; <span className="text-[#f8f8fc] font-medium">Healthcare Leaders</span> &bull; <span className="text-[#f8f8fc] font-medium">Tech Giants</span>
+          <p className="text-sm text-muted-foreground">
+            <span className="text-foreground font-medium">Fortune 500</span> &bull; <span className="text-foreground font-medium">Global Banks</span> &bull; <span className="text-foreground font-medium">Healthcare Leaders</span> &bull; <span className="text-foreground font-medium">Tech Giants</span>
           </p>
         </div>
       </div>

@@ -5,6 +5,69 @@
    ============================================ */
 
 :root {
+  /* Core Palette - Light */
+  --background: #ffffff;
+  --foreground: #0a0a0b;
+  --surface: #f5f5f7;
+  --surface-hover: #e8e8ed;
+  --surface-elevated: #ffffff;
+
+  /* Primary - Violet */
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --primary-hover: #6d28d9;
+  --primary-glow: rgba(124, 58, 237, 0.1);
+  --primary-glow-strong: rgba(124, 58, 237, 0.2);
+
+  /* Secondary - Amber */
+  --secondary: #f59e0b;
+  --secondary-foreground: #ffffff;
+  --secondary-hover: #d97706;
+
+  /* Muted */
+  --muted: #f0f0f2;
+  --muted-foreground: #6b6b76;
+
+  /* Borders & Input */
+  --border: #d4d4d8;
+  --border-subtle: #e8e8ed;
+  --input: #d4d4d8;
+  --ring: #7c3aed;
+
+  /* Status */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 40px rgba(124, 58, 237, 0.08);
+  --shadow-gold-glow: 0 0 40px rgba(245, 158, 11, 0.08);
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(212, 212, 216, 0.7);
+  --glass-blur: 20px;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Enterprise Accent */
+  --enterprise-gradient: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
+  --gold-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  --surface-gradient: linear-gradient(180deg, #f5f5f7 0%, #ffffff 100%);
+}
+
+.dark {
   /* Core Palette - Refined Dark */
   --background: #06060a;
   --foreground: #f8f8fc;
@@ -54,12 +117,6 @@
   --glass-bg: rgba(19, 19, 26, 0.7);
   --glass-border: rgba(30, 30, 40, 0.7);
   --glass-blur: 20px;
-
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
 
   /* Enterprise Accent */
   --enterprise-gradient: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
