@@ -499,16 +499,35 @@ export default function InterviewRoomPage() {
               </div>
 
               {showCameraFailover && cameraStatus !== "ready" && !continueWithoutCamera && (
-                <div className="mx-4 sm:mx-5 mt-4 p-4 border border-[#e050b0]/20 bg-[#e050b0]/5">
-                  <p className="text-sm text-[#a78bfa] font-mono">
-                    <strong>Camera access denied.</strong> To use your camera:
+                <div className="mx-4 sm:mx-5 mt-4 p-5 border-2 border-[#e050b0]/40 bg-[#e050b0]/10 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldCheck className="w-5 h-5 text-[#f5c542]" />
+                    <p className="text-sm text-[#f5c542] font-mono font-bold">
+                      Camera & Microphone Blocked
+                    </p>
+                  </div>
+                  <p className="text-xs text-[#a1a1aa] font-mono mb-3">
+                    Chrome blocked access. You need to allow it manually:
                   </p>
-                  <ol className="text-xs text-[#a1a1aa] font-mono mt-2 space-y-1 list-decimal list-inside">
-                    <li>Click the lock/camera icon in your browser address bar</li>
-                    <li>Set Camera to &quot;Allow&quot;</li>
-                    <li>Click &quot;Retry Camera&quot; below</li>
-                  </ol>
-                  <div className="flex gap-2 mt-3">
+                  <div className="bg-[#09090b] border border-[#27272a] p-3 mb-3 font-mono text-xs text-[#a1a1aa] space-y-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#a78bfa] font-bold">1.</span>
+                      <span>Click the <strong className="text-white">tune icon (⚙️)</strong> or <strong className="text-white">lock icon (🔒)</strong> to the LEFT of the URL bar</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#a78bfa] font-bold">2.</span>
+                      <span>Find <strong className="text-white">Camera</strong> → set to <strong className="text-[#22c55e]">Allow</strong></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#a78bfa] font-bold">3.</span>
+                      <span>Find <strong className="text-white">Microphone</strong> → set to <strong className="text-[#22c55e]">Allow</strong></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#a78bfa] font-bold">4.</span>
+                      <span>Click <strong className="text-white">Retry Camera</strong> below</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => {
                         setCameraStatus("checking");
@@ -516,17 +535,17 @@ export default function InterviewRoomPage() {
                         setShowCameraFailover(false);
                         runChecks();
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#a78bfa]/10 border border-[#a78bfa]/30 text-[#a78bfa] text-sm font-medium hover:bg-[#a78bfa]/20 font-mono uppercase tracking-wider"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#a78bfa] text-white text-sm font-bold font-mono hover:bg-[#8b5cf6] transition-colors rounded"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      Retry Camera
+                      Retry Camera & Mic
                     </button>
                     <button
                       onClick={() => setContinueWithoutCamera(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#e050b0]/10 border border-[#e050b0]/30 text-[#a78bfa] text-sm font-medium hover:bg-[#e050b0]/20 font-mono uppercase tracking-wider"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] text-sm font-medium hover:bg-[#3f3f46] font-mono transition-colors rounded"
                     >
                       <CameraOff className="w-4 h-4" />
-                      Continue without camera
+                      Skip — continue without camera
                     </button>
                   </div>
                 </div>
