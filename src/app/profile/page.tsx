@@ -9,7 +9,7 @@ import {
   Upload, FileText, CheckCircle, ChevronLeft, ArrowRight, Shield, Lock, Eye, Clock,
   Plus, Trash2, Briefcase, Code, Award, GraduationCap, Sparkles, ExternalLink, Tag, Sun, Moon
 } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/ThemeProvider";
 import AIChatbot from "@/components/AIChatbot";
 import type { ParsedWorkExperience, ParsedProject } from "@/types/resume";
 

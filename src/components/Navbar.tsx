@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/ThemeProvider";
 import { Globe, ChevronDown, Menu, X, Shield, Building2, Users, LogOut, Sparkles, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 

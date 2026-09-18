@@ -39,6 +39,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var t = localStorage.getItem('stitch-theme');
+                if (t === 'light' || t === 'dark') {
+                  document.documentElement.classList.add(t);
+                } else {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch(e) {
+                document.documentElement.classList.add('dark');
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full bg-background text-foreground" suppressHydrationWarning>
         <Providers>
           <ToastProvider />
