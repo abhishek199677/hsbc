@@ -173,6 +173,8 @@ export default function InterviewRoomPage() {
     setShowCameraFailover(false);
 
     const gen = ++streamGenRef.current;
+
+    // Try video + audio first
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       if (gen !== streamGenRef.current) {
@@ -180,29 +182,57 @@ export default function InterviewRoomPage() {
         return;
       }
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
+      }
       setCameraStatus("ready");
       setMicStatus("ready");
       setShowCameraFailover(false);
       startMeter(stream);
-    } catch {
+    } catch (err) {
       if (gen !== streamGenRef.current) return;
-      setCameraStatus("denied");
-      setMicStatus("denied");
-      setShowCameraFailover(true);
+      console.warn("[camera] getUserMedia failed:", err);
 
+      // Try video only
       try {
-        const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
         if (gen !== streamGenRef.current) {
-          audioOnly.getTracks().forEach((t) => t.stop());
+          videoStream.getTracks().forEach((t) => t.stop());
           return;
         }
-        streamRef.current = audioOnly;
+        streamRef.current = videoStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = videoStream;
+          videoRef.current.play().catch(() => {});
+        }
+        setCameraStatus("ready");
+        setMicStatus("denied");
+        setShowCameraFailover(false);
+        startMeter(videoStream);
+      } catch {
+        if (gen !== streamGenRef.current) return;
+        setCameraStatus("denied");
+      }
+
+      // Try audio only
+      try {
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (gen !== streamGenRef.current) {
+          audioStream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        if (!streamRef.current) streamRef.current = audioStream;
         setMicStatus("ready");
-        startMeter(audioOnly);
+        startMeter(audioStream);
       } catch {
         if (gen !== streamGenRef.current) return;
         setMicStatus("unavailable");
+      }
+
+      // If both camera and mic failed, show failover
+      if (cameraStatus === "denied" && micStatus === "unavailable") {
+        setShowCameraFailover(true);
       }
     }
 
@@ -541,11 +571,17 @@ export default function InterviewRoomPage() {
                       Retry Camera & Mic
                     </button>
                     <button
+                      onClick={() => window.location.reload()}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] text-sm font-medium hover:bg-[#3f3f46] font-mono transition-colors rounded"
+                    >
+                      Reload Page
+                    </button>
+                    <button
                       onClick={() => setContinueWithoutCamera(true)}
                       className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] text-sm font-medium hover:bg-[#3f3f46] font-mono transition-colors rounded"
                     >
                       <CameraOff className="w-4 h-4" />
-                      Skip — continue without camera
+                      Skip
                     </button>
                   </div>
                 </div>
