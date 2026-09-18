@@ -7,8 +7,9 @@ import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Upload, FileText, CheckCircle, ChevronLeft, ArrowRight, Shield, Lock, Eye, Clock,
-  Plus, Trash2, Briefcase, Code, Award, GraduationCap, Sparkles, ExternalLink, Tag
+  Plus, Trash2, Briefcase, Code, Award, GraduationCap, Sparkles, ExternalLink, Tag, Sun, Moon
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import AIChatbot from "@/components/AIChatbot";
 import type { ParsedWorkExperience, ParsedProject } from "@/types/resume";
 
@@ -41,6 +42,7 @@ const noticePeriods = [
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -87,6 +89,9 @@ export default function ProfilePage() {
   const [achievementsList, setAchievementsList] = useState<string[]>([]);
   const [educationDetailsList, setEducationDetailsList] = useState<{degree: string; institution: string; year: string; grade?: string; details?: string}[]>([]);
   const [suggestedRolesList, setSuggestedRolesList] = useState<string[]>([]);
+  const [bestFitRole, setBestFitRole] = useState<string>("");
+  const [candidateSummary, setCandidateSummary] = useState<string>("");
+  const [topProjectsList, setTopProjectsList] = useState<string[]>([]);
 
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -357,6 +362,18 @@ export default function ProfilePage() {
             if (parsed.suggestedRoles?.length > 0 && suggestedRolesList.length === 0) {
               setSuggestedRolesList(parsed.suggestedRoles);
               filled.push(`${parsed.suggestedRoles.length} Suggested Roles`);
+            }
+            if (parsed.bestFitRole) {
+              setBestFitRole(parsed.bestFitRole);
+              filled.push("Best Fit Role");
+            }
+            if (parsed.candidateSummary) {
+              setCandidateSummary(parsed.candidateSummary);
+              filled.push("Candidate Summary");
+            }
+            if (parsed.topProjects?.length > 0) {
+              setTopProjectsList(parsed.topProjects);
+              filled.push(`${parsed.topProjects.length} Top Projects`);
             }
             
             return {
@@ -1360,14 +1377,131 @@ export default function ProfilePage() {
       case 1: return renderStep1();
       case 2:
         return (
-          <div className="bg-[#18181b] border border-[#27272a] p-6 space-y-6">
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-[#18181b] border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-[#f5c542]" />
+          <div className="space-y-6">
+            {/* Success Card */}
+            <div className="bg-[#18181b] border border-[#27272a] p-6">
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-[#18181b] border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-[#f5c542]" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Great! Your resume is uploaded and parsed!</h3>
+                <p className="text-[#a1a1aa] font-mono">All your tech stacks, projects, skills, and work experience have been auto-filled.</p>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Great! Your resume is uploaded and parsed!</h3>
-              <p className="text-[#a1a1aa] font-mono">All your tech stacks, projects, skills, and work experience have been auto-filled.</p>
             </div>
+
+            {/* Best Fit Role */}
+            {bestFitRole && (
+              <div className="bg-[#18181b] border-2 border-[#e050b0] p-6 ring-4 ring-[#e050b0]/15">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-[#f5c542]" />
+                  Best Fit Role
+                </h3>
+                <p className="text-[#f5c542] font-mono font-bold text-xl">{bestFitRole}</p>
+                <p className="text-sm text-[#a1a1aa] mt-2">Based on your skills, experience, and project portfolio</p>
+              </div>
+            )}
+
+            {/* Candidate Summary */}
+            {candidateSummary && (
+              <div className="bg-[#18181b] border-2 border-[#a78bfa] p-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+                  <Eye className="w-5 h-5 text-[#a78bfa]" />
+                  AI Candidate Summary
+                </h3>
+                <p className="text-[#d4d4d8] font-medium leading-relaxed">{candidateSummary}</p>
+              </div>
+            )}
+
+            {/* Suggested Roles */}
+            {suggestedRolesList.length > 0 && (
+              <div className="bg-[#18181b] border border-[#27272a] p-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+                  <Briefcase className="w-5 h-5 text-[#a78bfa]" />
+                  Suggested Roles
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedRolesList.map((role, i) => (
+                    <span key={i} className={`inline-flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 ${i === 0 ? "bg-[#f5c542] text-[#09090b]" : "bg-[#27272a] text-[#a1a1aa]"}`}>
+                      {i === 0 && <Sparkles className="w-3 h-3" />}
+                      {role}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top 3 Projects */}
+            {topProjectsList.length > 0 && (
+              <div className="bg-[#18181b] border border-[#27272a] p-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+                  <Code className="w-5 h-5 text-[#f5c542]" />
+                  Top 3 Trending Projects
+                </h3>
+                <div className="space-y-3">
+                  {topProjectsList.map((projName, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-[#09090b] border border-[#27272a]">
+                      <span className="text-xs font-mono bg-[#f5c542] text-[#09090b] font-bold px-2 py-1">#{i + 1}</span>
+                      <span className="text-sm font-medium text-white">{projName}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All Education */}
+            {educationDetailsList.length > 0 && (
+              <div className="bg-[#18181b] border border-[#27272a] p-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+                  <GraduationCap className="w-5 h-5 text-[#a78bfa]" />
+                  Education
+                </h3>
+                <div className="space-y-3">
+                  {educationDetailsList.map((edu, i) => (
+                    <div key={i} className="p-3 bg-[#09090b] border border-[#27272a]">
+                      <p className="text-sm font-semibold text-white">{edu.degree}</p>
+                      <p className="text-xs text-[#a1a1aa]">{edu.institution} {edu.year && `- ${edu.year}`}</p>
+                      {edu.grade && <p className="text-xs text-[#a78bfa]">Grade: {edu.grade}</p>}
+                      {edu.details && <p className="text-xs text-[#a1a1aa] mt-1">{edu.details}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All Skills */}
+            {skillsList.length > 0 && (
+              <div className="bg-[#18181b] border border-[#27272a] p-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+                  <Tag className="w-5 h-5 text-[#a78bfa]" />
+                  All Extracted Skills ({skillsList.length})
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {skillsList.map((skill) => (
+                    <span key={skill} className="inline-flex items-center gap-1.5 bg-[#a78bfa] text-white text-xs font-mono font-bold px-3 py-1.5">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Certifications */}
+            {certificationsList.length > 0 && (
+              <div className="bg-[#18181b] border border-[#27272a] p-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+                  <Award className="w-5 h-5 text-[#f5c542]" />
+                  Certifications
+                </h3>
+                <div className="space-y-2">
+                  {certificationsList.map((cert, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm text-[#d4d4d8]">
+                      <CheckCircle className="w-4 h-4 text-[#4ade80] flex-shrink-0" />
+                      {cert}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
       case 3: return renderStep3();
@@ -1388,6 +1522,17 @@ export default function ProfilePage() {
             Your data is safe with us
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="w-8 h-8 flex items-center justify-center border border-[#27272a] hover:bg-[#18181b] transition-colors"
+              title="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-[#f5c542]" />
+              ) : (
+                <Moon className="w-4 h-4 text-[#a78bfa]" />
+              )}
+            </button>
             <div className="w-8 h-8 bg-[#a78bfa] flex items-center justify-center">
               <span className="text-sm font-mono font-bold text-white">{user?.name?.charAt(0) || "U"}</span>
             </div>

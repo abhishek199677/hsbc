@@ -38,13 +38,15 @@ Return a JSON object with exactly these fields:
   ],
   "currentCompany": "Current/most recent employer name or null",
   "summary": "Complete text of Professional Summary section",
+  "candidateSummary": "A brief 3-4 sentence professional summary about the candidate overall. Cover: who they are, their core expertise, years of experience, key achievements, and what kind of role they'd excel in. Write in third person.",
   "strengths": "Key strengths mentioned (comma-separated) or null",
   "linkedinUrl": "Full LinkedIn profile URL or null",
   "noticePeriod": "Notice period if mentioned or null",
   "whatDrivesYou": "Career motivation from objective/summary or null",
   "jobType": "Employment type if mentioned or null",
   "preferredLocation": "Preferred work location or null",
-  "suggestedRoles": ["TOP 5 job roles that BEST match this candidate's skills, experience, and qualifications. Be specific (e.g. 'Senior Full Stack Developer', 'AI/ML Engineer', 'DevOps Lead'). Consider their tech stack, years of experience, and career trajectory."],
+  "suggestedRoles": ["TOP 5 job roles that BEST match this candidate's skills, experience, and qualifications. Be specific (e.g. 'Senior Full Stack Developer', 'AI/ML Engineer', 'DevOps Lead'). Consider their tech stack, years of experience, and career trajectory. Order from best fit to good fit."],
+  "bestFitRole": "The SINGLE best job role for this candidate based on their complete profile. Be specific (e.g. 'Senior Full Stack Developer with AI/ML focus').",
   "workExperience": [
     {
       "company": "Company name",
@@ -63,6 +65,7 @@ Return a JSON object with exactly these fields:
       "technologies": ["technologies used in this project"]
     }
   ],
+  "topProjects": ["Select the TOP 3 most impactful and trending projects from the resume. Choose projects that use modern, in-demand technologies (AI/ML, cloud-native, full-stack, etc.) and have the most impressive scope, scale, or innovation. List only the project names as strings."],
   "keyAchievements": ["Notable achievements, awards"],
   "certifications": ["Professional certifications"],
   "languages": ["Languages spoken"]
@@ -83,12 +86,20 @@ PROJECT SUMMARY RULES:
   * Impact or scale of the project
 - Be specific about the technical implementation
 
+TOP PROJECTS SELECTION RULES:
+- From ALL projects extracted, select the TOP 3 that are most impressive and use trending technologies
+- Prioritize projects that use: AI/ML, LLMs, Cloud-native, Microservices, Full-stack, DevOps, Data Engineering
+- Consider: project complexity, tech stack modernity, scale/impact, innovation
+- If fewer than 3 projects exist, list all available projects
+- The topProjects field should contain ONLY the project names (strings), which must match names in the projects array
+
 ROLE SUGGESTION RULES:
 - Analyze the candidate's complete profile: skills, experience, projects, education
 - Suggest 5 specific job roles that are the BEST FIT
 - Consider: technical depth, leadership potential, domain expertise
 - Be specific with titles (e.g. "Senior AI/ML Engineer" not just "Engineer")
 - Order from best fit to good fit
+- The bestFitRole should be the single most suitable role based on the complete profile
 
 SKILL EXTRACTION RULES (CRITICAL):
 - Scan EVERY line of the resume for technology names
@@ -121,10 +132,12 @@ function getDefaultParsedResume(): ParsedResume {
     educationDetails: [],
     currentCompany: null,
     summary: null,
+    candidateSummary: null,
     strengths: null,
     linkedinUrl: null,
     workExperience: [],
     projects: [],
+    topProjects: [],
     keyAchievements: [],
     certifications: [],
     languages: [],
@@ -157,6 +170,7 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
       : [],
     currentCompany: (parsed.currentCompany as string) || null,
     summary: (parsed.summary as string) || null,
+    candidateSummary: (parsed.candidateSummary as string) || null,
     strengths: (parsed.strengths as string) || null,
     linkedinUrl: (parsed.linkedinUrl as string) || null,
     workExperience: Array.isArray(parsed.workExperience)
@@ -196,6 +210,10 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
     preferredLocation: (parsed.preferredLocation as string) || null,
     suggestedRoles: Array.isArray(parsed.suggestedRoles)
       ? (parsed.suggestedRoles as string[]).filter(Boolean)
+      : [],
+    bestFitRole: (parsed.bestFitRole as string) || null,
+    topProjects: Array.isArray(parsed.topProjects)
+      ? (parsed.topProjects as string[]).filter(Boolean)
       : [],
   };
 }
@@ -701,6 +719,7 @@ function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedRes
     educationDetails: ai.educationDetails && ai.educationDetails.length > 0 ? ai.educationDetails : fallback.educationDetails,
     currentCompany: ai.currentCompany || fallback.currentCompany,
     summary: (ai.summary && ai.summary.length > 20) ? ai.summary : fallback.summary,
+    candidateSummary: ai.candidateSummary || fallback.candidateSummary,
     strengths: ai.strengths || fallback.strengths,
     linkedinUrl: ai.linkedinUrl || fallback.linkedinUrl,
     workExperience: ai.workExperience && ai.workExperience.length > 0 ? ai.workExperience : fallback.workExperience,
@@ -713,6 +732,8 @@ function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedRes
     jobType: ai.jobType,
     preferredLocation: ai.preferredLocation,
     suggestedRoles: ai.suggestedRoles && ai.suggestedRoles.length > 0 ? ai.suggestedRoles : fallback.suggestedRoles,
+    bestFitRole: ai.bestFitRole || fallback.bestFitRole,
+    topProjects: ai.topProjects && ai.topProjects.length > 0 ? ai.topProjects : fallback.topProjects,
   };
 }
 

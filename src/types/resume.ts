@@ -34,10 +34,12 @@ export interface ParsedResume {
   educationDetails: ParsedEducation[];
   currentCompany: string | null;
   summary: string | null;
+  candidateSummary: string | null;
   strengths: string | null;
   linkedinUrl: string | null;
   workExperience: ParsedWorkExperience[];
   projects: ParsedProject[];
+  topProjects: string[];
   keyAchievements: string[];
   certifications: string[];
   languages: string[];
@@ -46,4 +48,5 @@ export interface ParsedResume {
   jobType: string | null;
   preferredLocation: string | null;
   suggestedRoles: string[];
+  bestFitRole: string | null;
 }
