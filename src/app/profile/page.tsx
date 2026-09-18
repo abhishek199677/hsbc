@@ -553,7 +553,7 @@ export default function ProfilePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin h-8 w-8 border-4 border-[#e050b0] border-t-transparent" />
       </div>
     );
@@ -564,27 +564,27 @@ export default function ProfilePage() {
   const renderStep1 = () => (
     <div className="space-y-8">
       {/* Upload Resume Box */}
-      <div className="bg-[#18181b] border border-[#27272a] p-6">
+      <div className="bg-surface border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#a78bfa]" />
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
             1. Upload Resume for Instant AI Auto-Fill
           </h3>
-          <button className="text-sm font-mono text-[#f5c542] flex items-center gap-1 hover:text-[#a78bfa] font-medium uppercase tracking-wider">
+          <button className="text-sm font-mono text-secondary flex items-center gap-1 hover:text-primary font-medium uppercase tracking-wider">
             <Eye className="w-4 h-4" /> AI Resume Parsing Active
           </button>
         </div>
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-32 h-40 bg-[#18181b] flex items-center justify-center flex-shrink-0 border border-[#27272a]">
-            <FileText className="w-16 h-16 text-[#a78bfa]" />
+          <div className="w-32 h-40 bg-surface flex items-center justify-center flex-shrink-0 border border-border">
+            <FileText className="w-16 h-16 text-primary" />
           </div>
           <div className="flex-1">
-            <h4 className="font-mono font-bold text-white mb-2 uppercase tracking-wider">Upload your resume (PDF, DOCX, or Image)</h4>
-            <p className="text-sm font-mono text-[#a1a1aa] mb-4">
+            <h4 className="font-mono font-bold text-foreground mb-2 uppercase tracking-wider">Upload your resume (PDF, DOCX, or Image)</h4>
+            <p className="text-sm font-mono text-muted-foreground mb-4">
               All your skills, professional summary, work history, tech stacks, projects, and certifications will be auto-parsed into your profile without manual entry!
             </p>
             <div
-              className="drop-zone border-2 border-dashed border-[#27272a] p-6 text-center cursor-pointer hover:border-[#e050b0] transition-colors bg-[#18181b]"
+              className="drop-zone border-2 border-dashed border-border p-6 text-center cursor-pointer hover:border-[#e050b0] transition-colors bg-surface"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -592,22 +592,22 @@ export default function ProfilePage() {
             >
               {uploading ? (
                 <div className="flex flex-col items-center py-4">
-                  <svg className="animate-spin h-8 w-8 text-[#a78bfa] mb-2" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-8 w-8 text-primary mb-2" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <p className="text-sm font-mono font-bold text-[#a78bfa]">AI Parsing your resume...</p>
-                  <p className=" text-xs text-[#a1a1aa] mt-1">Extracting technical skills, projects, and work experience</p>
+                  <p className="text-sm font-mono font-bold text-primary">AI Parsing your resume...</p>
+                  <p className=" text-xs text-muted-foreground mt-1">Extracting technical skills, projects, and work experience</p>
                 </div>
               ) : (
                 <>
-                  <Upload className="w-8 h-8 text-[#a78bfa] mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-white">Drag & drop your resume here</p>
-                  <p className=" text-xs text-[#a1a1aa] my-1">or click to browse files</p>
-                  <span className="rounded-lg bg-[#a78bfa] text-white px-4 py-2 text-sm font-medium hover:bg-[#8b5cf6] transition-colors mt-2">
+                  <Upload className="w-8 h-8 text-primary mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-foreground">Drag & drop your resume here</p>
+                  <p className=" text-xs text-muted-foreground my-1">or click to browse files</p>
+                  <span className="rounded-lg bg-primary text-foreground px-4 py-2 text-sm font-medium hover:bg-primary-hover transition-colors mt-2">
                     Browse Resume File
                   </span>
-                  <p className=" text-xs text-[#a1a1aa] mt-2">Supports PDF, DOC, DOCX, PNG, JPG (Max 5MB)</p>
+                  <p className=" text-xs text-muted-foreground mt-2">Supports PDF, DOC, DOCX, PNG, JPG (Max 5MB)</p>
                 </>
               )}
             </div>
@@ -620,31 +620,31 @@ export default function ProfilePage() {
             />
 
             {formData.resumeFileName && (
-              <div className="mt-3 flex items-center gap-2 text-[#f5c542] bg-[#18181b] p-2.5 border border-[#27272a]">
+              <div className="mt-3 flex items-center gap-2 text-secondary bg-surface p-2.5 border border-border">
                 <CheckCircle className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm font-mono font-bold">{formData.resumeFileName}</span>
               </div>
             )}
 
             {parsingError && (
-              <div className="mt-3 flex items-start gap-2 text-[#a78bfa] bg-[#18181b] p-3 border border-[#27272a]">
+              <div className="mt-3 flex items-start gap-2 text-primary bg-surface p-3 border border-border">
                 <span className="text-sm font-mono">{parsingError}</span>
               </div>
             )}
 
             {resumeParsed && autoFilledFields.length > 0 && (
-              <div className="mt-4 p-5 bg-[#18181b] text-white border border-[#e050b0]">
+              <div className="mt-4 p-5 bg-surface text-foreground border border-[#e050b0]">
                 <div className="flex items-center gap-2 font-mono font-bold text-base mb-1 uppercase tracking-wider">
-                  <Sparkles className="w-5 h-5 text-[#a78bfa] animate-pulse" />
+                  <Sparkles className="w-5 h-5 text-primary animate-pulse" />
                   Resume Auto-Parsed & Fields Highlighted!
                 </div>
-                <p className=" text-xs text-[#a1a1aa] mb-3 font-medium">
+                <p className=" text-xs text-muted-foreground mb-3 font-medium">
                   The following sections were extracted from your resume and automatically populated with high-contrast emphasis into form boxes below:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {autoFilledFields.map((field) => (
-                    <span key={field} className="inline-flex items-center gap-1.5 bg-[#2a2a2a] text-white text-xs font-mono px-3 py-1 font-bold border border-[#e050b0]">
-                      <CheckCircle className="w-3.5 h-3.5 text-[#f5c542]" /> {field}
+                    <span key={field} className="inline-flex items-center gap-1.5 bg-surface-hover text-foreground text-xs font-mono px-3 py-1 font-bold border border-[#e050b0]">
+                      <CheckCircle className="w-3.5 h-3.5 text-secondary" /> {field}
                     </span>
                   ))}
                 </div>
@@ -655,21 +655,21 @@ export default function ProfilePage() {
       </div>
 
       {/* Professional Summary Box */}
-      <div className={`bg-[#18181b] border-2 p-6 transition-all ${formData.aboutYou ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
+      <div className={`bg-surface border-2 p-6 transition-all ${formData.aboutYou ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
             2. Professional Summary
           </h3>
           <div className="flex items-center gap-2">
             {formData.aboutYou && (
-              <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
-                <Sparkles className="w-3 h-3 text-white" /> Highlighted Auto-Fill
+              <span className="text-xs font-mono bg-primary text-foreground font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-foreground" /> Highlighted Auto-Fill
               </span>
             )}
             <button
               onClick={generateAISummary}
               disabled={generatingSummary}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-[#a78bfa] to-[#e050b0] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-[#a78bfa] to-[#e050b0] text-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {generatingSummary ? (
                 <>
@@ -685,60 +685,60 @@ export default function ProfilePage() {
             </button>
           </div>
         </div>
-        <p className="text-sm font-mono text-[#a1a1aa] mb-4 font-medium">
+        <p className="text-sm font-mono text-muted-foreground mb-4 font-medium">
           {formData.aboutYou
             ? "Auto-extracted from your resume. Feel free to edit or refine it."
             : "Upload a resume or click AI Auto-Fill to generate a professional summary."}
         </p>
         <textarea
-          className="w-full border-2 border-[#27272a] p-4 text-sm font-medium text-white resize-none focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b] leading-relaxed placeholder-[#a0a0a0]"
+          className="w-full border-2 border-border p-4 text-sm font-medium text-foreground resize-none focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-background leading-relaxed placeholder-[#a0a0a0]"
           rows={5}
           placeholder="Professional summary will be automatically filled when you upload your resume or click AI Auto-Fill..."
           value={formData.aboutYou}
           onChange={(e) => updateFormData({ aboutYou: e.target.value })}
         />
-        <div className="flex justify-between items-center mt-2 text-xs font-semibold text-[#a78bfa]">
+        <div className="flex justify-between items-center mt-2 text-xs font-semibold text-primary">
           <span>Editable box - Synced with AI interviewer</span>
           <span>{formData.aboutYou.length} characters</span>
         </div>
       </div>
 
       {/* Current Role Snapshot */}
-      <div className={`bg-[#18181b] border-2 p-6 transition-all ${formData.currentRole ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
+      <div className={`bg-surface border-2 p-6 transition-all ${formData.currentRole ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">3. Role Snapshot & Overview</h3>
+          <h3 className="text-lg font-semibold text-foreground">3. Role Snapshot & Overview</h3>
           {(formData.currentRole || formData.totalExperience || formData.currentLocation) && (
-            <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
-              <Sparkles className="w-3 h-3 text-white" /> Auto-Filled
+            <span className="text-xs font-mono bg-primary text-foreground font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-foreground" /> Auto-Filled
             </span>
           )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Current / Target Role</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Current / Target Role</label>
             <input
               type="text"
-              className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
+              className="w-full rounded-lg border border-border p-3 text-sm font-medium text-foreground focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-background"
               placeholder="e.g. Senior AI Engineer"
               value={formData.currentRole}
               onChange={(e) => updateFormData({ currentRole: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Total Experience</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Total Experience</label>
             <input
               type="text"
-              className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
+              className="w-full rounded-lg border border-border p-3 text-sm font-medium text-foreground focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-background"
               placeholder="e.g. 10+ years"
               value={formData.totalExperience}
               onChange={(e) => updateFormData({ totalExperience: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Current Location</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Current Location</label>
             <input
               type="text"
-              className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
+              className="w-full rounded-lg border border-border p-3 text-sm font-medium text-foreground focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-background"
               placeholder="e.g. Bangalore, India"
               value={formData.currentLocation}
               onChange={(e) => updateFormData({ currentLocation: e.target.value })}
@@ -752,35 +752,35 @@ export default function ProfilePage() {
   const renderStep3 = () => (
     <div className="space-y-8">
       {/* Technical Skills & Tech Stacks Box */}
-      <div className={`bg-[#18181b] border-2 p-6 transition-all ${skillsList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
+      <div className={`bg-surface border-2 p-6 transition-all ${skillsList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Code className="w-5 h-5 text-[#a78bfa]" />
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Code className="w-5 h-5 text-primary" />
             Technical Skills & Tech Stacks
           </h3>
-          <span className="text-xs font-mono bg-[#a78bfa] text-white px-3 py-1 font-bold flex items-center gap-1 uppercase tracking-wider">
-            <Sparkles className="w-3 h-3 text-white" /> {skillsList.length} Skills Extracted
+          <span className="text-xs font-mono bg-primary text-foreground px-3 py-1 font-bold flex items-center gap-1 uppercase tracking-wider">
+            <Sparkles className="w-3 h-3 text-foreground" /> {skillsList.length} Skills Extracted
           </span>
         </div>
-        <p className="text-sm font-mono text-[#a1a1aa] font-medium mb-4">
+        <p className="text-sm font-mono text-muted-foreground font-medium mb-4">
           All programming languages, frameworks, databases, and tools parsed from your resume.
         </p>
 
         {/* Skill Tag Chips */}
-        <div className="flex flex-wrap gap-2 mb-4 p-4 bg-[#09090b] border-2 border-[#27272a] min-h-[70px] items-center">
+        <div className="flex flex-wrap gap-2 mb-4 p-4 bg-background border-2 border-border min-h-[70px] items-center">
           {skillsList.length === 0 ? (
-            <p className="text-sm font-mono text-[#a1a1aa] font-medium italic">No skills extracted yet. Upload a resume or add skills below.</p>
+            <p className="text-sm font-mono text-muted-foreground font-medium italic">No skills extracted yet. Upload a resume or add skills below.</p>
           ) : (
             skillsList.map((skill) => (
               <span
                 key={skill}
-                className="inline-flex items-center gap-1.5 bg-[#a78bfa] text-white text-xs font-mono font-bold px-3.5 py-1.5 hover:bg-[#8b5cf6] transition-all group"
+                className="inline-flex items-center gap-1.5 bg-primary text-foreground text-xs font-mono font-bold px-3.5 py-1.5 hover:bg-primary-hover transition-all group"
               >
-                <Tag className="w-3.5 h-3.5 text-white" />
+                <Tag className="w-3.5 h-3.5 text-foreground" />
                 {skill}
                 <button
                   onClick={() => removeSkillTag(skill)}
-                  className="hover:text-[#f5c542] transition-colors ml-1 font-bold text-sm"
+                  className="hover:text-secondary transition-colors ml-1 font-bold text-sm"
                   title="Remove skill"
                 >
                   x
@@ -794,7 +794,7 @@ export default function ProfilePage() {
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-[#09090b]"
+            className="flex-1 rounded-lg border border-border p-3 text-sm font-medium text-foreground focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-background"
             placeholder="Add another skill or tech stack (e.g. Docker, Next.js, PyTorch)"
             value={newSkill}
             onChange={(e) => setNewSkill(e.target.value)}
@@ -808,7 +808,7 @@ export default function ProfilePage() {
           <button
             onClick={addSkillTag}
             type="button"
-            className="rounded-lg bg-[#a78bfa] text-white px-5 py-3 text-sm font-medium hover:bg-[#8b5cf6] transition-colors flex items-center gap-1.5"
+            className="rounded-lg bg-primary text-foreground px-5 py-3 text-sm font-medium hover:bg-primary-hover transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> Add Skill
           </button>
@@ -816,14 +816,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Work Experience Cards */}
-      <div className={`bg-[#18181b] border-2 p-6 transition-all ${workExpList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
+      <div className={`bg-surface border-2 p-6 transition-all ${workExpList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-[#a78bfa]" />
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-primary" />
               Work Experience History
             </h3>
-            <p className="text-sm font-mono text-[#a1a1aa] font-medium mt-1">Auto-extracted job titles, companies, durations, and responsibilities.</p>
+            <p className="text-sm font-mono text-muted-foreground font-medium mt-1">Auto-extracted job titles, companies, durations, and responsibilities.</p>
           </div>
           <button
             onClick={() => {
@@ -834,32 +834,32 @@ export default function ProfilePage() {
               updateWorkExperienceList(updated);
             }}
             type="button"
-            className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3.5 py-2 flex items-center gap-1 transition-colors"
+            className="rounded-lg text-xs font-medium bg-primary text-foreground hover:bg-primary-hover px-3.5 py-2 flex items-center gap-1 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add Experience
           </button>
         </div>
 
         {workExpList.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-[#27272a] bg-[#09090b]">
-            <Briefcase className="w-10 h-10 text-[#a1a1aa] mx-auto mb-2" />
-            <p className="text-sm font-semibold text-white">No work experience entries yet</p>
-            <p className=" text-xs text-[#a1a1aa] mt-1">Upload your resume to automatically fill this section.</p>
+          <div className="text-center py-8 border-2 border-dashed border-border bg-background">
+            <Briefcase className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm font-semibold text-foreground">No work experience entries yet</p>
+            <p className=" text-xs text-muted-foreground mt-1">Upload your resume to automatically fill this section.</p>
           </div>
         ) : (
           <div className="space-y-5">
             {workExpList.map((exp, idx) => (
-              <div key={idx} className="border-2 border-[#27272a] p-5 bg-[#09090b] hover:border-[#e050b0] transition-all space-y-4">
+              <div key={idx} className="border-2 border-border p-5 bg-background hover:border-[#e050b0] transition-all space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1.5 uppercase tracking-wider">
-                    <Sparkles className="w-3 h-3 text-white" /> Experience #{idx + 1} - Auto-Filled
+                  <span className="text-xs font-mono bg-primary text-foreground font-bold px-3 py-1 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3 text-foreground" /> Experience #{idx + 1} - Auto-Filled
                   </span>
                   <button
                     onClick={() => {
                       const updated = workExpList.filter((_, i) => i !== idx);
                       updateWorkExperienceList(updated);
                     }}
-                    className="text-[#a78bfa] hover:text-white bg-[#18181b] p-1.5 border border-[#27272a] transition-colors"
+                    className="text-primary hover:text-foreground bg-surface p-1.5 border border-border transition-colors"
                     title="Delete entry"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -868,10 +868,10 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Company</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Company</label>
                     <input
                       type="text"
-                      className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+                      className="w-full rounded-lg border border-border p-3 text-sm font-medium text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
                       value={exp.company}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -881,10 +881,10 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Role / Job Title</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Role / Job Title</label>
                     <input
                       type="text"
-                      className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+                      className="w-full rounded-lg border border-border p-3 text-sm font-medium text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
                       value={exp.role}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -897,10 +897,10 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Start Date</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Start Date</label>
                     <input
                       type="text"
-                      className="w-full rounded-lg border border-[#27272a] p-2.5 text-xs font-medium text-white bg-[#09090b]"
+                      className="w-full rounded-lg border border-border p-2.5 text-xs font-medium text-foreground bg-background"
                       value={exp.startDate}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -910,10 +910,10 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">End Date</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">End Date</label>
                     <input
                       type="text"
-                      className="w-full rounded-lg border border-[#27272a] p-2.5 text-xs font-medium text-white bg-[#09090b]"
+                      className="w-full rounded-lg border border-border p-2.5 text-xs font-medium text-foreground bg-background"
                       value={exp.endDate}
                       onChange={(e) => {
                         const updated = [...workExpList];
@@ -925,9 +925,9 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Responsibilities & Achievements</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Responsibilities & Achievements</label>
                   <textarea
-                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono font-semibold text-white bg-[#09090b] leading-relaxed resize-none"
+                    className="w-full border-2 border-border p-3 text-xs font-mono font-semibold text-foreground bg-background leading-relaxed resize-none"
                     rows={3}
                     value={exp.description}
                     onChange={(e) => {
@@ -944,14 +944,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Projects & Tech Stacks Cards */}
-      <div className={`bg-[#18181b] border-2 p-6 transition-all ${projectsList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-[#27272a]"}`}>
+      <div className={`bg-surface border-2 p-6 transition-all ${projectsList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Code className="w-5 h-5 text-[#a78bfa]" />
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Code className="w-5 h-5 text-primary" />
               Projects & Tech Stacks
             </h3>
-            <p className="text-sm font-mono text-[#a1a1aa] font-medium mt-1">Key projects and technologies extracted from your resume.</p>
+            <p className="text-sm font-mono text-muted-foreground font-medium mt-1">Key projects and technologies extracted from your resume.</p>
           </div>
           <button
             onClick={() => {
@@ -962,32 +962,32 @@ export default function ProfilePage() {
               updateProjectsList(updated);
             }}
             type="button"
-            className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3.5 py-2 flex items-center gap-1 transition-colors"
+            className="rounded-lg text-xs font-medium bg-primary text-foreground hover:bg-primary-hover px-3.5 py-2 flex items-center gap-1 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add Project
           </button>
         </div>
 
         {projectsList.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-[#27272a] bg-[#09090b]">
-            <Code className="w-10 h-10 text-[#a1a1aa] mx-auto mb-2" />
-            <p className="text-sm font-semibold text-white">No project entries yet</p>
-            <p className=" text-xs text-[#a1a1aa] mt-1">Upload your resume to automatically fill this section.</p>
+          <div className="text-center py-8 border-2 border-dashed border-border bg-background">
+            <Code className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm font-semibold text-foreground">No project entries yet</p>
+            <p className=" text-xs text-muted-foreground mt-1">Upload your resume to automatically fill this section.</p>
           </div>
         ) : (
           <div className="space-y-5">
             {projectsList.map((proj, idx) => (
-              <div key={idx} className="border-2 border-[#27272a] p-5 bg-[#09090b] hover:border-[#e050b0] transition-all space-y-4">
+              <div key={idx} className="border-2 border-border p-5 bg-background hover:border-[#e050b0] transition-all space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1.5 uppercase tracking-wider">
-                    <Sparkles className="w-3 h-3 text-white" /> Project #{idx + 1} - Auto-Filled
+                  <span className="text-xs font-mono bg-primary text-foreground font-bold px-3 py-1 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3 text-foreground" /> Project #{idx + 1} - Auto-Filled
                   </span>
                   <button
                     onClick={() => {
                       const updated = projectsList.filter((_, i) => i !== idx);
                       updateProjectsList(updated);
                     }}
-                    className="text-[#a78bfa] hover:text-white bg-[#18181b] p-1.5 border border-[#27272a] transition-colors"
+                    className="text-primary hover:text-foreground bg-surface p-1.5 border border-border transition-colors"
                     title="Delete project"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -995,10 +995,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Project Title</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Project Title</label>
                   <input
                     type="text"
-                    className="w-full rounded-lg border border-[#27272a] p-3 text-sm font-medium text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+                    className="w-full rounded-lg border border-border p-3 text-sm font-medium text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
                     value={proj.name}
                     onChange={(e) => {
                       const updated = [...projectsList];
@@ -1009,9 +1009,9 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Description</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Description</label>
                   <textarea
-                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono font-semibold text-white bg-[#09090b] leading-relaxed resize-none"
+                    className="w-full border-2 border-border p-3 text-xs font-mono font-semibold text-foreground bg-background leading-relaxed resize-none"
                     rows={2}
                     value={proj.description}
                     onChange={(e) => {
@@ -1023,9 +1023,9 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Project Overview</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Project Overview</label>
                   <textarea
-                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono text-[#a1a1aa] bg-[#09090b] leading-relaxed resize-none"
+                    className="w-full border-2 border-border p-3 text-xs font-mono text-muted-foreground bg-background leading-relaxed resize-none"
                     rows={4}
                     placeholder="Detailed overview of what the project does, its architecture, key features, and impact..."
                     value={proj.summary || ""}
@@ -1039,10 +1039,10 @@ export default function ProfilePage() {
 
                 {/* Tech Stack Tags for Project */}
                 <div>
-                  <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5">Tech Stack Used</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Tech Stack Used</label>
                   <input
                     type="text"
-                    className="w-full border-2 border-[#27272a] p-3 text-xs font-mono font-bold text-[#f5c542] bg-[#09090b]"
+                    className="w-full border-2 border-border p-3 text-xs font-mono font-bold text-secondary bg-background"
                     placeholder="Comma-separated tech stack (e.g. Next.js, Tailwind, PostgreSQL)"
                     value={proj.technologies ? proj.technologies.join(", ") : ""}
                     onChange={(e) => {
@@ -1059,22 +1059,22 @@ export default function ProfilePage() {
       </div>
 
       {/* Education & Certifications Box */}
-      <div className="bg-[#18181b] rounded-lg border border-[#27272a] p-6 space-y-6">
+      <div className="bg-surface rounded-lg border border-border p-6 space-y-6">
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-[#a78bfa]" />
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-primary" />
               Education & Qualification
             </h3>
             {formData.education && (
-              <span className="text-xs font-mono bg-[#a78bfa] text-white font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
-                <Sparkles className="w-3 h-3 text-white" /> Auto-Filled
+              <span className="text-xs font-mono bg-primary text-foreground font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-foreground" /> Auto-Filled
               </span>
             )}
           </div>
           <input
             type="text"
-            className="w-full rounded-lg border border-[#27272a] p-3.5 text-sm font-medium text-white focus:ring-2 focus:ring-[#e050b0] bg-[#09090b]"
+            className="w-full rounded-lg border border-border p-3.5 text-sm font-medium text-foreground focus:ring-2 focus:ring-[#e050b0] bg-background"
             placeholder="e.g. B.Tech in Computer Science, IIT Delhi, 2020"
             value={formData.education}
             onChange={(e) => updateFormData({ education: e.target.value })}
@@ -1083,8 +1083,8 @@ export default function ProfilePage() {
 
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Award className="w-4 h-4 text-[#a78bfa]" />
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Award className="w-4 h-4 text-primary" />
               Certifications & Credentials
             </h4>
             <button
@@ -1093,7 +1093,7 @@ export default function ProfilePage() {
                 updateCertificationsList(updated);
               }}
               type="button"
-              className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3 py-1.5 flex items-center gap-1"
+              className="rounded-lg text-xs font-medium bg-primary text-foreground hover:bg-primary-hover px-3 py-1.5 flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" /> Add Certification
             </button>
@@ -1101,13 +1101,13 @@ export default function ProfilePage() {
 
           <div className="space-y-2.5">
             {certificationsList.length === 0 ? (
-              <p className=" text-xs text-[#a1a1aa] font-medium italic">No certifications extracted yet.</p>
+              <p className=" text-xs text-muted-foreground font-medium italic">No certifications extracted yet.</p>
             ) : (
               certificationsList.map((cert, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
                   <input
                     type="text"
-                    className="flex-1 border-2 border-[#27272a] p-3 text-xs font-medium text-white bg-[#09090b]"
+                    className="flex-1 border-2 border-border p-3 text-xs font-medium text-foreground bg-background"
                     value={cert}
                     onChange={(e) => {
                       const updated = [...certificationsList];
@@ -1120,7 +1120,7 @@ export default function ProfilePage() {
                       const updated = certificationsList.filter((_, i) => i !== idx);
                       updateCertificationsList(updated);
                     }}
-                    className="text-[#a78bfa] hover:text-white bg-[#18181b] p-2.5 border border-[#27272a] transition-colors"
+                    className="text-primary hover:text-foreground bg-surface p-2.5 border border-border transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -1133,8 +1133,8 @@ export default function ProfilePage() {
         {/* Education Details Timeline */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-[#a78bfa]" />
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-primary" />
               Complete Education History
             </h4>
             <button
@@ -1143,7 +1143,7 @@ export default function ProfilePage() {
                 setEducationDetailsList(updated);
               }}
               type="button"
-              className="rounded-lg text-xs font-medium bg-[#a78bfa] text-white hover:bg-[#8b5cf6] px-3 py-1.5 flex items-center gap-1"
+              className="rounded-lg text-xs font-medium bg-primary text-foreground hover:bg-primary-hover px-3 py-1.5 flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" /> Add Education
             </button>
@@ -1151,18 +1151,18 @@ export default function ProfilePage() {
 
           <div className="space-y-3">
             {educationDetailsList.length === 0 ? (
-              <p className=" text-xs text-[#a1a1aa] font-medium italic">No education details extracted yet. Upload your resume to auto-fill.</p>
+              <p className=" text-xs text-muted-foreground font-medium italic">No education details extracted yet. Upload your resume to auto-fill.</p>
             ) : (
               educationDetailsList.map((edu, idx) => (
-                <div key={idx} className="border border-[#27272a] p-4 bg-[#09090b] space-y-3">
+                <div key={idx} className="border border-border p-4 bg-background space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-mono text-[#a78bfa] font-bold">Education #{idx + 1}</span>
+                    <span className="text-xs font-mono text-primary font-bold">Education #{idx + 1}</span>
                     <button
                       onClick={() => {
                         const updated = educationDetailsList.filter((_, i) => i !== idx);
                         setEducationDetailsList(updated);
                       }}
-                      className="text-[#a78bfa] hover:text-white p-1"
+                      className="text-primary hover:text-foreground p-1"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1170,7 +1170,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 gap-3">
                     <input
                       type="text"
-                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      className="border border-border p-2 text-xs text-foreground bg-background rounded"
                       placeholder="Degree (e.g. B.Tech in CSE)"
                       value={edu.degree}
                       onChange={(e) => {
@@ -1181,7 +1181,7 @@ export default function ProfilePage() {
                     />
                     <input
                       type="text"
-                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      className="border border-border p-2 text-xs text-foreground bg-background rounded"
                       placeholder="Institution"
                       value={edu.institution}
                       onChange={(e) => {
@@ -1192,7 +1192,7 @@ export default function ProfilePage() {
                     />
                     <input
                       type="text"
-                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      className="border border-border p-2 text-xs text-foreground bg-background rounded"
                       placeholder="Year (e.g. 2020)"
                       value={edu.year}
                       onChange={(e) => {
@@ -1203,7 +1203,7 @@ export default function ProfilePage() {
                     />
                     <input
                       type="text"
-                      className="border border-[#27272a] p-2 text-xs text-white bg-[#09090b] rounded"
+                      className="border border-border p-2 text-xs text-foreground bg-background rounded"
                       placeholder="Grade/GPA (optional)"
                       value={edu.grade || ""}
                       onChange={(e) => {
@@ -1215,7 +1215,7 @@ export default function ProfilePage() {
                   </div>
                   <input
                     type="text"
-                    className="w-full border border-[#27272a] p-2 text-xs text-[#a1a1aa] bg-[#09090b] rounded"
+                    className="w-full border border-border p-2 text-xs text-muted-foreground bg-background rounded"
                     placeholder="Additional details (specialization, honors, coursework)"
                     value={edu.details || ""}
                     onChange={(e) => {
@@ -1234,20 +1234,20 @@ export default function ProfilePage() {
         {suggestedRolesList.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-[#f5c542]" />
+              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-secondary" />
                 AI-Suggested Best Fit Roles
               </h4>
-              <span className="text-xs font-mono bg-[#f5c542] text-[#09090b] font-bold px-2 py-1 flex items-center gap-1">
+              <span className="text-xs font-mono bg-secondary text-primary-foreground font-bold px-2 py-1 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> AI Powered
               </span>
             </div>
             <div className="space-y-2">
               {suggestedRolesList.map((role, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 bg-[#09090b] border border-[#27272a] rounded-lg">
-                  <span className="text-xs font-mono font-bold text-[#f5c542] w-6">#{idx + 1}</span>
-                  <span className="text-sm text-white font-medium">{role}</span>
-                  {idx === 0 && <span className="text-xs bg-[#22c55e]/20 text-[#22c55e] px-2 py-0.5 rounded-full ml-auto">Best Fit</span>}
+                <div key={idx} className="flex items-center gap-3 p-3 bg-background border border-border rounded-lg">
+                  <span className="text-xs font-mono font-bold text-secondary w-6">#{idx + 1}</span>
+                  <span className="text-sm text-foreground font-medium">{role}</span>
+                  {idx === 0 && <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full ml-auto">Best Fit</span>}
                 </div>
               ))}
             </div>
@@ -1258,14 +1258,14 @@ export default function ProfilePage() {
   );
 
   const renderStep4 = () => (
-    <div className="bg-[#18181b] border border-[#27272a] p-6">
-      <h3 className="text-lg font-mono font-bold text-white mb-4 uppercase tracking-wider">Your Preferences</h3>
-      <p className="text-sm font-mono text-[#a1a1aa] mb-6">What kind of opportunities are you looking for?</p>
+    <div className="bg-surface border border-border p-6">
+      <h3 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-wider">Your Preferences</h3>
+      <p className="text-sm font-mono text-muted-foreground mb-6">What kind of opportunities are you looking for?</p>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Job Type</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Preferred Job Type</label>
           <select
-            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
             value={formData.jobType}
             onChange={(e) => updateFormData({ jobType: e.target.value })}
           >
@@ -1277,19 +1277,19 @@ export default function ProfilePage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Expected Salary Range</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Expected Salary Range</label>
           <input
             type="text"
-            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
             placeholder="e.g. 15-20 LPA"
             value={formData.salaryRange}
             onChange={(e) => updateFormData({ salaryRange: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Location</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Preferred Location</label>
           <select
-            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
             value={formData.preferredLocation}
             onChange={(e) => updateFormData({ preferredLocation: e.target.value })}
           >
@@ -1300,18 +1300,18 @@ export default function ProfilePage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Work Mode</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Work Mode</label>
           <div className="flex gap-4 mt-2">
             {["Remote", "Hybrid", "On-site"].map((mode) => (
               <label key={mode} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="workMode"
-                  className="w-4 h-4 text-[#a78bfa]"
+                  className="w-4 h-4 text-primary"
                   checked={formData.workMode === mode}
                   onChange={() => updateFormData({ workMode: mode })}
                 />
-                <span className="text-sm font-mono text-white">{mode}</span>
+                <span className="text-sm font-mono text-foreground">{mode}</span>
               </label>
             ))}
           </div>
@@ -1321,31 +1321,31 @@ export default function ProfilePage() {
   );
 
   const renderStep5 = () => (
-    <div className="bg-[#18181b] border border-[#27272a] p-6">
-      <h3 className="text-lg font-mono font-bold text-white mb-4 uppercase tracking-wider">AI Interview Preparation</h3>
-      <p className="text-sm font-mono text-[#a1a1aa] mb-6">Get ready for your 15-minute AI-powered interview.</p>
+    <div className="bg-surface border border-border p-6">
+      <h3 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-wider">AI Interview Preparation</h3>
+      <p className="text-sm font-mono text-muted-foreground mb-6">Get ready for your 15-minute AI-powered interview.</p>
       <div className="space-y-4">
-        <div className="bg-[#09090b] border border-[#27272a] p-4">
-          <h4 className=" font-semibold text-[#a78bfa] mb-2">What to expect:</h4>
-          <ul className="space-y-2 text-sm text-white">
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#f5c542]" /> Technical questions based on your resume & tech stacks</li>
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#f5c542]" /> Behavioral assessment</li>
-            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#f5c542]" /> Live coding challenge in WebRTC room</li>
+        <div className="bg-background border border-border p-4">
+          <h4 className=" font-semibold text-primary mb-2">What to expect:</h4>
+          <ul className="space-y-2 text-sm text-foreground">
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-secondary" /> Technical questions based on your resume & tech stacks</li>
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-secondary" /> Behavioral assessment</li>
+            <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-secondary" /> Live coding challenge in WebRTC room</li>
           </ul>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Interview Date</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Preferred Interview Date</label>
           <input
             type="date"
-            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
             value={formData.preferredDate}
             onChange={(e) => updateFormData({ preferredDate: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Preferred Time Slot</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Preferred Time Slot</label>
           <select
-            className="w-full rounded-lg border border-[#27272a] p-2.5 text-sm text-white bg-[#09090b] focus:ring-2 focus:ring-[#e050b0]"
+            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
             value={formData.preferredTimeSlot}
             onChange={(e) => updateFormData({ preferredTimeSlot: e.target.value })}
           >
@@ -1360,14 +1360,14 @@ export default function ProfilePage() {
   );
 
   const renderStep6 = () => (
-    <div className="bg-[#18181b] border border-[#27272a] p-6 text-center py-12">
-      <div className="w-20 h-20 bg-[#18181b] border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
-        <CheckCircle className="w-10 h-10 text-[#f5c542]" />
+    <div className="bg-surface border border-border p-6 text-center py-12">
+      <div className="w-20 h-20 bg-surface border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
+        <CheckCircle className="w-10 h-10 text-secondary" />
       </div>
-      <h3 className="text-xl font-semibold text-white mb-2">All Set! You&apos;re Good to Go!</h3>
-      <p className="text-[#a1a1aa] font-mono mb-6">We&apos;re looking forward to your interview. Get ready to showcase your best self.</p>
-      <div className="bg-[#09090b] border border-[#4dacde] p-4 max-w-md mx-auto">
-        <p className="text-sm font-mono text-[#f5c542]">Your profile is complete and your AI interview is scheduled. You&apos;ll receive a confirmation email shortly.</p>
+      <h3 className="text-xl font-semibold text-foreground mb-2">All Set! You&apos;re Good to Go!</h3>
+      <p className="text-muted-foreground font-mono mb-6">We&apos;re looking forward to your interview. Get ready to showcase your best self.</p>
+      <div className="bg-background border border-[#4dacde] p-4 max-w-md mx-auto">
+        <p className="text-sm font-mono text-secondary">Your profile is complete and your AI interview is scheduled. You&apos;ll receive a confirmation email shortly.</p>
       </div>
     </div>
   );
@@ -1379,49 +1379,49 @@ export default function ProfilePage() {
         return (
           <div className="space-y-6">
             {/* Success Card */}
-            <div className="bg-[#18181b] border border-[#27272a] p-6">
+            <div className="bg-surface border border-border p-6">
               <div className="text-center py-8">
-                <div className="w-20 h-20 bg-[#18181b] border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-10 h-10 text-[#f5c542]" />
+                <div className="w-20 h-20 bg-surface border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-secondary" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Great! Your resume is uploaded and parsed!</h3>
-                <p className="text-[#a1a1aa] font-mono">All your tech stacks, projects, skills, and work experience have been auto-filled.</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">Great! Your resume is uploaded and parsed!</h3>
+                <p className="text-muted-foreground font-mono">All your tech stacks, projects, skills, and work experience have been auto-filled.</p>
               </div>
             </div>
 
             {/* Best Fit Role */}
             {bestFitRole && (
-              <div className="bg-[#18181b] border-2 border-[#e050b0] p-6 ring-4 ring-[#e050b0]/15">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-[#f5c542]" />
+              <div className="bg-surface border-2 border-[#e050b0] p-6 ring-4 ring-[#e050b0]/15">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-secondary" />
                   Best Fit Role
                 </h3>
-                <p className="text-[#f5c542] font-mono font-bold text-xl">{bestFitRole}</p>
-                <p className="text-sm text-[#a1a1aa] mt-2">Based on your skills, experience, and project portfolio</p>
+                <p className="text-secondary font-mono font-bold text-xl">{bestFitRole}</p>
+                <p className="text-sm text-muted-foreground mt-2">Based on your skills, experience, and project portfolio</p>
               </div>
             )}
 
             {/* Candidate Summary */}
             {candidateSummary && (
-              <div className="bg-[#18181b] border-2 border-[#a78bfa] p-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
-                  <Eye className="w-5 h-5 text-[#a78bfa]" />
+              <div className="bg-surface border-2 border-primary p-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <Eye className="w-5 h-5 text-primary" />
                   AI Candidate Summary
                 </h3>
-                <p className="text-[#d4d4d8] font-medium leading-relaxed">{candidateSummary}</p>
+                <p className="text-muted-foreground font-medium leading-relaxed">{candidateSummary}</p>
               </div>
             )}
 
             {/* Suggested Roles */}
             {suggestedRolesList.length > 0 && (
-              <div className="bg-[#18181b] border border-[#27272a] p-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
-                  <Briefcase className="w-5 h-5 text-[#a78bfa]" />
+              <div className="bg-surface border border-border p-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <Briefcase className="w-5 h-5 text-primary" />
                   Suggested Roles
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {suggestedRolesList.map((role, i) => (
-                    <span key={i} className={`inline-flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 ${i === 0 ? "bg-[#f5c542] text-[#09090b]" : "bg-[#27272a] text-[#a1a1aa]"}`}>
+                    <span key={i} className={`inline-flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 ${i === 0 ? "bg-secondary text-primary-foreground" : "bg-surface-hover text-muted-foreground"}`}>
                       {i === 0 && <Sparkles className="w-3 h-3" />}
                       {role}
                     </span>
@@ -1432,16 +1432,16 @@ export default function ProfilePage() {
 
             {/* Top 3 Projects */}
             {topProjectsList.length > 0 && (
-              <div className="bg-[#18181b] border border-[#27272a] p-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
-                  <Code className="w-5 h-5 text-[#f5c542]" />
+              <div className="bg-surface border border-border p-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <Code className="w-5 h-5 text-secondary" />
                   Top 3 Trending Projects
                 </h3>
                 <div className="space-y-3">
                   {topProjectsList.map((projName, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-[#09090b] border border-[#27272a]">
-                      <span className="text-xs font-mono bg-[#f5c542] text-[#09090b] font-bold px-2 py-1">#{i + 1}</span>
-                      <span className="text-sm font-medium text-white">{projName}</span>
+                    <div key={i} className="flex items-center gap-3 p-3 bg-background border border-border">
+                      <span className="text-xs font-mono bg-secondary text-primary-foreground font-bold px-2 py-1">#{i + 1}</span>
+                      <span className="text-sm font-medium text-foreground">{projName}</span>
                     </div>
                   ))}
                 </div>
@@ -1450,18 +1450,18 @@ export default function ProfilePage() {
 
             {/* All Education */}
             {educationDetailsList.length > 0 && (
-              <div className="bg-[#18181b] border border-[#27272a] p-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
-                  <GraduationCap className="w-5 h-5 text-[#a78bfa]" />
+              <div className="bg-surface border border-border p-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <GraduationCap className="w-5 h-5 text-primary" />
                   Education
                 </h3>
                 <div className="space-y-3">
                   {educationDetailsList.map((edu, i) => (
-                    <div key={i} className="p-3 bg-[#09090b] border border-[#27272a]">
-                      <p className="text-sm font-semibold text-white">{edu.degree}</p>
-                      <p className="text-xs text-[#a1a1aa]">{edu.institution} {edu.year && `- ${edu.year}`}</p>
-                      {edu.grade && <p className="text-xs text-[#a78bfa]">Grade: {edu.grade}</p>}
-                      {edu.details && <p className="text-xs text-[#a1a1aa] mt-1">{edu.details}</p>}
+                    <div key={i} className="p-3 bg-background border border-border">
+                      <p className="text-sm font-semibold text-foreground">{edu.degree}</p>
+                      <p className="text-xs text-muted-foreground">{edu.institution} {edu.year && `- ${edu.year}`}</p>
+                      {edu.grade && <p className="text-xs text-primary">Grade: {edu.grade}</p>}
+                      {edu.details && <p className="text-xs text-muted-foreground mt-1">{edu.details}</p>}
                     </div>
                   ))}
                 </div>
@@ -1470,14 +1470,14 @@ export default function ProfilePage() {
 
             {/* All Skills */}
             {skillsList.length > 0 && (
-              <div className="bg-[#18181b] border border-[#27272a] p-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
-                  <Tag className="w-5 h-5 text-[#a78bfa]" />
+              <div className="bg-surface border border-border p-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <Tag className="w-5 h-5 text-primary" />
                   All Extracted Skills ({skillsList.length})
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {skillsList.map((skill) => (
-                    <span key={skill} className="inline-flex items-center gap-1.5 bg-[#a78bfa] text-white text-xs font-mono font-bold px-3 py-1.5">
+                    <span key={skill} className="inline-flex items-center gap-1.5 bg-primary text-foreground text-xs font-mono font-bold px-3 py-1.5">
                       {skill}
                     </span>
                   ))}
@@ -1487,15 +1487,15 @@ export default function ProfilePage() {
 
             {/* Certifications */}
             {certificationsList.length > 0 && (
-              <div className="bg-[#18181b] border border-[#27272a] p-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
-                  <Award className="w-5 h-5 text-[#f5c542]" />
+              <div className="bg-surface border border-border p-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <Award className="w-5 h-5 text-secondary" />
                   Certifications
                 </h3>
                 <div className="space-y-2">
                   {certificationsList.map((cert, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-[#d4d4d8]">
-                      <CheckCircle className="w-4 h-4 text-[#4ade80] flex-shrink-0" />
+                    <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                       {cert}
                     </div>
                   ))}
@@ -1515,41 +1515,41 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <Sidebar currentStep={currentStep} progress={progress} />
-      <main className="flex-1 bg-[#09090b] overflow-auto">
-        <div className="p-4 bg-[#18181b] border-b border-[#27272a] flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-[#a1a1aa]">
-            <Shield className="w-4 h-4 text-[#f5c542]" />
+      <main className="flex-1 bg-background overflow-auto">
+        <div className="p-4 bg-surface border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Shield className="w-4 h-4 text-secondary" />
             Your data is safe with us
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="w-8 h-8 flex items-center justify-center border border-[#27272a] hover:bg-[#18181b] transition-colors"
+              className="w-8 h-8 flex items-center justify-center border border-border hover:bg-surface transition-colors"
               title="Toggle theme"
             >
               {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-[#f5c542]" />
+                <Sun className="w-4 h-4 text-secondary" />
               ) : (
-                <Moon className="w-4 h-4 text-[#a78bfa]" />
+                <Moon className="w-4 h-4 text-primary" />
               )}
             </button>
-            <div className="w-8 h-8 bg-[#a78bfa] flex items-center justify-center">
-              <span className="text-sm font-mono font-bold text-white">{user?.name?.charAt(0) || "U"}</span>
+            <div className="w-8 h-8 bg-primary flex items-center justify-center">
+              <span className="text-sm font-mono font-bold text-foreground">{user?.name?.charAt(0) || "U"}</span>
             </div>
-            <span className="text-sm font-mono font-medium text-white">Hi, {user?.name || "User"}</span>
+            <span className="text-sm font-mono font-medium text-foreground">Hi, {user?.name || "User"}</span>
           </div>
         </div>
         <StepIndicator steps={steps} currentStep={currentStep} />
         <div className="max-w-4xl mx-auto px-4 pb-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white">Let&apos;s Build Your Profile</h2>
-            <p className="text-[#a1a1aa] font-mono mt-1">Upload your resume to auto-fill all skills, projects, and work experience!</p>
+            <h2 className="text-2xl font-semibold text-foreground">Let&apos;s Build Your Profile</h2>
+            <p className="text-muted-foreground font-mono mt-1">Upload your resume to auto-fill all skills, projects, and work experience!</p>
           </div>
 
           {renderCurrentStep()}
 
           {validationError && (
-            <div className="mb-4 p-3 bg-[#18181b] border border-[#e050b0] font-mono text-[#a78bfa] text-sm mt-4">
+            <div className="mb-4 p-3 bg-surface border border-[#e050b0] font-mono text-primary text-sm mt-4">
               {validationError}
             </div>
           )}
@@ -1558,17 +1558,17 @@ export default function ProfilePage() {
             <button
               onClick={handlePrev}
               disabled={currentStep === 1}
-              className="rounded-lg flex items-center gap-2 px-6 py-3 border border-[#27272a] text-sm font-medium hover:bg-[#18181b] disabled:opacity-50 disabled:cursor-not-allowed bg-[#09090b] text-white"
+              className="rounded-lg flex items-center gap-2 px-6 py-3 border border-border text-sm font-medium hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed bg-background text-foreground"
             >
               <ChevronLeft className="w-4 h-4" />
               Save & Exit
             </button>
             <div className="flex items-center gap-2">
-              {saving && <span className="text-sm font-mono text-[#a1a1aa]">Saving...</span>}
+              {saving && <span className="text-sm font-mono text-muted-foreground">Saving...</span>}
               <button
                 onClick={handleNext}
                 disabled={saving}
-                className="rounded-lg flex items-center gap-2 px-6 py-3 bg-[#a78bfa] text-white text-sm font-medium hover:bg-[#8b5cf6] transition-colors disabled:opacity-50"
+                className="rounded-lg flex items-center gap-2 px-6 py-3 bg-primary text-foreground text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-50"
               >
                 {saving ? "Completing..." : currentStep === steps.length ? "Complete" : "Save & Continue"}
                 <ArrowRight className="w-4 h-4" />

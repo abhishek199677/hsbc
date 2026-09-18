@@ -501,16 +501,34 @@ export default function InterviewRoomPage() {
               {showCameraFailover && cameraStatus !== "ready" && !continueWithoutCamera && (
                 <div className="mx-4 sm:mx-5 mt-4 p-4 border border-[#e050b0]/20 bg-[#e050b0]/5">
                   <p className="text-sm text-[#a78bfa] font-mono">
-                    <strong>Can&apos;t access your camera?</strong> You can still proceed without
-                    video. We recommend a camera for the best experience.
+                    <strong>Camera access denied.</strong> To use your camera:
                   </p>
-                  <button
-                    onClick={() => setContinueWithoutCamera(true)}
-                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#e050b0]/10 border border-[#e050b0]/30 text-[#a78bfa] text-sm font-medium hover:bg-[#e050b0]/20 font-mono uppercase tracking-wider"
-                  >
-                    <CameraOff className="w-4 h-4" />
-                    Continue without camera
-                  </button>
+                  <ol className="text-xs text-[#a1a1aa] font-mono mt-2 space-y-1 list-decimal list-inside">
+                    <li>Click the lock/camera icon in your browser address bar</li>
+                    <li>Set Camera to &quot;Allow&quot;</li>
+                    <li>Click &quot;Retry Camera&quot; below</li>
+                  </ol>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => {
+                        setCameraStatus("checking");
+                        setMicStatus("checking");
+                        setShowCameraFailover(false);
+                        runChecks();
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#a78bfa]/10 border border-[#a78bfa]/30 text-[#a78bfa] text-sm font-medium hover:bg-[#a78bfa]/20 font-mono uppercase tracking-wider"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Retry Camera
+                    </button>
+                    <button
+                      onClick={() => setContinueWithoutCamera(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#e050b0]/10 border border-[#e050b0]/30 text-[#a78bfa] text-sm font-medium hover:bg-[#e050b0]/20 font-mono uppercase tracking-wider"
+                    >
+                      <CameraOff className="w-4 h-4" />
+                      Continue without camera
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

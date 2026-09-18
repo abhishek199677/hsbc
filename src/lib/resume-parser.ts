@@ -146,6 +146,7 @@ function getDefaultParsedResume(): ParsedResume {
     jobType: null,
     preferredLocation: null,
     suggestedRoles: [],
+    bestFitRole: null,
   };
 }
 
@@ -558,6 +559,9 @@ function parseResumeFallback(text: string): ParsedResume {
     jobType,
     preferredLocation,
     suggestedRoles: [],
+    candidateSummary: null,
+    topProjects: [],
+    bestFitRole: null,
   };
 }
 
