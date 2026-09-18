@@ -422,6 +422,7 @@ export default function LiveInterviewContent() {
   const callAI = async (action: string, extra: Record<string, unknown> = {}) => {
     const response = await fetch("/api/ai-interview", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -597,6 +598,7 @@ export default function LiveInterviewContent() {
 
       const res = await fetch("/api/ai-agent", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -871,6 +873,7 @@ export default function LiveInterviewContent() {
     try {
       await fetch("/api/interview", {
         method: "PATCH",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -1052,6 +1055,21 @@ export default function LiveInterviewContent() {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <Loader className="animate-spin h-8 w-8 text-[#a78bfa]" />
+      </div>
+    );
+  }
+
+  if (!user || !token) {
+    return (
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <ShieldCheck className="w-12 h-12 text-[#a78bfa] mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white font-mono mb-2">Login Required</h2>
+          <p className="text-[#a1a1aa] font-mono text-sm mb-4">Please log in to start your AI interview.</p>
+          <a href="/login" className="inline-flex items-center gap-2 px-6 py-3 bg-[#a78bfa] text-white font-mono font-bold text-sm hover:bg-[#8b5cf6] transition-colors rounded">
+            Go to Login
+          </a>
+        </div>
       </div>
     );
   }

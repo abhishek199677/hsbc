@@ -370,7 +370,7 @@ export default function InterviewRoomPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/interview");
+        const res = await fetch("/api/interview", { credentials: "include" });
         const data = await res.json();
         if (!cancelled && data.success && data.interview?.id) {
           sessionStorage.setItem("tcInterviewId", data.interview.id);
