@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@prisma/client";
 
 export type AuditAction =
   // Auth events
