@@ -1473,23 +1473,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* All Skills */}
-            {skillsList.length > 0 && (
-              <div className="bg-surface border border-border p-6">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
-                  <Tag className="w-5 h-5 text-primary" />
-                  All Extracted Skills ({skillsList.length})
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {skillsList.map((skill) => (
-                    <span key={skill} className="inline-flex items-center gap-1.5 bg-primary text-foreground text-xs font-mono font-bold px-3 py-1.5">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Certifications */}
             {certificationsList.length > 0 && (
               <div className="bg-surface border border-border p-6">
