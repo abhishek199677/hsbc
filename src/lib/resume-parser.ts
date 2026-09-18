@@ -174,7 +174,11 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
           description: (p.description as string) || "",
           summary: (p.summary as string) || "",
           url: (p.url as string) || undefined,
-          technologies: Array.isArray(p.technologies) ? (p.technologies as string[]) : undefined,
+          technologies: Array.isArray(p.technologies)
+            ? (p.technologies as string[])
+            : typeof p.technologies === "string"
+            ? (p.technologies as string).split(/,\s*/).map((t: string) => t.trim()).filter(Boolean)
+            : undefined,
         }))
       : [],
     keyAchievements: Array.isArray(parsed.keyAchievements)
@@ -258,7 +262,7 @@ function extractWorkExperienceFromText(text: string, defaultRole: string, defaul
     return [];
   }
 
-  return result.slice(0, 4);
+  return result;
 }
 
 function extractProjectsFromText(text: string, skills: string[], defaultSummary: string): ParsedProject[] {
@@ -304,7 +308,7 @@ function extractProjectsFromText(text: string, skills: string[], defaultSummary:
     return [];
   }
 
-  return result.slice(0, 4);
+  return result;
 }
 
 function parseResumeFallback(text: string): ParsedResume {
@@ -600,7 +604,7 @@ async function parseImageWithVision(base64Images: string[], fallbackText?: strin
       model: "gpt-4o",
       messages: [{ role: "user", content }],
       temperature: 0.1,
-      max_tokens: 2500,
+      max_tokens: 8000,
       response_format: { type: "json_object" },
     });
 
@@ -633,13 +637,13 @@ async function parseTextWithAI(text: string): Promise<ParsedResume> {
   }
   console.log(`[resume-parser] Sending ${text.length} chars to GPT-4o-mini...`);
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: RESUME_PARSING_PROMPT },
-      { role: "user", content: `Parse this resume:\n\n${text.slice(0, 12000)}` },
+      { role: "user", content: `Parse this resume:\n\n${text.slice(0, 30000)}` },
     ],
     temperature: 0.1,
-    max_tokens: 4000,
+    max_tokens: 8000,
     response_format: { type: "json_object" },
   });
 
