@@ -693,17 +693,27 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
   return result.value;
 }
 
+function cleanSkill(raw: string): string {
+  return raw
+    .replace(/^[\u2022\u2023\u25E6\u2043\u2219\u203B\u25AA\u25AB\u25FB\u25FC\u25FD\u25FE\u2660\u2663\u2665\u2666•●○◆◇■□▪▫►▻🏢📁📋✅❌⚡🔹🔸①②③④⑤⑥⑦⑧⑨⑩]\s*/g, "")
+    .replace(/^[●•]\s*/g, "")
+    .replace(/^[-*]\s*/g, "")
+    .trim();
+}
+
 function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedResume {
   // Normalize and deduplicate skills
-  const normalizeSkill = (s: string) => s.trim().toLowerCase();
+  const normalizeSkill = (s: string) => cleanSkill(s).toLowerCase();
   const skillCanonical = new Map<string, string>();
   
   const allSkills = [...(ai.skills || []), ...(fallback.skills || [])];
   for (const skill of allSkills) {
     if (!skill || skill.trim().length === 0) continue;
-    const normalized = normalizeSkill(skill);
+    const cleaned = cleanSkill(skill);
+    if (cleaned.length < 2) continue;
+    const normalized = normalizeSkill(cleaned);
     if (!skillCanonical.has(normalized)) {
-      skillCanonical.set(normalized, skill.trim());
+      skillCanonical.set(normalized, cleaned);
     }
   }
   
@@ -780,7 +790,13 @@ export async function parseResume(
       const ai = await parseTextWithAI(pdfText);
       return mergeParsedResults(ai, fallback);
     } catch (err) {
-      console.error("[resume-parser] AI text parsing failed, using fallback only:", err instanceof Error ? err.message : err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[resume-parser] AI text parsing failed:", msg);
+      // If the API key is invalid, don't use fallback (it returns garbage)
+      if (msg.includes("401") || msg.includes("invalid") || msg.includes("Unauthorized") || msg.includes("invalidated")) {
+        console.log("[resume-parser] API key invalid, returning empty parsed resume");
+        return getDefaultParsedResume();
+      }
       return fallback;
     }
   }
@@ -805,7 +821,11 @@ export async function parseResume(
       const ai = await parseTextWithAI(text);
       return mergeParsedResults(ai, fallback);
     } catch (err) {
-      console.error("[resume-parser] AI text parsing failed, using fallback only:", err instanceof Error ? err.message : err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[resume-parser] AI text parsing failed:", msg);
+      if (msg.includes("401") || msg.includes("invalid") || msg.includes("Unauthorized") || msg.includes("invalidated")) {
+        return getDefaultParsedResume();
+      }
       return fallback;
     }
   }
@@ -815,7 +835,11 @@ export async function parseResume(
   try {
     return await parseTextWithAI(text);
   } catch (err) {
-    console.error("[resume-parser] AI parsing failed for unknown type, using fallback:", err instanceof Error ? err.message : err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[resume-parser] AI parsing failed for unknown type:", msg);
+    if (msg.includes("401") || msg.includes("invalid") || msg.includes("Unauthorized") || msg.includes("invalidated")) {
+      return getDefaultParsedResume();
+    }
     return parseResumeFallback(text);
   }
 }

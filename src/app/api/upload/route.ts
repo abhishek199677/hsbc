@@ -182,8 +182,20 @@ export async function POST(request: Request) {
       try {
         console.log(`[upload] Parsing resume: ${file.name} (${file.type}, ${file.size} bytes)`);
         parsedResume = await parseResume(Buffer.from(bytes), file.name);
-        parsingStatus = "success";
-        console.log("[upload] Resume parsed successfully:", JSON.stringify(parsedResume, null, 2));
+        
+        // Check if AI parsing actually extracted meaningful data
+        const hasData = parsedResume && (
+          parsedResume.name || parsedResume.email || parsedResume.currentRole || 
+          (parsedResume.skills && parsedResume.skills.length > 0)
+        );
+        if (!hasData) {
+          parsingStatus = "failed";
+          parsingError = "AI parsing failed or API key invalid. Please enter details manually.";
+          parsedResume = null;
+          console.log("[upload] Resume parsed but no meaningful data extracted");
+        } else {
+          parsingStatus = "success";
+          console.log("[upload] Resume parsed successfully:", JSON.stringify(parsedResume, null, 2));
         
         // Count extracted fields for diagnostics
         const fieldsExtracted = [
@@ -279,6 +291,7 @@ export async function POST(request: Request) {
           });
           console.log("[upload] Profile saved to database");
         }
+        } // end else (hasData)
       } catch (error) {
         parsingStatus = "failed";
         parsingError = error instanceof Error ? error.message : "Unknown parsing error";
