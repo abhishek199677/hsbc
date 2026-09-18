@@ -49,7 +49,7 @@ export default function SignupPage() {
         throw new Error(data.error || "Signup failed");
       }
 
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      router.push(`/verify-email?email=${encodeURIComponent(email)}&verifyUrl=${encodeURIComponent(data.verifyUrl || "")}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {

@@ -11,10 +11,12 @@ function VerifyEmailContent() {
   const { user, token: authToken } = useAuth();
   const token = searchParams.get("token");
   const pendingEmail = searchParams.get("email");
+  const initialVerifyUrl = searchParams.get("verifyUrl") || "";
   const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">(
     token ? "verifying" : "idle"
   );
   const [message, setMessage] = useState("");
+  const [verifyUrl, setVerifyUrl] = useState(initialVerifyUrl);
   const [resending, setResending] = useState(false);
   const verifyAttempted = useRef(false);
 
@@ -62,6 +64,9 @@ function VerifyEmailContent() {
       });
       const data = await response.json();
       setMessage(data.message || (data.error || "Please try again later."));
+      if (data.verifyUrl) {
+        setVerifyUrl(data.verifyUrl);
+      }
     } catch {
       setMessage("Something went wrong. Please try again.");
     } finally {
@@ -111,14 +116,28 @@ function VerifyEmailContent() {
           </p>
 
           {status !== "success" && (
-            <button
-              onClick={handleResend}
-              disabled={resending}
-              className="w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium hover:bg-[#8b5cf6] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${resending ? "animate-spin" : ""}`} />
-              {resending ? "Sending..." : "Resend Verification Email"}
-            </button>
+            <>
+              <button
+                onClick={handleResend}
+                disabled={resending}
+                className="w-full bg-[#a78bfa] text-[#09090b] py-3 rounded-lg font-medium hover:bg-[#8b5cf6] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${resending ? "animate-spin" : ""}`} />
+                {resending ? "Sending..." : "Resend Verification Email"}
+              </button>
+
+              {verifyUrl && (
+                <div className="mt-4 p-3 bg-[#18181b] border border-[#27272a] rounded-lg">
+                  <p className="text-[#a1a1aa] text-xs mb-2">Direct verification link (email not configured):</p>
+                  <a
+                    href={verifyUrl}
+                    className="text-[#a78bfa] text-sm break-all hover:underline"
+                  >
+                    {verifyUrl}
+                  </a>
+                </div>
+              )}
+            </>
           )}
 
           <div className="mt-6">

@@ -117,14 +117,18 @@ export async function POST(request: Request) {
     });
 
     // Send verification email. Login remains blocked until verification succeeds.
-    await sendEmail({
-      to: user.email,
-      subject: "Verify your HireRight email address",
-      html: generateVerificationEmail(
-        user.name || "there",
-        `${getAppBaseUrl()}/verify-email?token=${verifyToken}`
-      ),
-    });
+    const verifyUrl = `${getAppBaseUrl()}/verify-email?token=${verifyToken}`;
+    if (process.env.SMTP_USER) {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Verify your HireRight email address",
+          html: generateVerificationEmail(user.name || "there", verifyUrl),
+        });
+      } catch (emailErr) {
+        console.error("Email send failed:", emailErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -148,6 +152,7 @@ export async function POST(request: Request) {
         plan: organization.plan,
         planStatus: organization.planStatus,
       },
+      verifyUrl,
     });
   } catch (error) {
     console.error("Signup error:", error);

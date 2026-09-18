@@ -69,16 +69,33 @@ export async function POST(request: Request) {
     });
 
     // Send verification email
-    await sendEmail({
-      to: user.email,
-      subject: "Verify your Techcitta email address",
-      html: generateVerificationEmail(
-        user.name || "there",
-        `${getAppBaseUrl()}/verify-email?token=${verifyToken}`
-      ),
-    });
+    const verifyUrl = `${getAppBaseUrl()}/verify-email?token=${verifyToken}`;
+    let emailSent = false;
 
-    return NextResponse.json({ success: true, message: "Verification email sent. Please check your inbox." });
+    if (process.env.SMTP_USER) {
+      try {
+        const result = await sendEmail({
+          to: user.email,
+          subject: "Verify your Techcitta email address",
+          html: generateVerificationEmail(
+            user.name || "there",
+            verifyUrl
+          ),
+        });
+        emailSent = result.success && !result.devFallback;
+      } catch (emailErr) {
+        console.error("Email send failed:", emailErr);
+      }
+    }
+
+    // Return the URL directly so it works with or without SMTP
+    return NextResponse.json({
+      success: true,
+      message: emailSent
+        ? "Verification email sent. Please check your inbox."
+        : "Verification link generated (email not configured).",
+      verifyUrl,
+    });
   } catch (error) {
     console.error("Resend verification error:", error);
     return NextResponse.json(
