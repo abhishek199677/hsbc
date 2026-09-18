@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { getActiveUser } from "@/lib/authorization";
+import { getInterviewUser } from "@/lib/authorization";
 import { rateLimitByIp, rateLimit } from "@/lib/rateLimit";
 import { trackedChatCompletion } from "@/lib/openai-usage";
 import { prisma } from "@/lib/prisma";
@@ -323,7 +323,7 @@ function getAdaptiveDifficulty(scores: number[], current: string): string {
 
 export async function POST(request: Request) {
   try {
-    const user = await getActiveUser(request);
+    const user = await getInterviewUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

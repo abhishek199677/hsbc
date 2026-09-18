@@ -39,6 +39,24 @@ export async function getActiveUser(request: Request) {
   return { ...user, organizationRole: orgRole };
 }
 
+export async function getInterviewUser(request: Request) {
+  const auth = await getUserFromRequest(request);
+  if (!auth) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    include: {
+      organization: true,
+    },
+  });
+
+  if (!user || user.organizationId !== auth.organizationId) {
+    return null;
+  }
+
+  return { ...user, organizationRole: null };
+}
+
 export async function requireOrganizationRole(
   request: Request,
   allowedRoles: OrganizationRole[]
