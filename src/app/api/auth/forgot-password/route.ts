@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimitByIp } from "@/lib/rateLimit";
 import { sendEmail, generatePasswordResetEmail, getAppBaseUrl } from "@/lib/email";
-import { generateVerificationToken } from "@/lib/tokens";
+import { generateVerificationToken, hashToken, tokenExpiryDate } from "@/lib/tokens";
 
 export async function POST(request: Request) {
   try {
@@ -40,7 +40,18 @@ export async function POST(request: Request) {
     }
 
     const resetToken = generateVerificationToken();
+    const tokenHash = hashToken(resetToken);
     const resetUrl = `${getAppBaseUrl()}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
+
+    // Save the hashed token to the database
+    await prisma.verificationToken.create({
+      data: {
+        userId: user.id,
+        token: tokenHash,
+        type: "password_reset",
+        expiresAt: tokenExpiryDate(),
+      },
+    });
 
     // Try to send email, but always return the URL so the user can reset
     if (process.env.SMTP_USER) {
