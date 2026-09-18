@@ -52,6 +52,11 @@ export default function ProfilePage() {
   const [parsingError, setParsingError] = useState<string | null>(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  const [isRenderDomain, setIsRenderDomain] = useState(false);
+
+  useEffect(() => {
+    setIsRenderDomain(window.location.hostname.includes("render"));
+  }, []);
 
   const [formData, setFormData] = useState({
     resume: null as File | null,
@@ -1541,10 +1546,12 @@ export default function ProfilePage() {
         </div>
         <StepIndicator steps={steps} currentStep={currentStep} />
         <div className="max-w-4xl mx-auto px-4 pb-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-foreground">Let&apos;s Build Your Profile</h2>
-            <p className="text-muted-foreground font-mono mt-1">Upload your resume to auto-fill all skills, projects, and work experience!</p>
-          </div>
+          {isRenderDomain && (
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-foreground">Let&apos;s Build Your Profile</h2>
+              <p className="text-muted-foreground font-mono mt-1">Upload your resume to auto-fill all skills, projects, and work experience!</p>
+            </div>
+          )}
 
           {renderCurrentStep()}
 
