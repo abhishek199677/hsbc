@@ -1,5 +1,5 @@
 import {
-  MessageSquare, Video, Mic, Send, Wifi, WifiOff, ArrowRight, Loader, ShieldCheck,
+  MessageSquare, Video, Mic, Send, Wifi, WifiOff, ArrowRight, Loader, ShieldCheck, Calendar,
 } from "lucide-react";
 import type { ChatPanelProps } from "./types";
 
@@ -67,11 +67,23 @@ export default function ChatPanel({
                     </span>
                   </div>
                 )}
-                {startError && (
+                {startError && startError === "__NO_INTERVIEW__" ? (
+                  <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-lg p-4 mb-4 text-center">
+                    <Calendar className="w-6 h-6 mx-auto mb-2 text-amber-400" />
+                    <p className="font-medium mb-1">No interview scheduled</p>
+                    <p className="text-amber-400/70 text-xs mb-3">You need to schedule an interview before you can start.</p>
+                    <a
+                      href="/interview"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-lg font-medium text-sm hover:bg-amber-400 transition-colors"
+                    >
+                      Schedule Interview <ArrowRight className="w-4 h-4" />
+                    </a>
+                  </div>
+                ) : startError ? (
                   <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 mb-4">
                     {startError}
                   </div>
-                )}
+                ) : null}
                 {liveKitError && (
                   <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm rounded-lg p-3 mb-4 flex items-start gap-2">
                     <WifiOff className="w-4 h-4 mt-0.5 flex-shrink-0" />

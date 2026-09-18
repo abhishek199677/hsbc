@@ -41,7 +41,7 @@ const noticePeriods = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
   const { theme, setTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -180,6 +180,10 @@ export default function ProfilePage() {
     (async () => {
       try {
         const response = await fetch("/api/profile", { credentials: "include" });
+        if (response.status === 401) {
+          logout();
+          return;
+        }
         const data = await response.json();
         if (cancelled) return;
         if (data.success && data.profile) {
@@ -287,7 +291,19 @@ export default function ProfilePage() {
         body: formDataObj,
       });
 
+      if (!response.ok) {
+        if (response.status === 401) {
+          logout();
+          return;
+        }
+        const errData = await response.json().catch(() => ({}));
+        console.error("[upload] HTTP error:", response.status, errData);
+        setParsingError(errData.error || `Upload failed (${response.status})`);
+        return;
+      }
+
       const data = await response.json();
+      console.log("[upload] Response:", { success: data.success, parsingStatus: data.parsingStatus, hasParsed: !!data.parsedResume, error: data.parsingError });
       if (data.success) {
         setFormData((prev) => ({
           ...prev,

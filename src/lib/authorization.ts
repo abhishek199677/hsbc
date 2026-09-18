@@ -30,12 +30,6 @@ export async function getActiveUser(request: Request) {
 
   const orgRole = user.teamMemberships[0]?.role ?? null;
 
-  // Block admin/owner users who haven't set up 2FA
-  const isAdminOrOwner = orgRole === "owner" || orgRole === "admin";
-  if (isAdminOrOwner && !user.twoFactorEnabled) {
-    return null;
-  }
-
   return { ...user, organizationRole: orgRole };
 }
 

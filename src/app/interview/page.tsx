@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
@@ -30,6 +29,7 @@ export default function InterviewSchedulePage() {
   const [currentStep, setCurrentStep] = useState(4);
   const [selectedTime, setSelectedTime] = useState("01:30 PM");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [timezone, setTimezone] = useState("Asia/Kolkata");
 
   useEffect(() => {
@@ -123,6 +123,7 @@ export default function InterviewSchedulePage() {
   const saveInterview = async () => {
     if (!token || selectedDate === null) return false;
     setSaving(true);
+    setSaveError(null);
     try {
       const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
       const response = await fetch("/api/interview", {
@@ -136,12 +137,17 @@ export default function InterviewSchedulePage() {
         }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        setSaveError(data.error || "Failed to schedule interview");
+        return false;
+      }
       if (data.success && data.interview?.id) {
         sessionStorage.setItem("tcInterviewId", data.interview.id);
       }
       return data.success;
     } catch (error) {
       console.error("Failed to save interview:", error);
+      setSaveError("Network error. Please try again.");
       return false;
     } finally {
       setSaving(false);
@@ -152,6 +158,13 @@ export default function InterviewSchedulePage() {
     const saved = await saveInterview();
     if (saved) {
       router.push("/confirmation");
+    }
+  };
+
+  const handleStartLive = async () => {
+    const saved = await saveInterview();
+    if (saved) {
+      router.push("/interview/room");
     }
   };
 
@@ -373,13 +386,17 @@ export default function InterviewSchedulePage() {
               Back
             </button>
             <div className="flex gap-3">
-              <Link
-                href="/interview/room"
-                className="rounded-lg flex items-center gap-2 px-6 py-3 bg-[#f5c542] text-black text-sm font-medium hover:bg-[#f5c542]/80 transition-colors"
+              <button
+                onClick={handleStartLive}
+                disabled={saving || selectedDate === null}
+                className="rounded-lg flex items-center gap-2 px-6 py-3 bg-[#f5c542] text-black text-sm font-medium hover:bg-[#f5c542]/80 transition-colors disabled:opacity-50"
               >
-                <Video className="w-4 h-4" />
-                Start Live Interview
-              </Link>
+                {saving ? (
+                  <>Saving...</>
+                ) : (
+                  <><Video className="w-4 h-4" /> Start Live Interview</>
+                )}
+              </button>
               <button
                 onClick={handleConfirm}
                 disabled={saving || selectedDate === null}
@@ -389,6 +406,11 @@ export default function InterviewSchedulePage() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+            {saveError && (
+              <div className="mt-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 text-center">
+                {saveError}
+              </div>
+            )}
           </div>
           <p className="text-center text-xs text-[#a1a1aa] mt-4 flex items-center justify-center gap-1 font-mono">
             <Lock className="w-3 h-3" />

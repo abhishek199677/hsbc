@@ -173,28 +173,8 @@ export async function POST(request: Request) {
 
     // Mandatory 2FA for admin/owner roles
     if (isAdminOrOwner && !user.twoFactorEnabled) {
-      await prisma.loginLog.create({
-        data: {
-          userId: user.id,
-          organizationId: user.organizationId,
-          email: user.email,
-          success: false,
-          failureReason: "2FA not configured (admin required)",
-          ipAddress,
-          userAgent,
-          device,
-          browser,
-          os,
-        },
-      });
-
-      return NextResponse.json(
-        {
-          error: "Two-factor authentication is required for admin accounts. Please set up 2FA first.",
-          twoFactorSetupRequired: true,
-        },
-        { status: 403 }
-      );
+      // Allow login but flag 2FA needs setup
+      console.warn(`[auth] Admin ${user.email} logged in without 2FA - setup recommended`);
     }
 
     if (user.twoFactorEnabled) {

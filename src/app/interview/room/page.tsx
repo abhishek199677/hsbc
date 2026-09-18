@@ -93,7 +93,13 @@ const tips = [
 
 export default function InterviewRoomPage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [user, isLoading, router]);
 
   const [cameraStatus, setCameraStatus] = useState<DeviceStatus>("idle");
   const [micStatus, setMicStatus] = useState<DeviceStatus>("idle");
@@ -122,6 +128,7 @@ export default function InterviewRoomPage() {
   const rafRef = useRef<number>(0);
   const recognitionRef = useRef<InstanceType<SpeechRecognitionCtor> | null>(null);
   const [joining, setJoining] = useState(false);
+  const [interviewId, setInterviewId] = useState<string | null>(null);
 
   const displayName = user?.name || "Candidate";
 
@@ -352,33 +359,43 @@ export default function InterviewRoomPage() {
   ].filter(Boolean).length;
 
   const readiness = Math.round((checksPassed / 7) * 100);
-  const canJoin = roleLevelReady && checklistComplete && cameraOk;
+  const canJoin = roleLevelReady && checklistComplete && cameraOk && !!interviewId;
 
   const handleJoin = () => {
-    if (!canJoin || joining) return;
+    if (!canJoin || !interviewId || joining) return;
     setJoining(true);
     try {
       sessionStorage.setItem("tcRole", selectedRole || "");
       sessionStorage.setItem("tcLevel", selectedLevel || "");
       sessionStorage.setItem("tcNoCamera", continueWithoutCamera ? "1" : "0");
     } catch {}
-    router.push("/interview/live");
+    router.push(`/interview/live?id=${interviewId}`);
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem("tcInterviewId") || !token) return;
+    const existing = sessionStorage.getItem("tcInterviewId");
+    if (existing) {
+      setInterviewId(existing);
+      return;
+    }
+    if (!token) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/interview", { credentials: "include" });
+        if (res.status === 401) {
+          router.replace("/login");
+          return;
+        }
         const data = await res.json();
         if (!cancelled && data.success && data.interview?.id) {
           sessionStorage.setItem("tcInterviewId", data.interview.id);
+          setInterviewId(data.interview.id);
         }
       } catch {}
     })();
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, router]);
 
   const ringRadius = 34;
   const ringCircumference = 2 * Math.PI * ringRadius;
@@ -973,7 +990,9 @@ export default function InterviewRoomPage() {
               {!canJoin && (
                 <p className="text-center text-[11px] text-[#a78bfa] mt-2 flex items-center justify-center gap-1 font-mono">
                   <Lock className="w-3 h-3" />
-                  {!roleLevelReady && !checklistComplete
+                  {!interviewId
+                    ? "Loading interview session..."
+                    : !roleLevelReady && !checklistComplete
                     ? "Pick a role, level & tick the checklist to enable"
                     : !roleLevelReady
                     ? "Pick a role track & level to enable"

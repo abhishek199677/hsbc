@@ -109,6 +109,12 @@ export default function LiveInterviewContent() {
   const router = useRouter();
   const { user, token, isLoading: authLoading } = useAuth();
 
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/login");
+    }
+  }, [user, authLoading, router]);
+
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewEnded, setInterviewEnded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -209,6 +215,53 @@ export default function LiveInterviewContent() {
     }
     checkLiveKit();
   }, []);
+
+  // Verify interview exists on mount — redirect to /interview if not
+  useEffect(() => {
+    if (authLoading || !user || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        // First check sessionStorage for a known ID
+        const stored = sessionStorage.getItem("tcInterviewId");
+        if (stored) {
+          // Verify it's still valid
+          const res = await fetch("/api/interview", { credentials: "include" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.interview?.id) {
+              if (!cancelled) sessionStorage.setItem("tcInterviewId", data.interview.id);
+              return;
+            }
+          }
+          // Stored ID is stale — clear it
+          sessionStorage.removeItem("tcInterviewId");
+        }
+
+        // No valid interview — fetch to confirm
+        const res = await fetch("/api/interview", { credentials: "include" });
+        if (cancelled) return;
+        if (res.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        if (res.status === 404 || !res.ok) {
+          // No interview scheduled — show error with link to schedule
+          setStartError("__NO_INTERVIEW__");
+          return;
+        }
+        const data = await res.json();
+        if (data.success && data.interview?.id) {
+          sessionStorage.setItem("tcInterviewId", data.interview.id);
+        } else {
+          setStartError("__NO_INTERVIEW__");
+        }
+      } catch {
+        // Network error — will be handled when user tries to start
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, token, authLoading, router]);
 
   useEffect(() => {
     startPreview();
@@ -440,7 +493,11 @@ export default function LiveInterviewContent() {
         },
       }),
     });
-    return response.json();
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      throw new Error(data.error || `API error ${response.status}`);
+    }
+    return data;
   };
 
   const speakText = (text: string) =>
@@ -592,9 +649,31 @@ export default function LiveInterviewContent() {
     setLiveKitError(null);
     try {
       // Get the interview ID from the URL or session
-      const interviewId = typeof window !== "undefined"
+      let interviewId = typeof window !== "undefined"
         ? new URLSearchParams(window.location.search).get("id") || sessionStorage.getItem("tcInterviewId")
         : null;
+
+      // Fallback: fetch from API if not available locally
+      if (!interviewId) {
+        try {
+          const fallbackRes = await fetch("/api/interview", { credentials: "include" });
+          if (fallbackRes.status === 401) {
+            router.replace("/login");
+            return;
+          }
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            if (fallbackData.success && fallbackData.interview?.id) {
+              interviewId = fallbackData.interview.id;
+              sessionStorage.setItem("tcInterviewId", interviewId);
+            }
+          }
+        } catch {}
+      }
+
+      if (!interviewId) {
+        throw new Error("interviewId is required — please go back and rejoin the interview");
+      }
 
       const res = await fetch("/api/ai-agent", {
         method: "POST",
@@ -619,13 +698,14 @@ export default function LiveInterviewContent() {
       setInterviewStarted(true);
     } catch (error) {
       console.error("Failed to start LiveKit interview:", error);
-      setLiveKitError(
-        error instanceof Error
-          ? error.message
-          : "Failed to connect to the AI interviewer. Falling back to browser mode."
-      );
-      // Fall back to browser Speech API
-      setLiveKitAvailable(false);
+      const msg = error instanceof Error ? error.message : "";
+      if (msg === "Interview not found" || msg.includes("interviewId is required")) {
+        setStartError("__NO_INTERVIEW__");
+      } else {
+        setLiveKitError(msg || "Failed to connect to the AI interviewer. Falling back to browser mode.");
+        // Fall back to browser Speech API
+        setLiveKitAvailable(false);
+      }
     } finally {
       setLiveKitLoading(false);
     }
@@ -764,6 +844,28 @@ export default function LiveInterviewContent() {
       }
       startRecorder();
 
+      // Verify interview exists before calling AI
+      const interviewId = sessionStorage.getItem("tcInterviewId");
+      if (!interviewId) {
+        // Try to fetch from API
+        try {
+          const checkRes = await fetch("/api/interview", { credentials: "include" });
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            if (checkData.success && checkData.interview?.id) {
+              sessionStorage.setItem("tcInterviewId", checkData.interview.id);
+            } else {
+              throw new Error("__NO_INTERVIEW__");
+            }
+          } else {
+            throw new Error("__NO_INTERVIEW__");
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message === "__NO_INTERVIEW__") throw e;
+          // Network error — proceed, AI route will handle it
+        }
+      }
+
       const storedRole = typeof window !== "undefined" ? sessionStorage.getItem("tcRole") : null;
       const storedLevel = typeof window !== "undefined" ? sessionStorage.getItem("tcLevel") : null;
 
@@ -787,7 +889,12 @@ export default function LiveInterviewContent() {
       }
     } catch (error) {
       console.error("Failed to start interview:", error);
-      setStartError("Failed to connect to the AI interviewer. Please check your internet connection and try again.");
+      const msg = error instanceof Error ? error.message : "";
+      if (msg === "__NO_INTERVIEW__" || msg === "Interview not found") {
+        setStartError("__NO_INTERVIEW__");
+      } else {
+        setStartError("Failed to connect to the AI interviewer. Please check your internet connection and try again.");
+      }
     } finally {
       setLoading(false);
     }

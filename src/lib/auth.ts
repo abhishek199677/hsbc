@@ -99,7 +99,7 @@ async function resolveSession(token: string): Promise<AuthUser | null> {
         },
       }),
       new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error("Session lookup timeout")), 3000)
+        setTimeout(() => reject(new Error("Session lookup timeout")), 8000)
       ),
     ]);
 

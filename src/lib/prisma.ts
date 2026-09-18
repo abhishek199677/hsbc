@@ -12,7 +12,7 @@ function createPrismaClient() {
       "DATABASE_URL is not set. Copy .env.example to .env and configure your database."
     );
   }
-  const adapter = new PrismaPg({ connectionString });
+  const adapter = new PrismaPg({ connectionString, max: 10 });
   return new PrismaClient({ adapter });
 }
 
