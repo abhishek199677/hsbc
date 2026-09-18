@@ -108,6 +108,7 @@ export default function ProfilePage() {
     try {
       const response = await fetch("/api/ai/generate-summary", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentRole: formData.currentRole,
@@ -178,7 +179,7 @@ export default function ProfilePage() {
 
     (async () => {
       try {
-        const response = await fetch("/api/profile");
+        const response = await fetch("/api/profile", { credentials: "include" });
         const data = await response.json();
         if (cancelled) return;
         if (data.success && data.profile) {
@@ -245,6 +246,7 @@ export default function ProfilePage() {
     try {
       const response = await fetch("/api/profile", {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -281,6 +283,7 @@ export default function ProfilePage() {
 
       const response = await fetch("/api/upload", {
         method: "POST",
+        credentials: "include",
         body: formDataObj,
       });
 
@@ -405,7 +408,7 @@ export default function ProfilePage() {
           setParsingError(data.parsingError || "Resume parsing failed. Upload was successful but fields could not be auto-filled.");
           console.log("[upload] Parsing failed, attempting to re-fetch profile from API...");
           try {
-            const profileResponse = await fetch("/api/profile");
+            const profileResponse = await fetch("/api/profile", { credentials: "include" });
             const profileData = await profileResponse.json();
             if (profileData.success && profileData.profile) {
               const p = profileData.profile;
