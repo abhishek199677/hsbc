@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1400">
+<title>Techcitta - Proposed AWS Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f4f8; width: 1400px; min-height: 900px; }
+  
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { width: 48px; height: 48px; background: linear-gradient(135deg, #a78bfa, #7c3aed); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: white; }
+  .header-title h1 { font-size: 22px; font-weight: 700; }
+  .header-title p { font-size: 13px; color: #a78bfa; margin-top: 2px; }
+  .header-subtitle { font-size: 13px; color: #94a3b8; }
+  .env-badges { display: flex; gap: 8px; }
+  .env-badge { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .env-prod { background: #22c55e; color: white; }
+  .env-staging { background: #f59e0b; color: white; }
+  .env-dev { background: #3b82f6; color: white; }
+
+  .main { display: flex; gap: 0; padding: 20px; }
+  
+  .arch-area { flex: 1; position: relative; }
+  
+  /* Cloud boundary */
+  .cloud-box { border: 2px dashed #94a3b8; border-radius: 16px; padding: 20px; background: rgba(255,255,255,0.6); position: relative; margin-bottom: 16px; }
+  .cloud-label { position: absolute; top: -12px; left: 20px; background: #f0f4f8; padding: 0 8px; font-size: 12px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
+  .cloud-label .aws-icon { width: 20px; height: 20px; background: #ff9900; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: white; }
+
+  /* Row layout */
+  .row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .row-center { justify-content: center; }
+  
+  /* Service boxes */
+  .service-box { background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; text-align: center; min-width: 130px; position: relative; transition: all 0.2s; }
+  .service-box:hover { border-color: #a78bfa; box-shadow: 0 4px 12px rgba(167,139,250,0.2); }
+  .service-box .icon { width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .service-box .name { font-size: 12px; font-weight: 700; color: #1e293b; }
+  .service-box .desc { font-size: 10px; color: #64748b; margin-top: 2px; }
+  
+  /* AWS service colors */
+  .aws-orange { background: #fff3e0; border-color: #ff9800; }
+  .aws-orange .icon { background: #ff9800; color: white; }
+  .aws-blue { background: #e3f2fd; border-color: #2196f3; }
+  .aws-blue .icon { background: #2196f3; color: white; }
+  .aws-green { background: #e8f5e9; border-color: #4caf50; }
+  .aws-green .icon { background: #4caf50; color: white; }
+  .aws-purple { background: #f3e5f5; border-color: #9c27b0; }
+  .aws-purple .icon { background: #9c27b0; color: white; }
+  .aws-red { background: #ffebee; border-color: #f44336; }
+  .aws-red .icon { background: #f44336; color: white; }
+  .aws-teal { background: #e0f2f1; border-color: #009688; }
+  .aws-teal .icon { background: #009688; color: white; }
+  .aws-pink { background: #fce4ec; border-color: #e91e63; }
+  .aws-pink .icon { background: #e91e63; color: white; }
+  
+  /* Non-AWS services */
+  .svc-vercel { background: #fff; border-color: #000; }
+  .svc-vercel .icon { background: #000; color: white; }
+  .svc-neon { background: #e8f5e9; border-color: #00e676; }
+  .svc-neon .icon { background: #00c853; color: white; }
+  .svc-openai { background: #f3e5f5; border-color: #7c3aed; }
+  .svc-openai .icon { background: #7c3aed; color: white; }
+  .svc-livekit { background: #e3f2fd; border-color: #1565c0; }
+  .svc-livekit .icon { background: #1565c0; color: white; }
+  .svc-deepgram { background: #fff3e0; border-color: #e65100; }
+  .svc-deepgram .icon { background: #e65100; color: white; }
+  .svc-render { background: #e8eaf6; border-color: #3f51b5; }
+  .svc-render .icon { background: #3f51b5; color: white; }
+  .svc-sentry { background: #fce4ec; border-color: #c62828; }
+  .svc-sentry .icon { background: #c62828; color: white; }
+  .svc-upstash { background: #e0f7fa; border-color: #00838f; }
+  .svc-upstash .icon { background: #00838f; color: white; }
+  .svc-r2 { background: #fff8e1; border-color: #f9a825; }
+  .svc-r2 .icon { background: #f9a825; color: white; }
+  .svc-inngest { background: #ede7f6; border-color: #512da8; }
+  .svc-inngest .icon { background: #512da8; color: white; }
+  
+  /* Users icon */
+  .users-icon { text-align: center; }
+  .users-icon svg { width: 48px; height: 48px; }
+  .users-icon .label { font-size: 11px; color: #475569; font-weight: 600; margin-top: 4px; }
+  .users-icon .sublabel { font-size: 9px; color: #94a3b8; }
+  
+  /* Arrows */
+  .arrow { display: flex; align-items: center; color: #94a3b8; font-size: 18px; }
+  .arrow-down { justify-content: center; margin: 4px 0; }
+  .arrow-right { color: #94a3b8; }
+  
+  /* Section labels */
+  .section-label { font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; padding: 4px 12px; background: white; border-radius: 4px; display: inline-block; border-left: 3px solid #a78bfa; }
+  .section-label.orange { border-left-color: #ff9800; }
+  .section-label.blue { border-left-color: #2196f3; }
+  .section-label.green { border-left-color: #4caf50; }
+  .section-label.purple { border-left-color: #9c27b0; }
+  .section-label.red { border-left-color: #f44336; }
+  
+  /* Group boxes */
+  .group-box { border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; background: rgba(255,255,255,0.8); margin-bottom: 12px; }
+  .group-box .group-title { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+  
+  /* Right sidebar */
+  .sidebar { width: 280px; flex-shrink: 0; }
+  .sidebar-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 12px; }
+  .sidebar-card h3 { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #a78bfa; }
+  .sidebar-card .benefit { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 11px; color: #475569; }
+  .sidebar-card .benefit .check { color: #22c55e; font-weight: 700; flex-shrink: 0; }
+  
+  /* CI/CD Section */
+  .cicd-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; margin-top: 16px; }
+  .cicd-title { font-size: 14px; font-weight: 700; color: white; background: #1e293b; margin: -16px -16px 12px -16px; padding: 10px 16px; border-radius: 12px 12px 0 0; }
+  .cicd-flow { display: flex; align-items: center; gap: 8px; justify-content: center; }
+  .cicd-step { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; text-align: center; min-width: 100px; }
+  .cicd-step .step-icon { font-size: 20px; margin-bottom: 4px; }
+  .cicd-step .step-name { font-size: 11px; font-weight: 700; color: #1e293b; }
+  .cicd-step .step-desc { font-size: 9px; color: #64748b; }
+  .cicd-arrow { color: #94a3b8; font-size: 16px; }
+  
+  /* Bottom sections */
+  .bottom-row { display: flex; gap: 16px; margin-top: 16px; }
+  .bottom-card { flex: 1; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; }
+  .bottom-card h3 { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #a78bfa; }
+  .tree { font-family: 'Courier New', monospace; font-size: 11px; color: #475569; line-height: 1.6; }
+  .tree .folder { color: #2196f3; }
+  .tree .file { color: #64748b; }
+  .tree .comment { color: #94a3b8; }
+  
+  /* Env table */
+  .env-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .env-table th { background: #f1f5f9; padding: 6px 8px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+  .env-table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+  .env-table .env-name { font-weight: 600; color: #1e293b; }
+  
+  /* Connector lines */
+  .connector { position: relative; }
+  .connector::after { content: ''; position: absolute; background: #94a3b8; }
+  
+  /* Highlight box */
+  .highlight-box { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 2px solid #0ea5e9; border-radius: 10px; padding: 12px 16px; margin: 8px 0; }
+  .highlight-box .hl-title { font-size: 11px; font-weight: 700; color: #0369a1; margin-bottom: 4px; }
+  .highlight-box .hl-desc { font-size: 10px; color: #475569; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">T</div>
+    <div class="header-title">
+      <h1>Techcitta — Proposed AWS Architecture</h1>
+      <p>AI-Powered Hiring & Background Screening Platform</p>
+    </div>
+  </div>
+  <div style="text-align: right;">
+    <div class="env-badges" style="margin-bottom: 6px;">
+      <span class="env-badge env-prod">PROD — techcitta.com</span>
+      <span class="env-badge env-staging">STAGING — staging.techcitta.com</span>
+      <span class="env-badge env-dev">DEV — dev.techcitta.com</span>
+    </div>
+    <div class="header-subtitle">Modern | Secure | Scalable | AI-First</div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <!-- Architecture Area -->
+  <div class="arch-area">
+    
+    <!-- Users -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div class="users-icon">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="16" r="8" fill="#64748b"/><path d="M8 42c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#94a3b8"/></svg>
+        <div class="label">Users</div>
+        <div class="sublabel">(Job Seekers, Employers, Admins)</div>
+      </div>
+      <div class="arrow arrow-right">→</div>
+      
+      <!-- Edge & Delivery -->
+      <div class="cloud-box" style="flex: 1;">
+        <div class="cloud-label"><span class="aws-icon">aws</span> Edge & Delivery (Managed by Vercel / Render)</div>
+        <div class="row row-center">
+          <div class="service-box svc-vercel">
+            <div class="icon">▲</div>
+            <div class="name">Vercel</div>
+            <div class="desc">Next.js Frontend</div>
+            <div class="desc">Edge Functions, CDN, SSL</div>
+          </div>
+          <div class="arrow arrow-right">→</div>
+          <div class="service-box aws-orange">
+            <div class="icon">🔒</div>
+            <div class="name">Upstash Redis</div>
+            <div class="desc">Rate Limiting</div>
+            <div class="desc">Edge-rate Protection</div>
+          </div>
+          <div class="arrow arrow-right">→</div>
+          <div class="service-box svc-render">
+            <div class="icon">🐳</div>
+            <div class="name">Render</div>
+            <div class="desc">FastAPI Backend</div>
+            <div class="desc">Python API Server</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Application Layer -->
+    <div class="cloud-box">
+      <div class="cloud-label"><span class="aws-icon">aws</span> Application Layer</div>
+      
+      <div style="display: flex; gap: 16px;">
+        <!-- Left: AI & Media Services -->
+        <div style="flex: 1;">
+          <div class="section-label purple">AI & Intelligence Layer</div>
+          <div class="row">
+            <div class="service-box svc-openai">
+              <div class="icon">🤖</div>
+              <div class="name">OpenAI API</div>
+              <div class="desc">GPT-4o Resume Parsing</div>
+              <div class="desc">AI Interview, Chat</div>
+            </div>
+            <div class="arrow arrow-right">→</div>
+            <div class="service-box svc-livekit">
+              <div class="icon">📹</div>
+              <div class="name">LiveKit</div>
+              <div class="desc">Real-time WebRTC</div>
+              <div class="desc">AI Video Interviews</div>
+            </div>
+            <div class="arrow arrow-right">→</div>
+            <div class="service-box svc-deepgram">
+              <div class="icon">🎙️</div>
+              <div class="name">Deepgram</div>
+              <div class="desc">Speech-to-Text</div>
+              <div class="desc">Interview Transcription</div>
+            </div>
+          </div>
+          
+          <div class="section-label blue">Storage & Background</div>
+          <div class="row">
+            <div class="service-box svc-r2">
+              <div class="icon">☁️</div>
+              <div class="name">Cloudflare R2</div>
+              <div class="desc">Resume & Media Storage</div>
+              <div class="desc">S3-compatible, Zero Egress</div>
+            </div>
+            <div class="arrow arrow-right">→</div>
+            <div class="service-box svc-inngest">
+              <div class="icon">⚡</div>
+              <div class="name">Inngest</div>
+              <div class="desc">Background Jobs</div>
+              <div class="desc">Email, Reminders, Cron</div>
+            </div>
+            <div class="arrow arrow-right">→</div>
+            <div class="service-box svc-sentry">
+              <div class="icon">🐛</div>
+              <div class="name">Sentry</div>
+              <div class="desc">Error Tracking</div>
+              <div class="desc">Performance Monitoring</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right: Database & Auth -->
+        <div style="width: 220px;">
+          <div class="section-label green">Data & Auth Layer</div>
+          <div class="service-box svc-neon" style="margin-bottom: 10px;">
+            <div class="icon">🐘</div>
+            <div class="name">NeonDB (PostgreSQL)</div>
+            <div class="desc">Serverless PostgreSQL</div>
+            <div class="desc">Users, Profiles, Interviews</div>
+          </div>
+          <div class="service-box aws-green" style="margin-bottom: 10px;">
+            <div class="icon">🔑</div>
+            <div class="name">JWT + HttpOnly Cookies</div>
+            <div class="desc">Session Management</div>
+            <div class="desc">2FA / TOTP Support</div>
+          </div>
+          <div class="service-box aws-red">
+            <div class="icon">📧</div>
+            <div class="name">Gmail SMTP</div>
+            <div class="desc">Transactional Email</div>
+            <div class="desc">Verification, Notifications</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Render Services -->
+    <div class="cloud-box">
+      <div class="cloud-label"><span class="aws-icon">🐳</span> Render Services (Docker)</div>
+      <div class="row row-center">
+        <div class="service-box svc-render">
+          <div class="icon">🐍</div>
+          <div class="name">FastAPI Backend</div>
+          <div class="desc">REST API, Auth, CRUD</div>
+        </div>
+        <div class="service-box svc-render">
+          <div class="icon">🧠</div>
+          <div class="name">AI Agent</div>
+          <div class="desc">LiveKit Voice Agent</div>
+        </div>
+        <div class="service-box svc-render">
+          <div class="icon">💻</div>
+          <div class="name">Code Evaluator</div>
+          <div class="desc">Sandboxed Code Execution</div>
+        </div>
+        <div class="service-box svc-render">
+          <div class="icon">📊</div>
+          <div class="name">ML Prediction Server</div>
+          <div class="desc">Hire Recommendation Model</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CI/CD -->
+    <div class="cicd-section">
+      <div class="cicd-title">CI/CD Pipeline Flow</div>
+      <div class="cicd-flow">
+        <div class="cicd-step">
+          <div class="step-icon">👨‍💻</div>
+          <div class="step-name">Developer</div>
+          <div class="step-desc">Commit code</div>
+        </div>
+        <div class="cicd-arrow">→</div>
+        <div class="cicd-step">
+          <div class="step-icon">📦</div>
+          <div class="step-name">GitHub</div>
+          <div class="step-desc">Git Repository</div>
+        </div>
+        <div class="cicd-arrow">→</div>
+        <div class="cicd-step">
+          <div class="step-icon">🔄</div>
+          <div class="step-name">GitHub Actions</div>
+          <div class="step-desc">CI Pipeline</div>
+        </div>
+        <div class="cicd-arrow">→</div>
+        <div class="cicd-step" style="border-color: #22c55e;">
+          <div class="step-icon">▲</div>
+          <div class="step-name">Vercel</div>
+          <div class="step-desc">Frontend Deploy</div>
+        </div>
+        <div class="cicd-arrow">→</div>
+        <div class="cicd-step" style="border-color: #3f51b5;">
+          <div class="step-icon">🐳</div>
+          <div class="step-name">Render</div>
+          <div class="step-desc">Backend Deploy</div>
+        </div>
+        <div class="cicd-arrow">→</div>
+        <div class="cicd-step" style="border-color: #f59e0b;">
+          <div class="step-icon">✅</div>
+          <div class="step-name">Health Check</div>
+          <div class="step-desc">/api/health</div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 8px; font-size: 10px; color: #64748b;">
+        <strong>Triggers:</strong> Push to main → Deploy to Production &nbsp;|&nbsp; Pull Request → Build + Test (no deploy) &nbsp;|&nbsp; Auto-deploy on every commit
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-card">
+      <h3>Key Benefits</h3>
+      <div class="benefit"><span class="check">✅</span> AI-first architecture with GPT-4o for resume parsing & interviews</div>
+      <div class="benefit"><span class="check">✅</span> Real-time WebRTC video interviews via LiveKit</div>
+      <div class="benefit"><span class="check">✅</span> Serverless PostgreSQL with NeonDB (auto-scales)</div>
+      <div class="benefit"><span class="check">✅</span> Zero egress fees with Cloudflare R2 storage</div>
+      <div class="benefit"><span class="check">✅</span> Edge-rate limiting with Upstash Redis</div>
+      <div class="benefit"><span class="check">✅</span> Background job processing with Inngest</div>
+      <div class="benefit"><span class="check">✅</span> Dockerized microservices on Render</div>
+      <div class="benefit"><span class="check">✅</span> Automated CI/CD with GitHub Actions</div>
+      <div class="benefit"><span class="check">✅</span> Enterprise security: 2FA, JWT, CSP headers</div>
+      <div class="benefit"><span class="check">✅</span> Cost-optimized: Free tier for dev, pay-as-you-scale</div>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Environments</h3>
+      <table class="env-table">
+        <tr><th>Env</th><th>URL</th><th>Purpose</th></tr>
+        <tr><td class="env-name">Production</td><td>techcitta.com</td><td>Live platform</td></tr>
+        <tr><td class="env-name">Staging</td><td>staging.techcitta.com</td><td>Pre-release testing</td></tr>
+        <tr><td class="env-name">Dev</td><td>dev.techcitta.com</td><td>Internal development</td></tr>
+      </table>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Estimated Monthly Cost</h3>
+      <div style="font-size: 11px; color: #475569; line-height: 1.8;">
+        <div>Vercel (Pro): ~$20</div>
+        <div>Render (Starter): ~$7</div>
+        <div>NeonDB (Free tier): $0</div>
+        <div>Cloudflare R2: ~$1</div>
+        <div>LiveKit (Free tier): $0</div>
+        <div>OpenAI API: ~$10-50</div>
+        <div style="font-weight: 700; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px;">Total: ~$40-100/mo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom: Repo Structure + DNS -->
+<div style="padding: 0 20px 20px 20px;">
+  <div class="bottom-row">
+    <div class="bottom-card">
+      <h3>Git Repository Structure (Monorepo)</h3>
+      <div class="tree">
+        <span class="folder">hsbc/</span><br>
+        ├── <span class="folder">src/</span> <span class="comment"># Next.js frontend (App Router)</span><br>
+        │&nbsp;&nbsp; ├── <span class="folder">app/</span> <span class="comment"># Pages & API routes</span><br>
+        │&nbsp;&nbsp; ├── <span class="folder">components/</span> <span class="comment"># React components</span><br>
+        │&nbsp;&nbsp; ├── <span class="folder">lib/</span> <span class="comment"># Utilities, Prisma, email, auth</span><br>
+        │&nbsp;&nbsp; └── <span class="folder">types/</span> <span class="comment"># TypeScript types</span><br>
+        ├── <span class="folder">backend/</span> <span class="comment"># FastAPI (Python) REST API</span><br>
+        ├── <span class="folder">agent/</span> <span class="comment"># LiveKit AI Voice Agent</span><br>
+        ├── <span class="folder">evaluator/</span> <span class="comment"># Code execution sandbox</span><br>
+        ├── <span class="folder">ml/</span> <span class="comment"># ML prediction server</span><br>
+        ├── <span class="folder">prisma/</span> <span class="comment"># Database schema & migrations</span><br>
+        ├── <span class="folder">scripts/</span> <span class="comment"># Build & data scripts</span><br>
+        ├── <span class="folder">.github/</span> <span class="comment"># CI/CD workflows</span><br>
+        ├── <span class="file">render.yaml</span> <span class="comment"># Render Blueprint</span><br>
+        ├── <span class="file">vercel.json</span> <span class="comment"># Vercel config</span><br>
+        └── <span class="file">docker-compose.yml</span>
+      </div>
+    </div>
+
+    <div class="bottom-card">
+      <h3>Database Schema (Key Models)</h3>
+      <div class="tree">
+        <span class="folder">NeonDB (PostgreSQL)</span><br>
+        ├── <span class="file">Organization</span> <span class="comment"># Multi-tenant orgs</span><br>
+        ├── <span class="file">User</span> <span class="comment"># Auth, roles, 2FA</span><br>
+        ├── <span class="file">Profile</span> <span class="comment"># Resume, skills, preferences</span><br>
+        ├── <span class="file">Interview</span> <span class="comment"># AI interview sessions</span><br>
+        ├── <span class="file">InterviewMetrics</span> <span class="comment"># ML training data</span><br>
+        ├── <span class="file">Job</span> <span class="comment"># Job postings</span><br>
+        ├── <span class="file">CandidateMatch</span> <span class="comment"># AI job matching</span><br>
+        ├── <span class="file">Client</span> <span class="comment"># Agency clients</span><br>
+        ├── <span class="file">Placement</span> <span class="comment"># Hiring placements</span><br>
+        ├── <span class="file">AuditLog</span> <span class="comment"># SOC2 compliance</span><br>
+        └── <span class="file">OpenAIUsageLog</span> <span class="comment"># Cost tracking</span>
+      </div>
+    </div>
+
+    <div class="bottom-card">
+      <h3>Security & Compliance</h3>
+      <div style="font-size: 11px; color: #475569; line-height: 1.8;">
+        <div>🔐 <strong>Auth:</strong> JWT + HttpOnly cookies + bcrypt</div>
+        <div>🛡️ <strong>2FA:</strong> TOTP (speakeasy)</div>
+        <div>🔒 <strong>Headers:</strong> CSP, HSTS, X-Frame-Options</div>
+        <div>rate <strong>Rate Limit:</strong> Upstash Redis per-IP</div>
+        <div>📋 <strong>Audit:</strong> Full audit trail (SOC2)</div>
+        <div>🏢 <strong>SSO:</strong> SAML/OIDC (Enterprise)</div>
+        <div>🔍 <strong>Proctoring:</strong> Anti-cheating for interviews</div>
+        <div>💳 <strong>Billing:</strong> Stripe integration</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

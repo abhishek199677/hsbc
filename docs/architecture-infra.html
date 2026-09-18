@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1400">
+<title>Techcitta - Infrastructure & Data Flow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f4f8; width: 1400px; min-height: 900px; }
+  
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { width: 48px; height: 48px; background: linear-gradient(135deg, #a78bfa, #7c3aed); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: white; }
+  .header-title h1 { font-size: 22px; font-weight: 700; }
+  .header-title p { font-size: 13px; color: #a78bfa; margin-top: 2px; }
+
+  .main { display: flex; gap: 20px; padding: 20px; }
+  
+  .left-col { flex: 1; }
+  .right-col { width: 320px; }
+  
+  /* Cloud boundary */
+  .cloud-box { border: 2px dashed #94a3b8; border-radius: 16px; padding: 20px; background: rgba(255,255,255,0.6); position: relative; margin-bottom: 16px; }
+  .cloud-label { position: absolute; top: -12px; left: 20px; background: #f0f4f8; padding: 0 8px; font-size: 12px; font-weight: 600; color: #475569; }
+  
+  .row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .row-center { justify-content: center; }
+  
+  /* Service boxes */
+  .service-box { background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; text-align: center; min-width: 120px; }
+  .service-box .icon { width: 36px; height: 36px; margin: 0 auto 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .service-box .name { font-size: 11px; font-weight: 700; color: #1e293b; }
+  .service-box .desc { font-size: 9px; color: #64748b; margin-top: 2px; }
+  
+  .aws-orange { background: #fff3e0; border-color: #ff9800; }
+  .aws-orange .icon { background: #ff9800; color: white; }
+  .aws-blue { background: #e3f2fd; border-color: #2196f3; }
+  .aws-blue .icon { background: #2196f3; color: white; }
+  .aws-green { background: #e8f5e9; border-color: #4caf50; }
+  .aws-green .icon { background: #4caf50; color: white; }
+  .aws-purple { background: #f3e5f5; border-color: #9c27b0; }
+  .aws-purple .icon { background: #9c27b0; color: white; }
+  .aws-red { background: #ffebee; border-color: #f44336; }
+  .aws-red .icon { background: #f44336; color: white; }
+  
+  .svc-vercel { background: #fff; border-color: #000; }
+  .svc-vercel .icon { background: #000; color: white; }
+  .svc-neon { background: #e8f5e9; border-color: #00e676; }
+  .svc-neon .icon { background: #00c853; color: white; }
+  .svc-openai { background: #f3e5f5; border-color: #7c3aed; }
+  .svc-openai .icon { background: #7c3aed; color: white; }
+  .svc-livekit { background: #e3f2fd; border-color: #1565c0; }
+  .svc-livekit .icon { background: #1565c0; color: white; }
+  .svc-render { background: #e8eaf6; border-color: #3f51b5; }
+  .svc-render .icon { background: #3f51b5; color: white; }
+  .svc-r2 { background: #fff8e1; border-color: #f9a825; }
+  .svc-r2 .icon { background: #f9a825; color: white; }
+  
+  .arrow { display: flex; align-items: center; color: #94a3b8; font-size: 16px; }
+  
+  .section-label { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px; padding: 4px 10px; background: white; border-radius: 4px; display: inline-block; border-left: 3px solid #a78bfa; }
+  .section-label.orange { border-left-color: #ff9800; }
+  .section-label.blue { border-left-color: #2196f3; }
+  .section-label.green { border-left-color: #4caf50; }
+  .section-label.purple { border-left-color: #9c27b0; }
+  .section-label.red { border-left-color: #f44336; }
+  
+  /* Group boxes */
+  .group-box { border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; background: rgba(255,255,255,0.8); margin-bottom: 12px; }
+  .group-title { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+  
+  /* Sidebar */
+  .sidebar-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 12px; }
+  .sidebar-card h3 { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #a78bfa; }
+  .benefit { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 11px; color: #475569; }
+  .benefit .check { color: #22c55e; font-weight: 700; flex-shrink: 0; }
+  
+  /* Flow diagram */
+  .flow-box { background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .flow-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #a78bfa; }
+  .flow-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .flow-step { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; text-align: center; font-size: 10px; min-width: 80px; }
+  .flow-step .step-name { font-weight: 700; color: #1e293b; }
+  .flow-step .step-desc { color: #64748b; font-size: 9px; }
+  .flow-arrow { color: #94a3b8; font-size: 14px; }
+  
+  /* Table */
+  .info-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .info-table th { background: #f1f5f9; padding: 6px 8px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+  .info-table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+  
+  /* Data flow arrows */
+  .data-flow { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+  .data-flow-item { display: flex; align-items: center; gap: 8px; font-size: 10px; color: #475569; }
+  .data-flow-item .df-arrow { color: #a78bfa; font-weight: 700; }
+  
+  /* Highlight */
+  .highlight-box { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 2px solid #0ea5e9; border-radius: 10px; padding: 12px; margin: 8px 0; }
+  .hl-title { font-size: 11px; font-weight: 700; color: #0369a1; margin-bottom: 4px; }
+  .hl-desc { font-size: 10px; color: #475569; line-height: 1.5; }
+
+  /* Bottom row */
+  .bottom-row { display: flex; gap: 16px; padding: 0 20px 20px 20px; }
+  .bottom-card { flex: 1; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; }
+  .bottom-card h3 { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #a78bfa; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">T</div>
+    <div class="header-title">
+      <h1>Techcitta — Infrastructure & Data Flow</h1>
+      <p>AI-Powered Hiring Platform — Detailed Architecture</p>
+    </div>
+  </div>
+  <div style="text-align: right; font-size: 12px; color: #94a3b8;">
+    <div>Public: <strong style="color: white;">techcitta.com</strong></div>
+    <div>DEV: dev.techcitta.com | STAGING: staging.techcitta.com</div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <div class="left-col">
+    
+    <!-- Request Flow -->
+    <div class="cloud-box">
+      <div class="cloud-label">Request Flow — User to Database</div>
+      
+      <div class="row">
+        <div class="service-box" style="min-width: 80px;">
+          <div class="icon" style="background: #64748b; color: white; width: 32px; height: 32px;">👤</div>
+          <div class="name">User</div>
+          <div class="desc">Browser / Mobile</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="service-box svc-vercel">
+          <div class="icon">▲</div>
+          <div class="name">Vercel Edge</div>
+          <div class="desc">CDN + Edge Functions</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="service-box aws-orange">
+          <div class="icon">⚡</div>
+          <div class="name">Upstash</div>
+          <div class="desc">Rate Limit Check</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="service-box svc-vercel" style="border-color: #22c55e;">
+          <div class="icon" style="background: #22c55e;">⚙️</div>
+          <div class="name">Next.js API</div>
+          <div class="desc">Route Handlers</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="service-box svc-neon">
+          <div class="icon">🐘</div>
+          <div class="name">NeonDB</div>
+          <div class="desc">PostgreSQL Query</div>
+        </div>
+      </div>
+      
+      <div class="data-flow">
+        <div class="data-flow-item"><span class="df-arrow">①</span> User hits Vercel Edge (SSL termination, CSP headers)</div>
+        <div class="data-flow-item"><span class="df-arrow">②</span> Upstash Redis checks rate limit (100 req/min per IP)</div>
+        <div class="data-flow-item"><span class="df-arrow">③</span> Next.js middleware validates JWT session cookie</div>
+        <div class="data-flow-item"><span class="df-arrow">④</span> Route handler processes request (Prisma → NeonDB)</div>
+        <div class="data-flow-item"><span class="df-arrow">⑤</span> Response returned via Edge network (cached if GET)</div>
+      </div>
+    </div>
+
+    <!-- AI Interview Flow -->
+    <div class="cloud-box">
+      <div class="cloud-label">AI Interview Flow — Real-time WebRTC</div>
+      
+      <div class="row">
+        <div class="service-box" style="min-width: 80px;">
+          <div class="icon" style="background: #64748b; color: white; width: 32px; height: 32px;">👤</div>
+          <div class="name">Candidate</div>
+          <div class="desc">Video + Audio</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="service-box svc-livekit">
+          <div class="icon">📹</div>
+          <div class="name">LiveKit</div>
+          <div class="desc">WebRTC SFU</div>
+          <div class="desc">Video Room</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="service-box svc-render" style="border-color: #7c3aed;">
+          <div class="icon" style="background: #7c3aed;">🧠</div>
+          <div class="name">AI Agent</div>
+          <div class="desc">Python (LiveKit SDK)</div>
+          <div class="desc">GPT-4o + TTS/STT</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="service-box svc-openai">
+          <div class="icon">🤖</div>
+          <div class="name">OpenAI</div>
+          <div class="desc">GPT-4o Generate</div>
+          <div class="desc">Questions + Eval</div>
+        </div>
+      </div>
+      
+      <div class="data-flow">
+        <div class="data-flow-item"><span class="df-arrow">①</span> Candidate joins LiveKit room via WebRTC</div>
+        <div class="data-flow-item"><span class="df-arrow">②</span> AI Agent subscribes to audio track, sends to Deepgram STT</div>
+        <div class="data-flow-item"><span class="df-arrow">③</span> Transcript sent to GPT-4o for next question generation</div>
+        <div class="data-flow-item"><span class="df-arrow">④</span> AI response converted to speech (LiveKit TTS) and played back</div>
+        <div class="data-flow-item"><span class="df-arrow">⑤</span> Full conversation saved to DB, evaluated by GPT-4o</div>
+      </div>
+    </div>
+
+    <!-- Microservices -->
+    <div class="cloud-box">
+      <div class="cloud-label">Microservices Architecture (Render)</div>
+      
+      <div style="display: flex; gap: 12px;">
+        <div class="group-box" style="flex: 1;">
+          <div class="group-title">🐍 FastAPI Backend</div>
+          <div style="font-size: 10px; color: #475569; line-height: 1.6;">
+            • REST API (CRUD operations)<br>
+            • JWT Authentication<br>
+            • Resume parsing (pdfplumber)<br>
+            • Agency screening logic<br>
+            • Candidate matching<br>
+            • Health check: <code>/docs</code>
+          </div>
+        </div>
+        <div class="group-box" style="flex: 1;">
+          <div class="group-title">🧠 AI Agent (LiveKit)</div>
+          <div style="font-size: 10px; color: #475569; line-height: 1.6;">
+            • Real-time voice interviews<br>
+            • GPT-4o question generation<br>
+            • Deepgram speech-to-text<br>
+            • Proctoring (webcam monitoring)<br>
+            • Difficulty adaptation<br>
+            • Auto-evaluation
+          </div>
+        </div>
+        <div class="group-box" style="flex: 1;">
+          <div class="group-title">💻 Code Evaluator</div>
+          <div style="font-size: 10px; color: #475569; line-height: 1.6;">
+            • Sandboxed code execution<br>
+            • Multi-language support<br>
+            • Time/memory limits<br>
+            • Test case validation<br>
+            • Used in AI interviews<br>
+            • Health check: <code>/health</code>
+          </div>
+        </div>
+        <div class="group-box" style="flex: 1;">
+          <div class="group-title">📊 ML Server</div>
+          <div style="font-size: 10px; color: #475569; line-height: 1.6;">
+            • Hire recommendation model<br>
+            • Candidate-job matching<br>
+            • Score prediction<br>
+            • Trained on interview data<br>
+            • FastAPI + scikit-learn<br>
+            • Health check: <code>/health</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right Sidebar -->
+  <div class="right-col">
+    
+    <div class="sidebar-card">
+      <h3>Data Storage</h3>
+      <table class="info-table">
+        <tr><th>Service</th><th>Data</th><th>Retention</th></tr>
+        <tr><td><strong>NeonDB</strong></td><td>Users, profiles, interviews</td><td>Permanent</td></tr>
+        <tr><td><strong>Cloudflare R2</strong></td><td>Resumes, images, PDFs</td><td>Permanent</td></tr>
+        <tr><td><strong>Upstash Redis</strong></td><td>Rate limit counters</td><td>24h TTL</td></tr>
+        <tr><td><strong>Inngest</strong></td><td>Job queue, cron state</td><td>7 days</td></tr>
+      </table>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>API Endpoints (Key Routes)</h3>
+      <table class="info-table">
+        <tr><th>Route</th><th>Method</th><th>Purpose</th></tr>
+        <tr><td><code>/api/auth/*</code></td><td>POST</td><td>Signup, login, reset</td></tr>
+        <tr><td><code>/api/profile</code></td><td>GET/PUT</td><td>User profile CRUD</td></tr>
+        <tr><td><code>/api/upload</code></td><td>POST</td><td>Resume upload + parse</td></tr>
+        <tr><td><code>/api/ai-interview</code></td><td>POST</td><td>Start AI interview</td></tr>
+        <tr><td><code>/api/transcribe</code></td><td>POST</td><td>Deepgram STT</td></tr>
+        <tr><td><code>/api/livekit</code></td><td>GET</td><td>WebRTC token</td></tr>
+        <tr><td><code>/api/agency/*</code></td><td>POST</td><td>Recruiter operations</td></tr>
+        <tr><td><code>/api/admin/*</code></td><td>GET</td><td>Admin dashboard</td></tr>
+        <tr><td><code>/api/billing/*</code></td><td>POST</td><td>Stripe payments</td></tr>
+        <tr><td><code>/api/health</code></td><td>GET</td><td>Health check</td></tr>
+      </table>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Security Layers</h3>
+      <div style="font-size: 11px; color: #475569; line-height: 1.8;">
+        <div><strong>L1 — Edge:</strong> Vercel WAF, CSP headers</div>
+        <div><strong>L2 — Rate:</strong> Upstash Redis per-IP</div>
+        <div><strong>L3 — Auth:</strong> JWT + HttpOnly cookies</div>
+        <div><strong>L4 — 2FA:</strong> TOTP (Google Authenticator)</div>
+        <div><strong>L5 — RBAC:</strong> Role-based access control</div>
+        <div><strong>L6 — Data:</strong> Encrypted at rest (NeonDB)</div>
+        <div><strong>L7 — Audit:</strong> Full audit trail logging</div>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Monitoring & Observability</h3>
+      <div style="font-size: 11px; color: #475569; line-height: 1.8;">
+        <div>🐛 <strong>Sentry:</strong> Error tracking + performance</div>
+        <div>📊 <strong>OpenAI Logs:</strong> Token usage & cost tracking</div>
+        <div>📋 <strong>Audit Logs:</strong> SOC2 compliance trail</div>
+        <div>🔍 <strong>Render Logs:</strong> Service health monitoring</div>
+        <div>📈 <strong>Vercel Analytics:</strong> Web Vitals & traffic</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Row -->
+<div class="bottom-row">
+  <div class="bottom-card">
+    <h3>Branding & Multi-Tenancy</h3>
+    <div style="font-size: 11px; color: #475569; line-height: 1.8;">
+      <div>🏢 <strong>Organization:</strong> Multi-tenant isolation</div>
+      <div>🎨 <strong>Custom Branding:</strong> Logo, colors, favicon per org</div>
+      <div>🔐 <strong>SSO/SAML:</strong> Enterprise identity providers</div>
+      <div>🌐 <strong>Custom Domain:</strong> careers.yourcompany.com</div>
+      <div>📧 <strong>Email Branding:</strong> Custom from name/address</div>
+      <div>📋 <strong>API Keys:</strong> Enterprise integrations</div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <h3>Key Integrations</h3>
+    <div style="font-size: 11px; color: #475569; line-height: 1.8;">
+      <div>💳 <strong>Stripe:</strong> Subscription billing</div>
+      <div>📧 <strong>Gmail SMTP:</strong> Transactional email</div>
+      <div>🤖 <strong>OpenAI:</strong> GPT-4o for AI features</div>
+      <div>📹 <strong>LiveKit:</strong> Real-time video interviews</div>
+      <div>🎙️ <strong>Deepgram:</strong> Speech-to-text</div>
+      <div>☁️ <strong>Cloudflare R2:</strong> Object storage</div>
+      <div>⚡ <strong>Inngest:</strong> Background job processing</div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <h3>Deployment Strategy</h3>
+    <div style="font-size: 11px; color: #475569; line-height: 1.8;">
+      <div>🔄 <strong>Auto-deploy:</strong> Push to main → Production</div>
+      <div>🧪 <strong>Preview:</strong> PR → Vercel preview URL</div>
+      <div>🐳 <strong>Docker:</strong> All Render services containerized</div>
+      <div>📋 <strong>Blueprint:</strong> render.yaml for infra-as-code</div>
+      <div>🌐 <strong>Domain:</strong> DNS via Vercel / Cloudflare</div>
+      <div>🔒 <strong>SSL:</strong> Auto-managed certificates</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
