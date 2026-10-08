@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Shield, CheckCircle, ArrowRight, Building, Users, Lock, FileCheck, Globe, Award } from "lucide-react";
+import { Shield, ArrowRight, Users, Lock, FileCheck, Globe, Award } from "lucide-react";
 
 const features = [
   {

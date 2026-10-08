@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, CheckCircle, ArrowRight, Users, Zap, Lock, BarChart3, Globe, Headphones } from "lucide-react";
+import { Building2, CheckCircle, ArrowRight, Users, Zap, Lock, BarChart3, Headphones } from "lucide-react";
 import { VERIFICATION_PRICES_USD, formatPrice } from "@/lib/pricing";
 import { useCurrency } from "@/lib/useCurrency";
 import CurrencySelector from "@/components/CurrencySelector";

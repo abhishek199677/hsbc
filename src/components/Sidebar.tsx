@@ -1,14 +1,14 @@
 "use client";
 
-import { CheckCircle, Shield, Users, Lock, Heart, Headphones, Mail } from "lucide-react";
+import { CheckCircle, Headphones } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
-  currentStep: number;
+  currentStep?: number;
   progress: number;
 }
 
-export default function Sidebar({ currentStep, progress }: SidebarProps) {
+export default function Sidebar({ currentStep: _currentStep, progress }: SidebarProps) {
   const { organization } = useAuth();
   const brandName = organization?.name || "HireRight";
   const features = [
