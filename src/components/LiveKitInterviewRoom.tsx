@@ -46,8 +46,10 @@ interface Props {
   audioEnabled?: boolean;
 }
 
-/** How long the candidate waits for the agent before showing recovery options. */
-const AGENT_JOIN_TIMEOUT_MS = 25_000;
+/** How long the candidate waits for the agent before showing recovery options.
+ *  The API already refuses to hand over a room until the agent is in it, so
+ *  this only covers an agent that joins and then drops — keep it short. */
+const AGENT_JOIN_TIMEOUT_MS = 12_000;
 
 /**
  * Inner component that renders the interview layout.
@@ -88,12 +90,16 @@ function InterviewLayout({
 
   // Don't spin forever: if the agent hasn't joined in time, offer a way out.
   const [agentMissing, setAgentMissing] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (isAiConnected) {
       setAgentMissing(false);
       return;
     }
+    // Only arm the timer while we are still waiting — clearing agentMissing
+    // (i.e. retrying) restarts it, so a failed retry times out again too.
+    if (agentMissing) return;
     const startedAt = Date.now();
     const id = window.setInterval(() => {
       if (Date.now() - startedAt >= AGENT_JOIN_TIMEOUT_MS) {
@@ -101,7 +107,18 @@ function InterviewLayout({
       }
     }, 1000);
     return () => window.clearInterval(id);
-  }, [isAiConnected]);
+  }, [isAiConnected, agentMissing]);
+
+  const handleRetry = async () => {
+    if (retrying || !onRetry) return;
+    setRetrying(true);
+    setAgentMissing(false); // back to "Connecting…" while we re-dispatch
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -181,10 +198,11 @@ function InterviewLayout({
               <div className="flex gap-3">
                 {onRetry && (
                   <button
-                    onClick={onRetry}
-                    className="px-4 py-2 bg-[#a78bfa] text-white rounded-lg hover:bg-[#8b5cf6] text-sm"
+                    onClick={handleRetry}
+                    disabled={retrying}
+                    className="px-4 py-2 bg-[#a78bfa] text-white rounded-lg hover:bg-[#8b5cf6] text-sm disabled:opacity-60"
                   >
-                    Try again
+                    {retrying ? "Retrying…" : "Try again"}
                   </button>
                 )}
                 <button

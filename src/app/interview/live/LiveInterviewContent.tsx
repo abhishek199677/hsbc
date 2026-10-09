@@ -675,6 +675,8 @@ export default function LiveInterviewContent() {
         throw new Error("interviewId is required — please go back and rejoin the interview");
       }
 
+      // Cap the wait: the API confirms the agent joined before replying, so a
+      // hung request must not leave the candidate on "Connecting…" forever.
       const res = await fetch("/api/ai-agent", {
         method: "POST",
         credentials: "include",
@@ -682,6 +684,7 @@ export default function LiveInterviewContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ interviewId }),
+        signal: AbortSignal.timeout(30_000),
       });
 
       const data = await res.json();
@@ -698,7 +701,15 @@ export default function LiveInterviewContent() {
       setInterviewStarted(true);
     } catch (error) {
       console.error("Failed to start LiveKit interview:", error);
-      const msg = error instanceof Error ? error.message : "";
+      const timedOut =
+        typeof DOMException !== "undefined" &&
+        error instanceof DOMException &&
+        (error.name === "TimeoutError" || error.name === "AbortError");
+      const msg = timedOut
+        ? "Timed out waiting for the AI interviewer to join. Try again, or start the browser interview."
+        : error instanceof Error
+        ? error.message
+        : "";
       if (msg === "Interview not found" || msg.includes("interviewId is required")) {
         setStartError("__NO_INTERVIEW__");
       } else {

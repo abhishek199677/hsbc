@@ -40,6 +40,44 @@ async function hasAgentParticipant(
 }
 
 /**
+ * How long we let the dispatched agent show up before giving up. A healthy
+ * worker joins in ~1-2s; a cold start (first job spins up a subprocess) takes
+ * a few seconds more. Anything beyond this means no worker is registered.
+ */
+const AGENT_JOIN_TIMEOUT_MS = 15_000;
+const AGENT_JOIN_POLL_MS = 500;
+
+/**
+ * Block until the agent is actually sitting in the room, or throw.
+ *
+ * Dispatching only asks LiveKit for a job — if no `interview-agent` worker is
+ * registered (the Python service is not running) the dispatch succeeds and
+ * nobody ever joins. Returning success there is what left candidates staring
+ * at "Connecting to AI agent…" forever with no question ever asked.
+ */
+export async function waitForAgentParticipant(
+  svc: RoomServiceClient,
+  roomName: string,
+  candidateIdentity: string,
+  timeoutMs: number = AGENT_JOIN_TIMEOUT_MS
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  // Require the agent to be seen twice in a row so a worker that joins and
+  // immediately shuts down (e.g. missing room metadata) is not counted.
+  let seen = 0;
+  while (Date.now() < deadline) {
+    if (await hasAgentParticipant(svc, roomName, candidateIdentity)) {
+      seen += 1;
+      if (seen >= 2) return true;
+    } else {
+      seen = 0;
+    }
+    await new Promise((resolve) => setTimeout(resolve, AGENT_JOIN_POLL_MS));
+  }
+  return false;
+}
+
+/**
  * Generate a LiveKit access token for a participant.
  */
 export async function generateLiveKitToken(
@@ -120,19 +158,26 @@ export async function createInterviewRoom(
     const existing = (await getDispatchClient().listDispatch(roomName)).filter(
       (d) => d.agentName === INTERVIEW_AGENT_NAME
     );
-    // A dispatch is only useful if its job is recent (the agent joins within a
-    // couple of seconds). One left behind by a crashed agent must not block a
-    // retry, otherwise "Try again" would do nothing forever.
+    // A dispatch is only useful while someone is still working on it: either a
+    // job is running, or one was requested seconds ago and has not been
+    // assigned yet. A finished or crashed job must not block a retry, or
+    // "Try again" would keep doing nothing.
     const nowMs = Date.now();
-    const jobRecent = existing.some((d) => {
-      if ((d.state?.jobs?.length ?? 0) === 0) return false;
-      const raw = Number(d.state?.createdAt ?? 0);
-      if (!raw) return true;
-      const createdAtMs = raw < 1e12 ? raw * 1000 : raw;
-      return nowMs - createdAtMs < 60_000;
+    const jobPendingOrActive = existing.some((d) => {
+      const jobs = d.state?.jobs ?? [];
+      if (jobs.length === 0) {
+        const raw = Number(d.state?.createdAt ?? 0);
+        if (!raw) return false;
+        const createdAtMs = raw < 1e12 ? raw * 1000 : raw;
+        return nowMs - createdAtMs < 15_000;
+      }
+      return jobs.some((job) => {
+        const endedAt = String(job.state?.endedAt ?? "0");
+        return endedAt === "0" || endedAt === "";
+      });
     });
 
-    if (!alreadyServed && !jobRecent) {
+    if (!alreadyServed && !jobPendingOrActive) {
       // Clear leftovers from a failed attempt before asking for a new job.
       for (const stale of existing) {
         await getDispatchClient().deleteDispatch(stale.id, roomName).catch(() => undefined);
@@ -144,6 +189,21 @@ export async function createInterviewRoom(
     console.error("Failed to dispatch the interview agent:", error);
     throw new Error(
       "The AI interviewer is not available right now — please start the agent service (./dev-all.sh) and try again."
+    );
+  }
+
+  // The dispatch above only *requests* a job. Confirm a worker picked it up,
+  // otherwise the candidate is sent into a room where nobody will ever ask a
+  // question and the UI spins on "Connecting…" forever.
+  const agentJoined = await waitForAgentParticipant(svc, roomName, identity);
+  if (!agentJoined) {
+    console.error(
+      "[livekit] no interview-agent joined %s within %dms — worker is not running",
+      roomName,
+      AGENT_JOIN_TIMEOUT_MS
+    );
+    throw new Error(
+      "The AI interviewer did not join: the voice agent service is not running. Start it with ./dev-all.sh, or choose Start Browser Interview to continue without voice."
     );
   }
 
