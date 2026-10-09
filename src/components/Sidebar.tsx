@@ -22,7 +22,11 @@ export default function Sidebar({ currentStep: _currentStep, progress }: Sidebar
   return (
     <aside className="w-full lg:w-80 bg-[#09090b] text-white p-8 flex flex-col border-r border-[#27272a]">
       <div className="mb-8">
-        <img src={organization?.logoUrl || "/logo.png"} alt={brandName} className="h-12 w-auto" />
+        <img
+          src={organization?.logoUrl || "/hireright-logo.svg"}
+          alt={brandName}
+          className="h-12 w-auto"
+        />
       </div>
 
       <div className="mb-8">

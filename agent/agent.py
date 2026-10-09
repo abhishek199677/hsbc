@@ -34,7 +34,7 @@ load_dotenv("../.env")
 from livekit import agents
 from livekit.agents import AgentServer, AgentSession
 from livekit.agents.voice.room_io import AudioInputOptions, RoomOptions
-from livekit.plugins import deepgram, openai, silero
+from livekit.plugins import deepgram, openai, silero, simli
 
 from interview_agent import InterviewAgent, InterviewBackend, InterviewLLM
 
@@ -52,6 +52,8 @@ required_vars = [
     "LIVEKIT_API_SECRET",
     "DEEPGRAM_API_KEY",
     "OPENAI_API_KEY",
+    "SIMLI_API_KEY",
+    "SIMLI_FACE_ID",
 ]
 for var in required_vars:
     if not os.getenv(var):
@@ -63,6 +65,20 @@ DEFAULT_PROFILE = {
     "totalExperience": "1-3 years",
     "skills": "Not specified",
 }
+
+# How the interviewer sounds. Deliberately split from the script (which lives in
+# /api/ai-interview): this only shapes delivery, so the model never invents
+# content. Written as performance direction rather than adjectives so the
+# speech doesn't come out like a newsreader.
+VOICE_STYLE = (
+    "You are a friendly human colleague conducting a relaxed one-on-one video "
+    "interview, not a broadcast announcer. Speak warmly and conversationally, "
+    "at a comfortable unhurried pace, with the small natural pauses a person "
+    "uses while thinking. Use a natural Indian English accent. Let genuine "
+    "warmth and mild curiosity come through — as if you are actually "
+    "interested in the answer. Never sound monotone, robotic, over-rehearsed, "
+    "or like you are reading a list of questions."
+)
 
 # Create the agent server
 server = AgentServer()
@@ -109,7 +125,7 @@ async def interview_entrypoint(ctx: agents.JobContext):
             "No authToken in room metadata — the frontend must create the room "
             "through POST /api/ai-agent. Cannot run an interview without it."
         )
-        await ctx.shutdown("missing room metadata (authToken)")
+        ctx.shutdown("missing room metadata (authToken)")
         return
 
     logger.info(
@@ -135,9 +151,13 @@ async def interview_entrypoint(ctx: agents.JobContext):
         vad=load_vad(),
         llm=InterviewLLM(backend),
         tts=openai.TTS(
-            model="tts-1",
+            model="gpt-4o-mini-tts",
             voice="nova",
-            speed=1.0,
+            speed=1.04,
+            # Delivery direction, not content: the script comes from
+            # /api/ai-interview, this only decides how it sounds. tts-1 has no
+            # instructions field, hence gpt-4o-mini-tts.
+            instructions=VOICE_STYLE,
         ),
     )
 
@@ -150,6 +170,19 @@ async def interview_entrypoint(ctx: agents.JobContext):
         await ctx.delete_room()
 
     backend.attach(session, end_interview)
+
+    # Simli publishes synchronized, photorealistic video and audio as a
+    # separate LiveKit participant. Wait for its video before starting speech.
+    avatar = simli.AvatarSession(
+        simli_config=simli.SimliConfig(
+            api_key=os.environ["SIMLI_API_KEY"],
+            face_id=os.environ["SIMLI_FACE_ID"],
+            max_session_length=20 * 60,
+            max_idle_time=120,
+        )
+    )
+    await avatar.start(session, room=ctx.room)
+    await avatar.wait_for_join()
 
     # Start the agent session in the room
     await session.start(

@@ -1,15 +1,9 @@
-import { AlertTriangle } from "lucide-react";
+import { VideoOff } from "lucide-react";
 import type { VideoPanelsProps } from "./types";
-
-const PROCTOR_MESSAGES: Record<string, string> = {
-  look_away: "Malpractice alert: you looked away from the camera!",
-  face_hidden: "Malpractice alert: your face is not visible!",
-  multiple_faces: "Malpractice alert: multiple people detected in frame!",
-  eyes_closed: "Keep your eyes on the screen.",
-};
 
 export default function VideoPanels({
   videoEnabled,
+  liveVideoAvailable,
   user,
   videoRef,
   interviewStarted,
@@ -19,8 +13,6 @@ export default function VideoPanels({
   liveTranscript,
   isAiSpeaking,
   lastAiMessage,
-  proctorStatus,
-  proctorWarnings,
   currentDifficulty,
   questionNumber,
 }: VideoPanelsProps) {
@@ -48,29 +40,21 @@ export default function VideoPanels({
             <span className="w-2 h-2 bg-white rounded-full animate-pulse" /> REC
           </div>
         )}
-        {proctorStatus.state === "violating" && (
-          <div className="absolute top-2 left-2 right-2 z-10 px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg flex items-center gap-2 animate-pulse shadow-lg">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span>{PROCTOR_MESSAGES[proctorStatus.type] || "Malpractice detected!"}</span>
-          </div>
-        )}
-        {proctorWarnings > 0 && proctorStatus.state !== "violating" && interviewStarted && !interviewEnded && (
-          <div className="absolute bottom-2 left-2 px-2 py-1 bg-red-500/90 rounded text-xs text-white flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            {proctorWarnings} warning{proctorWarnings === 1 ? "" : "s"}
-          </div>
-        )}
       </div>
 
       {/* AI interviewer panel */}
-      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl overflow-hidden relative" style={{ aspectRatio: "4/3" }}>
+      <div className="bg-gray-800 rounded-xl overflow-hidden relative" style={{ aspectRatio: "4/3" }}>
         <div className="w-full h-full flex items-center justify-center">
           <div className="text-center">
-            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-5xl">🤖</span>
+            <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+              <VideoOff className="w-7 h-7 text-gray-400" aria-hidden="true" />
             </div>
             <p className="text-white font-medium">AI Interviewer</p>
-            <p className="text-white/70 text-sm">HireRight</p>
+            <p className="text-gray-400 text-xs mt-1">
+              {liveVideoAvailable
+                ? "Live interviewer video appears when you start the interview."
+                : "Live interviewer video requires the voice-agent service."}
+            </p>
             {questionNumber > 0 && (
               <p className="text-white/80 text-xs mt-2 font-medium">Q{questionNumber}/5</p>
             )}

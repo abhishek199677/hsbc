@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getActiveUser } from "@/lib/authorization";
 import { getTokenFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getLiveKitUrl, isLiveAvatarConfigured } from "@/lib/livekit-config";
 import {
   createInterviewRoom,
   isLiveKitEnabled,
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const livekitUrl = process.env.LIVEKIT_URL || "wss://techcitta-b5zx3t8p.livekit.cloud";
+    const livekitUrl = getLiveKitUrl();
 
     return NextResponse.json({
       success: true,
@@ -120,7 +121,17 @@ export async function POST(request: Request) {
  */
 export async function GET() {
   if (!isLiveKitEnabled()) {
-    return NextResponse.json({ available: false });
+    return NextResponse.json({
+      available: false,
+      error: "Live voice interviews are not configured. Set the LiveKit credentials.",
+    });
+  }
+  if (!isLiveAvatarConfigured()) {
+    return NextResponse.json({
+      available: false,
+      error:
+        "Live interviewer video is not configured. Set SIMLI_API_KEY and SIMLI_FACE_ID to enable the realistic AI avatar.",
+    });
   }
   return NextResponse.json({ available: true });
 }

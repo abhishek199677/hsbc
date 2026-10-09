@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="/logo.jpeg" alt="Techcitta logo" width="120" />
+<img src="public/hireright-logo.svg" alt="HireRight logo" width="180" />
 
-# Techcitta
+# HireRight
 
 **AI-powered background screening, job matching & video interviews**
 

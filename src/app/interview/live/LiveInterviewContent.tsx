@@ -142,7 +142,6 @@ export default function LiveInterviewContent() {
   const [hasStream, setHasStream] = useState(false);
   const [proctorStatus, setProctorStatus] = useState<ProctorStatus>({ state: "off" });
   const [proctorLoading, setProctorLoading] = useState(false);
-  const [proctorWarnings, setProctorWarnings] = useState(0);
   const [proctorReport, setProctorReport] = useState<ProctoringReport | null>(null);
   const [currentDifficulty, setCurrentDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [resultsUnlocked, setResultsUnlocked] = useState(() => {
@@ -209,6 +208,9 @@ export default function LiveInterviewContent() {
         const res = await fetch("/api/ai-agent");
         const data = await res.json();
         setLiveKitAvailable(data.available === true);
+        if (data.available !== true && typeof data.error === "string") {
+          setLiveKitError(data.error);
+        }
       } catch {
         setLiveKitAvailable(false);
       }
@@ -318,26 +320,6 @@ export default function LiveInterviewContent() {
     setHasStream(false);
   }
 
-  const playWarningBeep = () => {
-    try {
-      const w = window as unknown as { webkitAudioContext?: typeof AudioContext };
-      const Ctx = window.AudioContext || w.webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
-      osc.onended = () => ctx.close();
-    } catch {}
-  };
-
   const initProctor = async () => {
     if (proctorRef.current || typeof window === "undefined") return;
     const noCameraMode = sessionStorage.getItem("tcNoCamera") === "1";
@@ -351,10 +333,8 @@ export default function LiveInterviewContent() {
         videoRef.current,
         {
           onStatus: (status) => setProctorStatus(status),
-          onIncident: (incident: ProctorIncident, report: ProctoringReport) => {
+          onIncident: (_incident: ProctorIncident, report: ProctoringReport) => {
             setProctorReport(report);
-            setProctorWarnings((w) => w + 1);
-            playWarningBeep();
           },
         },
         {}
@@ -684,7 +664,7 @@ export default function LiveInterviewContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ interviewId }),
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(60_000),
       });
 
       const data = await res.json();
@@ -706,16 +686,16 @@ export default function LiveInterviewContent() {
         error instanceof DOMException &&
         (error.name === "TimeoutError" || error.name === "AbortError");
       const msg = timedOut
-        ? "Timed out waiting for the AI interviewer to join. Try again, or start the browser interview."
+        ? "Timed out waiting for the voice agent. Restart ./dev-all.sh, then retry the live interviewer."
         : error instanceof Error
         ? error.message
         : "";
       if (msg === "Interview not found" || msg.includes("interviewId is required")) {
         setStartError("__NO_INTERVIEW__");
       } else {
-        setLiveKitError(msg || "Failed to connect to the AI interviewer. Falling back to browser mode.");
-        // Fall back to browser Speech API
-        setLiveKitAvailable(false);
+        setLiveKitError(
+          msg || "Failed to connect to the live interviewer. Check the voice-agent service and retry."
+        );
       }
     } finally {
       setLiveKitLoading(false);
@@ -1149,7 +1129,7 @@ export default function LiveInterviewContent() {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-[#1a1a1a] backdrop-blur-sm p-1.5">
-                <img src="/logo.png" alt="HireRight" className="h-6 w-auto drop-shadow-md" />
+                <img src="/hireright-logo.svg" alt="HireRight" className="h-6 w-auto" />
               </div>
               <span className="px-2 py-0.5 bg-[#e050b0] text-white text-xs font-mono uppercase tracking-wider">Coding Challenge</span>
             </div>
@@ -1622,6 +1602,7 @@ export default function LiveInterviewContent() {
       <div className="flex-1 flex">
         <VideoPanels
           videoEnabled={videoEnabled}
+          liveVideoAvailable={liveKitAvailable}
           hasStream={hasStream}
           noCamera={noCamera}
           user={user}
@@ -1633,8 +1614,6 @@ export default function LiveInterviewContent() {
           liveTranscript={liveTranscript}
           isAiSpeaking={isAiSpeaking}
           lastAiMessage={lastAiMessage}
-          proctorStatus={proctorStatus}
-          proctorWarnings={proctorWarnings}
           currentDifficulty={currentDifficulty}
           questionNumber={questionNumber}
         />

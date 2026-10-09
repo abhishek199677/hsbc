@@ -7,6 +7,7 @@ import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { timezoneLabel } from "@/lib/timezone";
 import { to24HourTime } from "@/lib/time";
+import { getInterviewDateLabels } from "@/lib/interview-schedule";
 import { ChevronLeft, ChevronRight, CheckCircle, Clock, Lock, ArrowLeft, ArrowRight, Shield, Calendar, Video, Info } from "lucide-react";
 
 const steps = [
@@ -113,12 +114,20 @@ export default function InterviewSchedulePage() {
 
   const selectedDateLabel =
     selectedDate !== null
-      ? currentMonth.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+      ? getInterviewDateLabels(
+          currentMonth.getFullYear(),
+          currentMonth.getMonth(),
+          selectedDate
+        ).long
       : "Select a date";
 
   const selectedDateShort =
     selectedDate !== null
-      ? currentMonth.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+      ? getInterviewDateLabels(
+          currentMonth.getFullYear(),
+          currentMonth.getMonth(),
+          selectedDate
+        ).short
       : "Select a date";
 
   const saveInterview = async () => {
@@ -306,8 +315,14 @@ export default function InterviewSchedulePage() {
                       {timeSlots.morning.map((time) => (
                         <button
                           key={time}
+                          type="button"
                           onClick={() => setSelectedTime(time)}
-                          className={`time-slot ${selectedTime === time ? "selected" : ""}`}
+                          aria-pressed={selectedTime === time}
+                          className={`min-h-11 border px-2 py-2 text-xs sm:text-sm font-mono transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4dacde] ${
+                            selectedTime === time
+                              ? "border-[#4dacde] bg-[#4dacde]/20 text-white ring-1 ring-[#4dacde]/50"
+                              : "border-[#3f3f46] bg-[#09090b] text-[#d4d4d8] hover:border-[#4dacde] hover:bg-[#4dacde]/10"
+                          }`}
                         >
                           {time}
                         </button>
@@ -320,8 +335,14 @@ export default function InterviewSchedulePage() {
                       {timeSlots.afternoon.map((time) => (
                         <button
                           key={time}
+                          type="button"
                           onClick={() => setSelectedTime(time)}
-                          className={`time-slot ${selectedTime === time ? "selected" : ""}`}
+                          aria-pressed={selectedTime === time}
+                          className={`min-h-11 border px-2 py-2 text-xs sm:text-sm font-mono transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4dacde] ${
+                            selectedTime === time
+                              ? "border-[#4dacde] bg-[#4dacde]/20 text-white ring-1 ring-[#4dacde]/50"
+                              : "border-[#3f3f46] bg-[#09090b] text-[#d4d4d8] hover:border-[#4dacde] hover:bg-[#4dacde]/10"
+                          }`}
                         >
                           {time}
                         </button>
@@ -334,8 +355,14 @@ export default function InterviewSchedulePage() {
                       {timeSlots.evening.map((time) => (
                         <button
                           key={time}
+                          type="button"
                           onClick={() => setSelectedTime(time)}
-                          className={`time-slot ${selectedTime === time ? "selected" : ""}`}
+                          aria-pressed={selectedTime === time}
+                          className={`min-h-11 border px-2 py-2 text-xs sm:text-sm font-mono transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4dacde] ${
+                            selectedTime === time
+                              ? "border-[#4dacde] bg-[#4dacde]/20 text-white ring-1 ring-[#4dacde]/50"
+                              : "border-[#3f3f46] bg-[#09090b] text-[#d4d4d8] hover:border-[#4dacde] hover:bg-[#4dacde]/10"
+                          }`}
                         >
                           {time}
                         </button>

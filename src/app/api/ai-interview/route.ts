@@ -5,6 +5,7 @@ import { rateLimitByIp, rateLimit } from "@/lib/rateLimit";
 import { trackedChatCompletion } from "@/lib/openai-usage";
 import { prisma } from "@/lib/prisma";
 import { validateProctoringReport } from "@/lib/proctor-server";
+import { stripInterviewMarkers } from "@/lib/interview-markers";
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -375,13 +376,26 @@ INTERVIEW STRUCTURE (this is critical — follow this exactly):
 - Questions 8-9: SKILL follow-up based on how they did in coding
 - Question 10: Wrap up and thank them
 
-RULES:
-1. Be professional, friendly, concise
-2. Ask ONE question at a time
-3. Keep responses under 3 sentences
-4. Use simple, warm English (everyday Indian English is fine)
-5. Be encouraging — never make them feel bad
-6. NEVER ask about things outside their experience level (e.g. system design for freshers, or "tell me about your education" for 5+ year seniors)
+DELIVERY — your words are spoken aloud by a voice on a one-on-one video call, so write
+like a person talking, never like a document:
+1. Warm, natural, conversational. Short sentences, everyday words.
+2. Use the candidate's first name in the opening, and once or twice later — it should feel
+   like one person talking to one person, not a broadcast.
+3. React to what they actually said before moving on: one short, genuine acknowledgement
+   ("That's a good one", "Nice, I can see why you enjoyed that"). Never a generic
+   "Thank you for your answer" and never repeat their answer back at them.
+4. Ask ONE question at a time. Never list or number questions.
+5. Keep the spoken part under 3 sentences (the [DIFFICULTY]/[PHASE] markers are not spoken).
+6. Sound interested, not scripted — no headers, no bullet points, no markdown in spoken text.
+7. Simple warm English; everyday Indian English is fine.
+8. Be encouraging — never make them feel bad.
+9. NEVER ask about things outside their experience level (e.g. system design for freshers, or "tell me about your education" for 5+ year seniors)
+
+OPENING:
+Greet them by first name in a friendly, natural way, say briefly that you're the AI
+interviewer for this session and that the interview is monitored, then go straight into
+question 1 (warmup, easy). Keep the whole opening to 3-4 short sentences so it sounds like
+a person starting a call rather than a disclaimer being read out.
 
 ADAPTIVE DIFFICULTY:
 - If candidate answers well (detailed, accurate): increase difficulty → [DIFFICULTY: hard]
@@ -412,7 +426,9 @@ Start with a brief intro, mention anti-cheating monitoring, then ask question 1 
         { model: "gpt-5-nano", endpoint: "ai-interview/start", userId: user.id, organizationId: user.organizationId }
       );
 
-      const assistantMessage = completion.choices[0]?.message?.content;
+      const assistantMessage = stripInterviewMarkers(
+        completion.choices[0]?.message?.content
+      );
 
       // Persist server-side state and conversation history
       const initialState: InterviewState = {
@@ -557,13 +573,17 @@ ANSWER QUALITY: Previous answer scored ${analysis.score}/10 (${analysis.label}).
 ${analysis.score >= 8 ? "Candidate is doing excellent — increase challenge." : ""}
 ${analysis.score <= 3 ? "Candidate is struggling — simplify and encourage." : ""}
 
-RULES:
-1. Ask ONE question at a time
-2. Keep response under 3 sentences
-3. Be encouraging
-4. NEVER ask about topics outside their experience level
-5. Include [DIFFICULTY: easy|medium|hard] at the end
-6. Include [PHASE: warmup|skill|coding|followup|wrapup] at the end
+DELIVERY — this is spoken aloud on a one-on-one video call, so write like a person talking:
+1. React to what they just said with one short, genuine acknowledgement before the next
+   question. Never "Thank you for your answer", never repeat their answer back.
+2. Ask ONE question at a time. Never list or number questions.
+3. Keep the spoken part under 3 sentences (markers are not spoken).
+4. Warm, natural, short sentences. Use their first name occasionally — one person talking
+   to one person, not a broadcast. No markdown, headers or bullet points in spoken text.
+5. Be encouraging; if they struggle, help them along rather than leaving them stuck.
+6. NEVER ask about topics outside their experience level
+7. Include [DIFFICULTY: easy|medium|hard] at the end
+8. Include [PHASE: warmup|skill|coding|followup|wrapup] at the end
 
 ${INJECTION_GUARD}`;
 
@@ -583,16 +603,16 @@ ${INJECTION_GUARD}`;
         { model: "gpt-5-nano", endpoint: "ai-interview/respond", userId: user.id, organizationId: user.organizationId }
       );
 
-      const assistantMessage = completion.choices[0]?.message?.content;
+      const rawAssistantMessage = completion.choices[0]?.message?.content;
 
       // Extract difficulty from response
       let difficulty = nextDifficulty;
-      const diffMatch = assistantMessage?.match(/\[DIFFICULTY:\s*(easy|medium|hard)\]/i);
+      const diffMatch = rawAssistantMessage?.match(/\[DIFFICULTY:\s*(easy|medium|hard)\]/i);
       if (diffMatch) difficulty = diffMatch[1].toLowerCase();
 
       // Extract phase from response
       let detectedPhase: "skill" | "coding" | "wrapup" = phase;
-      const phaseMatch = assistantMessage?.match(/\[PHASE:\s*(warmup|skill|coding|followup|wrapup)\]/i);
+      const phaseMatch = rawAssistantMessage?.match(/\[PHASE:\s*(warmup|skill|coding|followup|wrapup)\]/i);
       if (phaseMatch) {
         const p = phaseMatch[1].toLowerCase();
         if (p === "warmup" || p === "followup") detectedPhase = "skill";
@@ -601,6 +621,7 @@ ${INJECTION_GUARD}`;
         else detectedPhase = "skill";
       }
 
+      const assistantMessage = stripInterviewMarkers(rawAssistantMessage);
       const isComplete = messageCount >= 10;
 
       // Persist updated state and conversation history to DB

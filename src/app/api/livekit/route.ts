@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getUserFromRequest } from "@/lib/auth";
+import { getTokenFromRequest, getUserFromRequest } from "@/lib/auth";
+import { getLiveKitUrl, isLiveAvatarConfigured } from "@/lib/livekit-config";
 import {
   createInterviewRoom,
   generateRejoinToken,
@@ -25,7 +26,6 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
-
     const body = await request.json();
     const { action, interviewId } = body;
 
@@ -34,6 +34,12 @@ export async function POST(request: Request) {
         return NextResponse.json(
           { error: "Interview ID required" },
           { status: 400 }
+        );
+      }
+      if (!isLiveAvatarConfigured()) {
+        return NextResponse.json(
+          { error: "The live interviewer video avatar is not configured" },
+          { status: 503 }
         );
       }
 
@@ -47,14 +53,15 @@ export async function POST(request: Request) {
 
       const { roomName, token } = await createInterviewRoom(
         interviewId,
-        user.userId
+        user.userId,
+        { authToken: getTokenFromRequest(request) ?? undefined }
       );
 
       return NextResponse.json({
         success: true,
         roomName,
         token,
-        url: `${process.env.LIVEKIT_URL || "wss://livekit.hireright.com"}?token=${token}`,
+        url: `${getLiveKitUrl()}?token=${token}`,
       });
     }
 

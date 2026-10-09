@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@/components/ThemeProvider";
-import { Globe, ChevronDown, Menu, X, Shield, Building2, Users, LogOut, Sparkles, Sun, Moon } from "lucide-react";
+import { Globe, ChevronDown, Menu, X, Shield, Building2, Users, LogOut, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
@@ -24,12 +24,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-8 lg:gap-12">
             <Link href="/" className="flex items-center group">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <span className="text-lg font-bold text-foreground tracking-tight hidden sm:block">Techcitta</span>
-              </div>
+              <img src="/hireright-logo.svg" alt="HireRight" className="h-9 w-auto" />
             </Link>
             <div className="hidden xl:flex items-center gap-1">
               <Link

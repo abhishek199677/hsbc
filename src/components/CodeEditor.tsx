@@ -8,8 +8,11 @@
  */
 
 import dynamic from "next/dynamic";
+import { loader } from "@monaco-editor/react";
 import { useCallback } from "react";
 import { LANGUAGE_MAP, type ProgrammingLanguage } from "@/lib/sandbox";
+
+loader.config({ paths: { vs: "/monaco/vs" } });
 
 // Dynamic import with SSR disabled — required for Monaco in Next.js
 const Editor = dynamic(() => import("@monaco-editor/react"), {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -19,18 +20,13 @@ import {
   Lock,
   ShieldCheck,
   Sparkles,
-  Layout,
-  Layers,
-  Server,
-  BarChart3,
-  Brain,
   Briefcase,
   Sun,
   Monitor,
   MessagesSquare,
-  GraduationCap,
   Clock,
 } from "lucide-react";
+import { getInterviewResumeDetails } from "@/lib/interview-profile";
 
 type DeviceStatus = "idle" | "checking" | "ready" | "denied" | "unavailable";
 
@@ -67,22 +63,6 @@ const getAudioCtxCtor = (): typeof AudioContext => {
   return window.AudioContext || w.webkitAudioContext || AudioContext;
 };
 
-const roleTracks = [
-  { id: "frontend", label: "Frontend Developer", icon: Layout, desc: "React · UI · Web performance" },
-  { id: "fullstack", label: "Full Stack Engineer", icon: Layers, desc: "Frontend + Backend + APIs" },
-  { id: "backend", label: "Backend Developer", icon: Server, desc: "APIs · Databases · Systems" },
-  { id: "data", label: "Data Analyst", icon: BarChart3, desc: "SQL · Dashboards · Insights" },
-  { id: "ai", label: "AI / ML Engineer", icon: Brain, desc: "LLMs · Models · Pipelines" },
-  { id: "pm", label: "Product Manager", icon: Briefcase, desc: "Roadmap · Discovery · Delivery" },
-];
-
-const levels = [
-  { id: "fresher", label: "Fresher", sub: "0 years" },
-  { id: "1-3", label: "1–3 years", sub: "Junior" },
-  { id: "3-6", label: "3–6 years", sub: "Mid-level" },
-  { id: "6+", label: "6+ years", sub: "Senior" },
-];
-
 const tips = [
   { icon: Sun, text: "Sit in a quiet, well-lit space" },
   { icon: ShieldCheck, text: "Anti-cheating monitor is ON — keep looking at the camera" },
@@ -116,8 +96,13 @@ export default function InterviewRoomPage() {
   const [speakerHeard, setSpeakerHeard] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState("");
 
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [resumeProfile, setResumeProfile] = useState<{
+    role: string | null;
+    experience: string | null;
+  } | null>(null);
+  const [resumeProfileStatus, setResumeProfileStatus] = useState<
+    "loading" | "ready" | "missing" | "error"
+  >("loading");
   const [checklist, setChecklist] = useState({ quiet: false, devices: false, outLoud: false });
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -245,7 +230,7 @@ export default function InterviewRoomPage() {
 
     const start = performance.now();
     try {
-      await fetch(`/logo.png?t=${Date.now()}`, { cache: "no-store" });
+      await fetch(`/hireright-icon.svg?t=${Date.now()}`, { cache: "no-store" });
       setLatency(Math.round(performance.now() - start));
       setNetworkStatus("ready");
     } catch {
@@ -345,7 +330,10 @@ export default function InterviewRoomPage() {
 
   const micBarCount = 32;
   const checklistComplete = checklist.quiet && checklist.devices && checklist.outLoud;
-  const roleLevelReady = !!selectedRole && !!selectedLevel;
+  const roleLevelReady =
+    resumeProfileStatus === "ready" &&
+    !!resumeProfile?.role &&
+    !!resumeProfile?.experience;
   const cameraOk = cameraStatus === "ready" || continueWithoutCamera;
 
   const checksPassed = [
@@ -365,8 +353,8 @@ export default function InterviewRoomPage() {
     if (!canJoin || !interviewId || joining) return;
     setJoining(true);
     try {
-      sessionStorage.setItem("tcRole", selectedRole || "");
-      sessionStorage.setItem("tcLevel", selectedLevel || "");
+      sessionStorage.setItem("tcRole", resumeProfile?.role || "");
+      sessionStorage.setItem("tcLevel", resumeProfile?.experience || "");
       sessionStorage.setItem("tcNoCamera", continueWithoutCamera ? "1" : "0");
     } catch {}
     router.push(`/interview/live?id=${interviewId}`);
@@ -397,6 +385,49 @@ export default function InterviewRoomPage() {
     return () => { cancelled = true; };
   }, [token, router]);
 
+  useEffect(() => {
+    if (isLoading || !token) return;
+    let cancelled = false;
+
+    const loadResumeProfile = async () => {
+      try {
+        const response = await fetch("/api/profile", { credentials: "include" });
+        if (response.status === 404) {
+          if (!cancelled) setResumeProfileStatus("missing");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(`Profile request failed (${response.status})`);
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.profile) {
+          throw new Error("Profile response did not include the saved resume profile");
+        }
+
+        const profile = getInterviewResumeDetails({
+          currentRole: data.profile.currentRole,
+          totalExperience: data.profile.totalExperience,
+        });
+        if (cancelled) return;
+
+        setResumeProfile({
+          role: profile.role,
+          experience: profile.experience,
+        });
+        setResumeProfileStatus(profile.ready ? "ready" : "missing");
+      } catch (error) {
+        console.error("Failed to load resume details for interview setup:", error);
+        if (!cancelled) setResumeProfileStatus("error");
+      }
+    };
+
+    void loadResumeProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, token]);
+
   const ringRadius = 34;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference * (1 - readiness / 100);
@@ -422,7 +453,7 @@ export default function InterviewRoomPage() {
             className="flex items-center gap-3 group"
           >
             <div className="bg-[#27272a] backdrop-blur-sm p-1.5">
-              <img src="/logo.png" alt="HireRight" className="h-6 w-auto drop-shadow-md" />
+              <img src="/hireright-logo.svg" alt="HireRight" className="h-6 w-auto" />
             </div>
             <span className="px-2 py-0.5 bg-[#e050b0] text-white text-xs font-medium font-mono uppercase tracking-wider">
               AI Interview Room
@@ -794,64 +825,48 @@ export default function InterviewRoomPage() {
             </button>
           </section>
 
-          {/* RIGHT: role, level, checklist, CTA */}
+          {/* RIGHT: resume details, checklist, CTA */}
           <aside className="lg:col-span-2 space-y-6">
             <div className="border border-[#27272a] bg-[#18181b] p-5">
               <h2 className="font-semibold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
                 <Briefcase className="w-4 h-4 text-[#a78bfa]" />
-                Role Track
+                Interview focus
               </h2>
-              <p className="text-xs text-[#a1a1aa] mt-0.5 mb-4 font-mono">What role are you interviewing for?</p>
-              <div className="grid grid-cols-2 gap-2">
-                {roleTracks.map((track) => {
-                  const Icon = track.icon;
-                  const active = selectedRole === track.id;
-                  return (
-                    <button
-                      key={track.id}
-                      onClick={() => setSelectedRole(track.id)}
-                      className={`text-left p-3 border transition-all ${
-                        active
-                          ? "border-[#e050b0]/60 bg-[#e050b0]/15 ring-1 ring-[#e050b0]/40"
-                          : "border-[#27272a] bg-[#27272a] hover:bg-[#27272a]/80"
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 mb-2 ${active ? "text-[#a78bfa]" : "text-[#a1a1aa]"}`} />
-                      <p className={`text-sm font-medium leading-tight ${active ? "text-white" : "text-[#a1a1aa]"} font-mono`}>
-                        {track.label}
-                      </p>
-                      <p className="text-[11px] text-[#a1a1aa] mt-0.5 font-mono">{track.desc}</p>
-                    </button>
-                  );
-                })}
+              <p className="text-xs text-[#a1a1aa] mt-0.5 mb-4 font-mono">
+                Your interview will be tailored to the role and experience in your saved resume.
+              </p>
+              <div className="space-y-3">
+                <div className="border border-[#27272a] bg-[#09090b] p-3">
+                  <p className="text-[11px] uppercase tracking-wider text-[#a1a1aa] font-mono">
+                    Resume role
+                  </p>
+                  <p className="text-sm text-white mt-1 font-mono" role="status" aria-live="polite">
+                    {resumeProfileStatus === "loading"
+                      ? "Loading resume..."
+                      : resumeProfile?.role || "Not found in saved resume"}
+                  </p>
+                </div>
+                <div className="border border-[#27272a] bg-[#09090b] p-3">
+                  <p className="text-[11px] uppercase tracking-wider text-[#a1a1aa] font-mono">
+                    Resume experience
+                  </p>
+                  <p className="text-sm text-white mt-1 font-mono" role="status" aria-live="polite">
+                    {resumeProfileStatus === "loading"
+                      ? "Loading resume..."
+                      : resumeProfile?.experience || "Not found in saved resume"}
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="border border-[#27272a] bg-[#18181b] p-5">
-              <h2 className="font-semibold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
-                <GraduationCap className="w-4 h-4 text-[#a78bfa]" />
-                Experience Level
-              </h2>
-              <p className="text-xs text-[#a1a1aa] mt-0.5 mb-4 font-mono">Pick the level that matches your experience</p>
-              <div className="grid grid-cols-2 gap-2">
-                {levels.map((level) => {
-                  const active = selectedLevel === level.id;
-                  return (
-                    <button
-                      key={level.id}
-                      onClick={() => setSelectedLevel(level.id)}
-                      className={`text-left p-3 border transition-all ${
-                        active
-                          ? "border-[#e050b0]/60 bg-[#e050b0]/15 ring-1 ring-[#e050b0]/40"
-                          : "border-[#27272a] bg-[#27272a] hover:bg-[#27272a]/80"
-                      }`}
-                    >
-                      <p className={`text-sm font-medium ${active ? "text-white" : "text-[#a1a1aa]"} font-mono`}>{level.label}</p>
-                      <p className="text-[11px] text-[#a1a1aa] font-mono">{level.sub}</p>
-                    </button>
-                  );
-                })}
-              </div>
+              {resumeProfileStatus === "error" || resumeProfileStatus === "missing" ? (
+                <p className="text-xs text-[#f5c542] mt-3 font-mono" role="alert">
+                  {resumeProfileStatus === "error"
+                    ? "Could not load your saved resume details."
+                    : "Add your role and total experience to your profile before starting."}{" "}
+                  <Link href="/profile" className="underline underline-offset-2 hover:text-white">
+                    Update profile
+                  </Link>
+                </p>
+              ) : null}
             </div>
 
             <div className="border border-[#27272a] bg-[#18181b] p-5">
@@ -956,7 +971,7 @@ export default function InterviewRoomPage() {
                 <ul className="text-[12px] text-[#a1a1aa] space-y-1.5 mb-4 font-mono">
                   {!roleLevelReady && (
                     <li className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 bg-[#e050b0]" /> Select a role track & level
+                      <span className="w-1.5 h-1.5 bg-[#e050b0]" /> Add your role and experience to your saved resume
                     </li>
                   )}
                   {!checklistComplete && (
@@ -992,10 +1007,8 @@ export default function InterviewRoomPage() {
                   <Lock className="w-3 h-3" />
                   {!interviewId
                     ? "Loading interview session..."
-                    : !roleLevelReady && !checklistComplete
-                    ? "Pick a role, level & tick the checklist to enable"
                     : !roleLevelReady
-                    ? "Pick a role track & level to enable"
+                    ? "Add resume role & experience to enable"
                     : "Complete the checklist above to enable"}
                 </p>
               )}

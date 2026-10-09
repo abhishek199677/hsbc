@@ -101,35 +101,40 @@ export default function ChatPanel({
                       {liveKitLoading ? (
                         <><Loader className="animate-spin w-4 h-4" /> Connecting to AI agent...</>
                       ) : (
-                        <><Wifi className="w-4 h-4" /> Start Voice Interview <ArrowRight className="w-4 h-4" /></>
+                        <><Wifi className="w-4 h-4" /> Start Browser Interview <ArrowRight className="w-4 h-4" /></>
                       )}
                     </button>
                     <div className="flex items-center gap-2 text-xs text-gray-500 justify-center">
                       <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-                      Real-time voice with AI interviewer
-                    </div>
-                    <div className="relative my-2">
-                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-700" /></div>
-                      <div className="relative flex justify-center text-xs"><span className="bg-gray-900 px-2 text-gray-500">or</span></div>
+                      Live interviewer video with lip-synced speech; provider usage fees may apply.
                     </div>
                   </div>
                 )}
 
-                <button
-                  onClick={startInterview}
-                  disabled={loading}
-                  className={`px-6 py-3 rounded-lg font-medium disabled:opacity-50 flex items-center gap-2 mx-auto ${
-                    liveKitAvailable
-                      ? "bg-gray-700 text-gray-300 hover:bg-gray-600 text-sm"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700"
-                  }`}
-                >
-                  {loading ? (
-                    <><Loader className="animate-spin w-4 h-4" /> Connecting...</>
-                  ) : (
-                    <>Start Browser Interview <ArrowRight className="w-4 h-4" /></>
-                  )}
-                </button>
+                {!liveKitAvailable && (
+                  <div
+                    role="status"
+                    className="bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-lg p-3 mb-4"
+                  >
+                    Live interviewer video is unavailable. Browser Interview can continue
+                    without video; start the LiveKit and Simli services to enable the
+                    lip-synced interviewer.
+                  </div>
+                )}
+
+                {!liveKitAvailable && (
+                  <button
+                    onClick={startInterview}
+                    disabled={loading}
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 mx-auto"
+                  >
+                    {loading ? (
+                      <><Loader className="animate-spin w-4 h-4" /> Connecting...</>
+                    ) : (
+                      <>Start Browser Interview (no interviewer video) <ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                )}
                 {!liveKitAvailable && !supportsSpeech && (
                   <p className="text-yellow-500 text-sm mt-4">
                     Voice input is not supported in this browser. You can type your answers instead.

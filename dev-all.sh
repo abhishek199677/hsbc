@@ -9,7 +9,7 @@
 #   [backend]   FastAPI backend         http://localhost:8001
 #   [evaluator] Code sandbox            http://localhost:8003
 #   [ml]        ML scoring server       http://localhost:8004
-#   [agent]     LiveKit voice agent     (only if LIVEKIT_API_KEY is set in .env)
+#   [agent]     LiveKit voice agent     (only if LiveKit + Simli are configured)
 #
 # Press Ctrl+C once to stop everything.
 # ============================================================
@@ -52,13 +52,16 @@ SERVICES=(
   "cd ml && ../.venv-ml/bin/python server.py"
 )
 
-if grep -qE '^LIVEKIT_API_KEY=.+' .env; then
+if grep -qE '^LIVEKIT_API_KEY=("[^"]+"|[^[:space:]"]+)' .env \
+  && grep -qE '^LIVEKIT_API_SECRET=("[^"]+"|[^[:space:]"]+)' .env \
+  && grep -qE '^SIMLI_API_KEY=("[^"]+"|[^[:space:]"]+)' .env \
+  && grep -qE '^SIMLI_FACE_ID=("[^"]+"|[^[:space:]"]+)' .env; then
   NAMES="$NAMES,agent"
   COLORS="$COLORS,red"
   SERVICES+=("$AGENT_CMD")
 else
-  echo "NOTE: skipping the LiveKit voice agent — LIVEKIT_API_KEY is empty in .env."
-  echo "      All other services will start. (See SETUP_GUIDE.md for LiveKit keys.)"
+  echo "NOTE: skipping the LiveKit voice agent — LiveKit and Simli settings are required."
+  echo "      All other services will start. (See SETUP_GUIDE.md for setup.)"
   echo ""
 fi
 

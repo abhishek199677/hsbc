@@ -45,8 +45,10 @@ cp .env.example .env
 | `LIVEKIT_API_KEY` | LiveKit API key | Same page |
 | `LIVEKIT_API_SECRET` | LiveKit API secret | Same page |
 | `DEEPGRAM_API_KEY` | Real-time speech-to-text | **console.deepgram.com → API Keys** |
+| `SIMLI_API_KEY` | Generates the live, lip-synced interviewer video | **app.simli.com → API key** |
+| `SIMLI_FACE_ID` | Selects the ready-made interviewer face | Choose a face in the [Simli face library](https://app.simli.com/create/from-existing) and copy its face ID |
 
-Without these the app runs fine — you just can't do live voice interviews.
+Without these the app runs fine and browser interviews remain available, but the live video avatar is disabled.
 
 ### ⚪ Optional (features degrade gracefully without them)
 

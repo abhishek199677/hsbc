@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Mail, Phone, MapPin, Sparkles, Shield, Lock, CheckCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Shield, Lock, CheckCircle } from "lucide-react";
 
 const footerLinks = {
   "Platform": [
@@ -48,12 +48,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center mb-5 w-fit">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold text-foreground tracking-tight">Techcitta</span>
-              </div>
+              <img src="/hireright-logo.svg" alt="HireRight" className="h-10 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
               AI-powered background screening platform trusted by 1,200+ enterprises worldwide. Making hiring decisions with certainty.
@@ -114,7 +109,7 @@ export default function Footer() {
         <div className="border-t border-border mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; 2026 Techcitta. All rights reserved.
+              &copy; 2026 HireRight. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">

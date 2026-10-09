@@ -19,6 +19,7 @@ import {
   useParticipants,
   useLocalParticipant,
   useTranscriptions,
+  useVoiceAssistant,
   ConnectionStateToast,
   VideoTrack,
 } from "@livekit/components-react";
@@ -73,6 +74,7 @@ function InterviewLayout({
 }) {
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
+  const { agent, state: agentState, videoTrack: avatarVideoTrack } = useVoiceAssistant();
   const tracks = useTracks();
   // The agent publishes its TTS text into the room as it speaks, so the
   // question is readable even when the candidate can't hear (muted speakers,
@@ -86,12 +88,8 @@ function InterviewLayout({
       t.source === Track.Source.Camera
   );
 
-  // Check if AI agent is connected (non-local participant)
-  const aiParticipant = participants.find(
-    (p) => p.identity !== localParticipant?.identity
-  );
-  const isAiConnected = !!aiParticipant;
-  const isAiSpeaking = aiParticipant?.isSpeaking ?? false;
+  const isAiConnected = !!agent;
+  const isAiSpeaking = agentState === "speaking";
 
   // Live captions. Transcriptions are keyed by segment id, so partial
   // updates replace themselves rather than appending — merge consecutive
@@ -122,19 +120,18 @@ function InterviewLayout({
 
   useEffect(() => {
     if (isAiConnected) {
-      setAgentMissing(false);
+      if (agentMissing) {
+        const resetId = window.setTimeout(() => setAgentMissing(false), 0);
+        return () => window.clearTimeout(resetId);
+      }
       return;
     }
-    // Only arm the timer while we are still waiting — clearing agentMissing
-    // (i.e. retrying) restarts it, so a failed retry times out again too.
     if (agentMissing) return;
-    const startedAt = Date.now();
-    const id = window.setInterval(() => {
-      if (Date.now() - startedAt >= AGENT_JOIN_TIMEOUT_MS) {
-        setAgentMissing(true);
-      }
-    }, 1000);
-    return () => window.clearInterval(id);
+    const timeoutId = window.setTimeout(
+      () => setAgentMissing(true),
+      AGENT_JOIN_TIMEOUT_MS
+    );
+    return () => window.clearTimeout(timeoutId);
   }, [isAiConnected, agentMissing]);
 
   const handleRetry = async () => {
@@ -170,56 +167,53 @@ function InterviewLayout({
         </div>
       )}
 
-      {/* Video panels */}
-      <div className="flex-1 flex gap-4 p-4">
-        {/* Candidate video */}
-        <div className="w-1/2 bg-[#18181b] rounded-xl overflow-hidden relative border border-[#27272a]" style={{ aspectRatio: "16/9" }}>
-          {videoEnabled && localVideoTrack ? (
+      {/* Stage: one person opposite another, not a grid of equal tiles. The
+          interviewer gets the frame; the candidate sees themselves in a small
+          self-view, exactly like a real one-on-one video call.
+
+          The max-width is derived from the viewport height so a 16:9 stage
+          always leaves room for the transcript and controls. */}
+      <div className="flex-1 min-h-0 flex flex-col gap-3 px-4 py-4 mx-auto w-full max-w-[max(380px,min(1400px,calc((100vh_-_300px)*16/9)))]">
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-[#27272a] bg-[#18181b]">
+          {avatarVideoTrack ? (
             <VideoTrack
-              trackRef={localVideoTrack}
-              className="w-full h-full object-cover"
+              trackRef={avatarVideoTrack}
+              className="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-20 h-20 bg-[#27272a] rounded-full flex items-center justify-center">
-                <span className="text-3xl font-bold text-[#a1a1aa]">Y</span>
-              </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#18181b] text-[#a1a1aa]">
+              <Loader className="h-6 w-6 animate-spin" />
+              <span className="text-sm">
+                {isAiConnected ? "Connecting interviewer video..." : "Waiting for the interviewer..."}
+              </span>
             </div>
           )}
-          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-xs text-[#fafafa]">You</div>
-        </div>
 
-        {/* AI interviewer panel */}
-        <div className="w-1/2 bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] rounded-xl overflow-hidden relative" style={{ aspectRatio: "16/9" }}>
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-5xl">🤖</span>
-              </div>
-              <p className="text-white font-medium">AI Interviewer</p>
-              <p className="text-white/70 text-sm">
-                {isAiConnected ? "Connected" : agentMissing ? "Unavailable" : "Connecting..."}
-              </p>
-            </div>
+          <div className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 bg-black/55 backdrop-blur-sm rounded-full text-xs text-white/90">
+            <span className="w-2 h-2 rounded-full bg-[#a78bfa]" />
+            AI Interviewer
           </div>
+
           {isAiSpeaking && (
-            <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-xs text-white flex items-center gap-1.5">
+            <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/55 rounded text-xs text-white flex items-center gap-1.5">
               <Volume2 className="w-3 h-3 animate-pulse" />
               Speaking...
             </div>
           )}
+
           {!isAiConnected && !agentMissing && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/45">
               <div className="flex items-center gap-2 text-white/80">
                 <Loader className="w-4 h-4 animate-spin" />
                 Waiting for AI agent...
               </div>
             </div>
           )}
+
           {!isAiConnected && agentMissing && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 p-4 text-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4 text-center">
               <AlertTriangle className="w-8 h-8 text-[#f59e0b] mb-2" />
-              <p className="text-white font-medium mb-1">The AI interviewer hasn't joined yet</p>
+              <p className="text-white font-medium mb-1">The AI interviewer has not joined yet</p>
               <p className="text-white/70 text-sm mb-4">
                 The interview agent may not be running. Try again — your camera and mic stay on.
               </p>
@@ -242,8 +236,24 @@ function InterviewLayout({
               </div>
             </div>
           )}
+
+          {/* Candidate self-view */}
+          <div className="absolute bottom-3 right-3 w-[32%] max-w-[240px] min-w-[112px] aspect-[4/3] rounded-lg overflow-hidden border border-white/15 bg-[#18181b] shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+            {videoEnabled && localVideoTrack ? (
+              <VideoTrack
+                trackRef={localVideoTrack}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="w-9 h-9 bg-[#27272a] rounded-full flex items-center justify-center">
+                  <span className="text-sm font-bold text-[#a1a1aa]">Y</span>
+                </div>
+              </div>
+            )}
+            <div className="absolute bottom-1 left-1.5 text-[10px] text-white/85 drop-shadow">You</div>
+          </div>
         </div>
-      </div>
 
       {/* Live captions — the AI's words on screen, so a question is never
           lost to muted speakers, blocked autoplay or a noisy room. */}
@@ -274,6 +284,7 @@ function InterviewLayout({
           </div>
         </div>
       )}
+      </div>
 
       {/* Audio renderer — plays the AI agent's audio track */}
       <RoomAudioRenderer />

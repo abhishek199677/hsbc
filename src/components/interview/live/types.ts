@@ -33,6 +33,7 @@ export interface InterviewHeaderProps {
 
 export interface VideoPanelsProps {
   videoEnabled: boolean;
+  liveVideoAvailable: boolean | null;
   hasStream: boolean;
   noCamera: boolean;
   user: { name?: string | null } | null;
@@ -44,8 +45,6 @@ export interface VideoPanelsProps {
   liveTranscript: string;
   isAiSpeaking: boolean;
   lastAiMessage?: Message;
-  proctorStatus: ProctorStatus;
-  proctorWarnings: number;
   currentDifficulty: string;
   questionNumber: number;
 }

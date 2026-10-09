@@ -1,9 +1,12 @@
 import { AccessToken, AgentDispatchClient, Room, RoomServiceClient } from "livekit-server-sdk";
 import { prisma } from "./prisma";
+import { getLiveKitUrl, isLiveAvatarConfigured } from "./livekit-config";
+import { getInterviewParticipants } from "./livekit-participants";
+import { createInterviewAgentMetadata } from "./livekit-agent-metadata";
 
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
-const LIVEKIT_URL = process.env.LIVEKIT_URL || "wss://livekit.hireright.com";
+const LIVEKIT_URL = getLiveKitUrl();
 
 /** Must match the name the Python agent registers with (agent/agent.py). */
 export const INTERVIEW_AGENT_NAME = "interview-agent";
@@ -33,10 +36,19 @@ async function hasAgentParticipant(
 ): Promise<boolean> {
   try {
     const participants = await svc.listParticipants(roomName);
-    return participants.some((p) => p.identity !== candidateIdentity);
+    return getInterviewParticipants(participants, candidateIdentity).agent !== null;
   } catch {
     return false;
   }
+}
+
+async function hasAvatarParticipant(
+  svc: RoomServiceClient,
+  roomName: string,
+  candidateIdentity: string
+): Promise<boolean> {
+  const participants = await svc.listParticipants(roomName);
+  return getInterviewParticipants(participants, candidateIdentity).avatar !== null;
 }
 
 /**
@@ -45,6 +57,7 @@ async function hasAgentParticipant(
  * a few seconds more. Anything beyond this means no worker is registered.
  */
 const AGENT_JOIN_TIMEOUT_MS = 15_000;
+const AVATAR_JOIN_TIMEOUT_MS = 35_000;
 const AGENT_JOIN_POLL_MS = 500;
 
 /**
@@ -67,6 +80,29 @@ export async function waitForAgentParticipant(
   let seen = 0;
   while (Date.now() < deadline) {
     if (await hasAgentParticipant(svc, roomName, candidateIdentity)) {
+      seen += 1;
+      if (seen >= 2) return true;
+    } else {
+      seen = 0;
+    }
+    await new Promise((resolve) => setTimeout(resolve, AGENT_JOIN_POLL_MS));
+  }
+  return false;
+}
+
+/**
+ * Block until the avatar worker associated with this interview's voice agent
+ * has joined the room, or return false after its startup grace period.
+ */
+async function waitForAvatarParticipant(
+  svc: RoomServiceClient,
+  roomName: string,
+  candidateIdentity: string
+): Promise<boolean> {
+  const deadline = Date.now() + AVATAR_JOIN_TIMEOUT_MS;
+  let seen = 0;
+  while (Date.now() < deadline) {
+    if (await hasAvatarParticipant(svc, roomName, candidateIdentity)) {
       seen += 1;
       if (seen >= 2) return true;
     } else {
@@ -116,38 +152,50 @@ export async function createInterviewRoom(
   userId: string,
   extraMetadata: { authToken?: string; profile?: Record<string, unknown> } = {}
 ): Promise<{ roomName: string; token: string }> {
+  if (!isLiveAvatarConfigured()) {
+    throw new Error(
+      "The live interviewer video is not configured. Set SIMLI_API_KEY and SIMLI_FACE_ID to enable the realistic AI avatar."
+    );
+  }
+
   const roomName = `interview-${interviewId}`;
   const identity = `candidate-${userId}`;
   const name = "Candidate";
 
   const svc = getRoomService();
 
-  const metadata = JSON.stringify({
+  const metadata = createInterviewAgentMetadata({
     interviewId,
     userId,
-    createdAt: new Date().toISOString(),
-    authToken: extraMetadata.authToken ?? null,
-    profile: extraMetadata.profile ?? null,
+    authToken: extraMetadata.authToken,
+    profile: extraMetadata.profile,
   });
 
-  try {
-    // Try to list existing rooms with this name
-    const rooms = await svc.listRooms([roomName]);
-    if (rooms.length === 0) {
-      await svc.createRoom({
-        name: roomName,
-        emptyTimeout: 300, // 5 min timeout when empty
-        maxParticipants: 2, // candidate + AI interviewer
-        metadata,
-      });
+  const roomOptions = {
+    name: roomName,
+    emptyTimeout: 300,
+    maxParticipants: 3,
+    metadata,
+  };
+  const rooms = await svc.listRooms([roomName]);
+  if (rooms.length === 0) {
+    await svc.createRoom(roomOptions);
+  } else {
+    const room = rooms[0];
+    if (room.maxParticipants > 0 && room.maxParticipants < 3) {
+      const participants = await svc.listParticipants(roomName);
+      if (participants.length > 0) {
+        throw new Error(
+          "This interview room was created before live avatar video was enabled. End the current interview and start a new one to continue."
+        );
+      }
+      await svc.deleteRoom(roomName);
+      await svc.createRoom(roomOptions);
     } else {
       // Rooms created by older code have no authToken/profile — refresh so the
       // agent that gets dispatched below can actually run the interview.
       await svc.updateRoomMetadata(roomName, metadata);
     }
-  } catch (error) {
-    console.error("Failed to create LiveKit room:", error);
-    // Fall back: token-only mode without room management
   }
 
   // Explicit dispatch: the agent registers as "interview-agent", so LiveKit
@@ -203,7 +251,19 @@ export async function createInterviewRoom(
       AGENT_JOIN_TIMEOUT_MS
     );
     throw new Error(
-      "The AI interviewer did not join: the voice agent service is not running. Start it with ./dev-all.sh, or choose Start Browser Interview to continue without voice."
+      "The voice agent did not complete its connection. Check the [agent] logs from ./dev-all.sh, then retry."
+    );
+  }
+
+  const avatarJoined = await waitForAvatarParticipant(svc, roomName, identity);
+  if (!avatarJoined) {
+    console.error(
+      "[livekit] no live avatar worker joined %s within %dms",
+      roomName,
+      AVATAR_JOIN_TIMEOUT_MS
+    );
+    throw new Error(
+      "The interviewer connected, but its live video avatar did not join. Check the Simli API key and face ID, then try again."
     );
   }
 

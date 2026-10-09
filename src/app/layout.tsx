@@ -18,13 +18,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Techcitta - Talent to Talent",
+  title: "HireRight - Talent to Talent",
   description: "Your Journey to the Right Opportunity Starts Here. Background screening you can trust.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/hireright-icon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Techcitta",
+    title: "HireRight",
   },
 };
 

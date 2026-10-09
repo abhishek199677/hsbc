@@ -123,9 +123,11 @@ export default function AdminSidebar({
     <div className="flex flex-col h-full bg-[#09090b] border-r border-[#27272a]">
       <div className="flex items-center justify-between px-4 h-16 border-b border-[#27272a]">
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-[#a78bfa] flex items-center justify-center">
-            <LayoutDashboard className="w-5 h-5 text-white" />
-          </div>
+          <img
+            src="/hireright-icon.svg"
+            alt="HireRight"
+            className="w-8 h-8 rounded-lg"
+          />
           {!collapsed && (
             <span className="text-sm font-bold text-[#fafafa] truncate">
               {organization?.name || "Admin"}

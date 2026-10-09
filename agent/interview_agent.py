@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import itertools
 import logging
+import random
 import re
 
 from livekit.agents import Agent, AgentSession, llm
@@ -59,10 +60,9 @@ GREETING_FAILED = (
 # broken and hangs up before question 1 is ever spoken. Each line is a
 # standalone sentence so being cut off mid-way still sounds natural.
 HOLDING_LINES = (
-    "Hi, I'm your AI interviewer, and welcome to your interview. "
-    "I'm loading your first question right now, so please give me a moment.",
-    "Thanks for holding on. I'm still setting up the interview on my side.",
-    "Almost ready — I'll have your first question for you in just a second.",
+    "Hi — lovely to meet you. I'm just pulling up your details, one moment.",
+    "Thanks for waiting on me. Almost there now.",
+    "Nearly ready — I'll have your first question for you in just a second.",
 )
 # Approximate spoken duration of one holding line, used as the poll interval
 # before starting the next one (or the real greeting).
@@ -70,6 +70,19 @@ HOLDING_LINE_SECONDS = 8
 # Only the opener is used once; the two shorter lines repeat until the API
 # answers, since /api/ai-interview can take anywhere from 9s to 30s.
 _REPEATABLE_FILLERS = HOLDING_LINES[1:]
+
+# /api/ai-interview takes seconds to answer every turn. A real interviewer fills
+# that gap with a nod and a "mm-hm"; silence would read as the call having
+# dropped. Kept to a couple of words so it never collides with the real reply,
+# which interrupts whichever one is still playing.
+BACKCHANNELS = (
+    "Mm-hm.",
+    "Right.",
+    "Okay, I see.",
+    "Got it.",
+    "I see, yeah.",
+    "Fair enough.",
+)
 
 
 def strip_markers(text: str) -> str:
@@ -120,12 +133,44 @@ class InterviewBackend:
         self.completed = False
         self._session: AgentSession | None = None
         self._end_interview = None  # callable set by the entrypoint
+        self._backchannel: SpeechHandle | None = None
         self._lock = asyncio.Lock()
 
     def attach(self, session: AgentSession, end_interview) -> None:
         """Wire in the LiveKit session and the room-teardown callback."""
         self._session = session
         self._end_interview = end_interview
+
+    def start_backchannel(self) -> None:
+        """
+        Fill the silence while /api/ai-interview thinks.
+
+        Called the moment the candidate stops talking, so the gap between their
+        answer and the next question sounds like someone listening rather than
+        a dead line. Queued speech does not interrupt itself, so we keep the
+        handle and cut it explicitly in cut_backchannel().
+        """
+        session = self._session
+        if session is None or self.completed or self._backchannel is not None:
+            return
+        try:
+            self._backchannel = session.say(
+                random.choice(BACKCHANNELS),
+                allow_interruptions=True,
+                add_to_chat_ctx=False,
+            )
+        except Exception:
+            logger.debug("Could not speak a backchannel", exc_info=True)
+
+    def cut_backchannel(self) -> None:
+        """Stop the filler so the real reply is never talked over."""
+        handle, self._backchannel = self._backchannel, None
+        if handle is None or handle.done():
+            return
+        try:
+            handle.interrupt()
+        except Exception:
+            logger.debug("Backchannel had already finished")
 
     async def greet(self) -> str:
         """Fetch the intro + first question from /api/ai-interview."""
@@ -261,7 +306,13 @@ class InterviewLLMStream(LLMStream):
             return
 
         logger.info("Asking interview API for a reply (%d chars)", len(user_message))
-        reply = await self._backend.respond(user_message)
+        # The candidate has stopped talking: acknowledge while we wait, then
+        # cut it the instant the real answer is ready.
+        self._backend.start_backchannel()
+        try:
+            reply = await self._backend.respond(user_message)
+        finally:
+            self._backend.cut_backchannel()
 
         self._event_ch.send_nowait(
             ChatChunk(
@@ -278,8 +329,10 @@ class InterviewAgent(Agent):
     def __init__(self, backend: InterviewBackend) -> None:
         super().__init__(
             instructions=(
-                "You are the AI interviewer for HireRight. You conduct a 15-minute "
-                "screening interview: one question at a time, short and friendly."
+                "You are a warm, friendly AI interviewer for HireRight, running a "
+                "relaxed one-on-one 15-minute screening interview: one question at "
+                "a time, short natural replies, spoken like a person talking to a "
+                "person rather than a script being read out."
             )
         )
         self._backend = backend

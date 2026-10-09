@@ -1,5 +1,5 @@
-const CACHE_NAME = "hireright-v1";
-const STATIC_ASSETS = ["/", "/favicon.ico", "/logo.png"];
+const CACHE_NAME = "hireright-v2";
+const STATIC_ASSETS = ["/", "/hireright-logo.svg", "/hireright-icon.svg"];
 const OFFLINE_PAGE = "/offline";
 
 self.addEventListener("install", (event) => {

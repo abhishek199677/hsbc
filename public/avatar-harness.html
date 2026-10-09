@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Interviewer avatar harness</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #09090b; color: #fafafa;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex; justify-content: center; padding: 24px;
+  }
+  .col { width: 100%; max-width: max(380px, min(1400px, calc((100vh - 300px) * 16 / 9))); }
+
+  .stage {
+    position: relative; width: 100%; aspect-ratio: 16 / 9;
+    border-radius: 12px; overflow: hidden; border: 1px solid #27272a; background: #18181b;
+  }
+
+  .layer {
+    position: absolute; inset: 0;
+    background-image: var(--src);
+    background-size: cover; background-position: center;
+  }
+
+  .lid {
+    position: absolute; overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  }
+  .lid > .skin { position: absolute; background-image: var(--src); background-size: cover; background-position: center; }
+
+  .vignette { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.42) 100%); }
+  .grade { position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to top, rgba(0,0,0,0.35), transparent 40%, rgba(0,0,0,0.10)); }
+
+  .badge { position: absolute; top: 12px; left: 12px; display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    border-radius: 999px; font-size: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #a78bfa; }
+  .speaking { position: absolute; bottom: 12px; left: 12px; padding: 4px 8px;
+    background: rgba(0,0,0,0.55); border-radius: 4px; font-size: 12px; }
+
+  .selfview { position: absolute; bottom: 12px; right: 12px; width: 32%; max-width: 240px;
+    min-width: 112px; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.15); background: #18181b;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
+  .selfview .initial { width: 36px; height: 36px; background: #27272a; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; color: #a1a1aa; font-size: 13px; }
+  .selfview .you { position: absolute; bottom: 4px; left: 6px; font-size: 10px; color: rgba(255,255,255,0.85); }
+
+  .transcript { margin-top: 12px; border: 1px solid #27272a; background: #101012;
+    border-radius: 8px; padding: 12px; }
+  .transcript .label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+    color: #71717a; margin-bottom: 6px; }
+  .transcript p { margin: 6px 0; font-size: 14px; }
+  .transcript .ai { color: #fafafa; } .transcript .ai b { color: #a78bfa; }
+  .transcript .you { color: #a1a1aa; } .transcript .you b { color: #71717a; }
+
+  .controls { display: flex; justify-content: center; gap: 16px; padding: 16px 0 4px; }
+  .ctrl { width: 48px; height: 48px; border-radius: 50%; border: 0; background: #27272a;
+    color: #fafafa; font-size: 18px; cursor: pointer; }
+  .ctrl.end { background: #ef4444; color: #fff; }
+  .meta { text-align: center; color: #71717a; font-size: 12px; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div class="col">
+    <div class="stage" id="stage">
+      <div id="avatar" style="position:absolute; inset:0; will-change:transform">
+        <div class="layer" id="closed" style="--src: url(/interviewer.jpg)"></div>
+        <div class="layer" id="open" style="--src: url(/interviewer-speaking.jpg); opacity: 0"></div>
+
+        <div class="lid" data-eye="0" style="left:37.4%; top:41.78%; width:8.8%; height:5.79%">
+          <div class="skin" style="--src: url(/interviewer.jpg);
+            left:-425%; top:-721.6%; width:1136.4%; height:1727.1%"></div>
+        </div>
+        <div class="lid" data-eye="1" style="left:51.4%; top:41.78%; width:7.5%; height:5.79%">
+          <div class="skin" style="--src: url(/interviewer.jpg);
+            left:-685.3%; top:-721.6%; width:1333.3%; height:1727.1%"></div>
+        </div>
+      </div>
+
+      <div class="vignette"></div>
+      <div class="grade"></div>
+
+      <div class="badge"><span class="dot"></span>AI Interviewer</div>
+      <div class="speaking" id="speaking">Speaking...</div>
+
+      <div class="selfview"><div class="initial">Y</div><div class="you">You</div></div>
+    </div>
+
+    <div class="transcript">
+      <div class="label">Live transcript</div>
+      <p class="ai"><b>AI:</b> Hi Ananya — lovely to meet you. I'm the AI interviewer for this session, and it's monitored, so just be yourself. Let's start easy: what's a project you really enjoyed working on?</p>
+      <p class="you"><b>You:</b> I built a real-time polling service for about 40,000 users.</p>
+      <p class="ai"><b>AI:</b> That's a good one — I can see why you enjoyed that. What was the trickiest part of getting it to hold up under that load?</p>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl">&#128247;</button>
+      <button class="ctrl">&#127908;</button>
+      <button class="ctrl end">&#9742;</button>
+    </div>
+    <div class="meta" id="meta">mouth level 0.00 &middot; blink idle</div>
+  </div>
+
+<script>
+const EYES = [
+  { left: 0.374, top: 0.4178, width: 0.088, height: 0.0579, lip: 0.85 },
+  { left: 0.514, top: 0.4178, width: 0.075, height: 0.0579, lip: 0.85 },
+];
+const lids = [...document.querySelectorAll('.lid')];
+const openLayer = document.getElementById('open');
+const avatar = document.getElementById('avatar');
+const meta = document.getElementById('meta');
+const speakingEl = document.getElementById('speaking');
+
+let level = 0, peak = 0.04;
+let blinkState = 'idle', blinkPhase = 0, nextBlink = performance.now() + 1400;
+const start = performance.now();
+let last = performance.now();
+
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(now - last, 100); last = now;
+  const t = (now - start) / 1000;
+
+  // Stand-in for the LiveKit analyser: syllabic rhythm with pauses.
+  const talking = (Math.sin(t * 0.45) > -0.2);
+  let raw = talking
+    ? Math.max(0, Math.abs(Math.sin(t * 7.3)) * 0.55 +
+                  Math.abs(Math.sin(t * 3.1 + 0.9)) * 0.30 +
+                  Math.abs(Math.sin(t * 11.7)) * 0.15)
+    : 0;
+
+  peak = Math.max(raw, peak * 0.996, 0.04);
+  let target = Math.min(1, Math.pow(raw / (peak * 0.75), 0.7));
+  const rate = target > level ? 0.45 : 0.14;
+  level += (target - level) * Math.min(1, (dt / 16) * rate);
+  if (level < 0.004) level = 0;
+  openLayer.style.opacity = level.toFixed(3);
+  speakingEl.style.opacity = talking ? '1' : '0.35';
+
+  let openness = 0;
+  if (blinkState === 'idle') {
+    if (now >= nextBlink) { blinkState = 'closing'; blinkPhase = now; }
+  } else if (blinkState === 'closing') {
+    const p = (now - blinkPhase) / 95;
+    if (p >= 1) { blinkState = 'opening'; blinkPhase = now; openness = 1; }
+    else openness = 1 - (1 - p) * (1 - p);
+  } else {
+    const p = (now - blinkPhase) / 140;
+    if (p >= 1) {
+      blinkState = 'idle'; openness = 0;
+      nextBlink = now + 1900 + Math.random() * 3600;
+      if (Math.random() < 0.16) nextBlink = now + 240;
+    } else openness = 1 - p * p;
+  }
+  lids.forEach((el, i) => {
+    const e = EYES[i];
+    el.firstElementChild.style.transform =
+      `translateY(${-(e.height * e.lip * 100 * openness).toFixed(3)}%)`;
+  });
+
+  const breathe = 1.02 + Math.sin(t * 0.9) * 0.004;
+  const swayX = Math.sin(t * 0.31) * 0.25;
+  const swayY = Math.cos(t * 0.23) * 0.18 + Math.sin(t * 1.6) * 0.06;
+  avatar.style.transform =
+    `translate(${swayX.toFixed(3)}%, ${swayY.toFixed(3)}%) scale(${breathe.toFixed(4)})`;
+
+  meta.textContent = `mouth level ${level.toFixed(2)} · blink ${blinkState} · ${talking ? 'agent speaking' : 'listening'}`;
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
