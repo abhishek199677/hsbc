@@ -20,6 +20,7 @@ on_user_speech pair that livekit-agents <1.x used.
 from __future__ import annotations
 
 import asyncio
+import itertools
 import logging
 import re
 
@@ -30,6 +31,7 @@ from livekit.agents.types import (
     DEFAULT_API_CONNECT_OPTIONS,
     NotGivenOr,
 )
+from livekit.agents.voice import SpeechHandle
 
 from nextjs_client import (
     get_coding_challenge,
@@ -50,6 +52,24 @@ GREETING_FAILED = (
     "Hi! I'm having trouble reaching the interview system on my side. "
     "Please end the call and start the interview again."
 )
+
+# The first /api/ai-interview call costs ~15s (it builds the system prompt and
+# asks the model for the intro + question 1). Without something to fill it the
+# candidate joins a room that stays completely silent, assumes the call is
+# broken and hangs up before question 1 is ever spoken. Each line is a
+# standalone sentence so being cut off mid-way still sounds natural.
+HOLDING_LINES = (
+    "Hi, I'm your AI interviewer, and welcome to your interview. "
+    "I'm loading your first question right now, so please give me a moment.",
+    "Thanks for holding on. I'm still setting up the interview on my side.",
+    "Almost ready — I'll have your first question for you in just a second.",
+)
+# Approximate spoken duration of one holding line, used as the poll interval
+# before starting the next one (or the real greeting).
+HOLDING_LINE_SECONDS = 8
+# Only the opener is used once; the two shorter lines repeat until the API
+# answers, since /api/ai-interview can take anywhere from 9s to 30s.
+_REPEATABLE_FILLERS = HOLDING_LINES[1:]
 
 
 def strip_markers(text: str) -> str:
@@ -281,6 +301,12 @@ class InterviewAgent(Agent):
             logger.error("InterviewAgent has no session bound")
             return
 
+        # Fetch the intro + question 1 in the background IMMEDIATELY, rather
+        # than after the candidate joins. The first /api/ai-interview call
+        # costs ~15s; starting it here overlaps that with the ~1-2s it takes
+        # the candidate to connect, which is most of the wait gone for free.
+        greeting_task = asyncio.create_task(self._backend.greet())
+
         # The agent is usually dispatched before the candidate joins; wait a
         # little so the greeting isn't spoken into an empty room.
         ctx = self._ctx
@@ -292,11 +318,46 @@ class InterviewAgent(Agent):
             except Exception:
                 logger.exception("wait_for_participant failed")
 
+        # Cover whatever latency is left so the candidate hears a voice
+        # instead of silence. /api/ai-interview has been measured at 9s and
+        # at 29s, so the short lines repeat rather than running out. Each
+        # say() is queued behind the previous one, so we wait for a line to
+        # finish before starting the next. chain() keeps the cycle lazy —
+        # unpacking it (`*itertools.cycle(...)`) would build an infinite
+        # tuple and hang the job process.
+        holding_speech: list[SpeechHandle] = []
+        lines = itertools.chain([HOLDING_LINES[0]], itertools.cycle(_REPEATABLE_FILLERS))
+        for line in lines:
+            if greeting_task.done():
+                break
+            try:
+                holding_speech.append(
+                    session.say(
+                        line,
+                        allow_interruptions=True,
+                        add_to_chat_ctx=False,
+                    )
+                )
+            except Exception:
+                logger.exception("Failed to speak holding line")
+                break
+            # asyncio.wait (unlike wait_for) leaves greeting_task running
+            # when it times out — wait_for would cancel it outright.
+            await asyncio.wait({greeting_task}, timeout=HOLDING_LINE_SECONDS)
+
         try:
-            greeting = await self._backend.greet()
+            greeting = await greeting_task
         except Exception:
             logger.exception("greeting failed")
             greeting = GREETING_FAILED
+
+        # Cut the last holding line short so the real greeting starts at once.
+        for speech in holding_speech:
+            if not speech.done():
+                try:
+                    speech.interrupt()
+                except Exception:
+                    logger.debug("holding line was already finished")
 
         try:
             await session.say(greeting)

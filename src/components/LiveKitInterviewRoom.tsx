@@ -11,13 +11,14 @@
  * connection state, errors, and disconnect events.
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
   useTracks,
   useParticipants,
   useLocalParticipant,
+  useTranscriptions,
   ConnectionStateToast,
   VideoTrack,
 } from "@livekit/components-react";
@@ -25,7 +26,7 @@ import "@livekit/components-styles";
 import { Track } from "livekit-client";
 import {
   Video, VideoOff, Mic, MicOff, Phone, Loader,
-  Volume2, AlertTriangle, Wifi,
+  Volume2, AlertTriangle, Wifi, Captions,
 } from "lucide-react";
 
 interface Props {
@@ -73,6 +74,10 @@ function InterviewLayout({
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
   const tracks = useTracks();
+  // The agent publishes its TTS text into the room as it speaks, so the
+  // question is readable even when the candidate can't hear (muted speakers,
+  // blocked autoplay, hearing impairment, noisy room).
+  const transcriptions = useTranscriptions();
 
   // Find the local participant's video track
   const localVideoTrack = tracks.find(
@@ -87,6 +92,29 @@ function InterviewLayout({
   );
   const isAiConnected = !!aiParticipant;
   const isAiSpeaking = aiParticipant?.isSpeaking ?? false;
+
+  // Live captions. Transcriptions are keyed by segment id, so partial
+  // updates replace themselves rather than appending — merge consecutive
+  // entries per speaker and keep the last few turns on screen.
+  const transcript = useMemo(() => {
+    const localId = localParticipant?.identity;
+    const agentIds = new Set(
+      participants.filter((p) => p.identity !== localId).map((p) => p.identity)
+    );
+    const lines: { from: "ai" | "you"; text: string }[] = [];
+    for (const segment of transcriptions) {
+      const text = segment.text.trim();
+      if (!text) continue;
+      const from = agentIds.has(segment.participantInfo.identity) ? "ai" : "you";
+      const last = lines[lines.length - 1];
+      if (last && last.from === from) {
+        last.text = text; // interim update for the same segment
+      } else {
+        lines.push({ from, text });
+      }
+    }
+    return lines.slice(-6);
+  }, [transcriptions, participants, localParticipant?.identity]);
 
   // Don't spin forever: if the agent hasn't joined in time, offer a way out.
   const [agentMissing, setAgentMissing] = useState(false);
@@ -216,6 +244,36 @@ function InterviewLayout({
           )}
         </div>
       </div>
+
+      {/* Live captions — the AI's words on screen, so a question is never
+          lost to muted speakers, blocked autoplay or a noisy room. */}
+      {transcript.length > 0 && (
+        <div className="mx-4 mb-2 rounded-lg border border-[#27272a] bg-[#101012] p-3">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-[#71717a]">
+            <Captions className="h-3.5 w-3.5" />
+            Live transcript
+          </div>
+          <div className="space-y-1.5">
+            {transcript.map((line, index) => (
+              <p
+                key={`${line.from}-${index}`}
+                className={`text-sm leading-relaxed ${
+                  line.from === "ai" ? "text-[#fafafa]" : "text-[#a1a1aa]"
+                }`}
+              >
+                <span
+                  className={`mr-1.5 font-semibold ${
+                    line.from === "ai" ? "text-[#a78bfa]" : "text-[#71717a]"
+                  }`}
+                >
+                  {line.from === "ai" ? "AI" : "You"}:
+                </span>
+                {line.text}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Audio renderer — plays the AI agent's audio track */}
       <RoomAudioRenderer />
