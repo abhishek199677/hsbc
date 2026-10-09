@@ -9,6 +9,13 @@ import {
   getPresignedUrl,
 } from "@/lib/storage";
 import { parseResume, ParsedResume } from "@/lib/resume-parser";
+import { serializeRoleInsights } from "@/lib/role-insights";
+import {
+  normalizeJobType,
+  normalizeWorkMode,
+  normalizePreferredLocation,
+  normalizeNoticePeriod,
+} from "@/lib/preferences";
 import { prisma } from "@/lib/prisma";
 
 const ALLOWED_TYPES = [
@@ -67,6 +74,19 @@ function extensionForType(type: string): string | null {
     "text/vtt": "vtt",
   };
   return extensions[type] || null;
+}
+
+/**
+ * Turns parser diagnostics into a message the candidate can act on, without
+ * ever leaking secrets (the OpenAI SDK echoes the key back on a 401).
+ */
+function sanitizeDiagnostic(diagnostics: string[]): string | null {
+  if (diagnostics.length === 0) return null;
+  const text = diagnostics
+    .join(" | ")
+    .replace(/sk-[A-Za-z0-9_-]+/g, "sk-***")
+    .slice(0, 300);
+  return `Resume parsing failed: ${text}. Please enter the details manually.`;
 }
 
 export async function POST(request: Request) {
@@ -181,7 +201,10 @@ export async function POST(request: Request) {
     if (!isVideo && !isCaption) {
       try {
         console.log(`[upload] Parsing resume: ${file.name} (${file.type}, ${file.size} bytes)`);
-        parsedResume = await parseResume(Buffer.from(bytes), file.name);
+        const diagnostics: string[] = [];
+        parsedResume = await parseResume(Buffer.from(bytes), file.name, (message) =>
+          diagnostics.push(message)
+        );
         
         // Check if AI parsing actually extracted meaningful data
         const hasData = parsedResume && (
@@ -190,7 +213,7 @@ export async function POST(request: Request) {
         );
         if (!hasData) {
           parsingStatus = "failed";
-          parsingError = "AI parsing failed or API key invalid. Please enter details manually.";
+          parsingError = sanitizeDiagnostic(diagnostics) || "AI parsing failed. Please enter details manually.";
           parsedResume = null;
           console.log("[upload] Resume parsed but no meaningful data extracted");
         } else {
@@ -231,7 +254,17 @@ export async function POST(request: Request) {
           const certifications = parsedResume.certifications?.length > 0 ? JSON.stringify(parsedResume.certifications) : null;
           const languages = parsedResume.languages?.length > 0 ? parsedResume.languages.join(", ") : null;
           const educationDetails = parsedResume.educationDetails?.length > 0 ? JSON.stringify(parsedResume.educationDetails) : null;
-          const suggestedRoles = parsedResume.suggestedRoles?.length > 0 ? JSON.stringify(parsedResume.suggestedRoles) : null;
+          const roleInsights = serializeRoleInsights(parsedResume);
+
+          // The AI answers in free text ("full time", "Bengaluru, India"). Map
+          // them onto the values the profile <select>/<radio> controls offer, so
+          // Preferences renders them instead of showing an empty field. When
+          // nothing matches we keep the raw wording rather than dropping it.
+          const jobType = normalizeJobType(parsedResume.jobType) || parsedResume.jobType;
+          const workMode = normalizeWorkMode(parsedResume.workMode) || parsedResume.workMode;
+          const preferredLocation =
+            normalizePreferredLocation(parsedResume.preferredLocation) || parsedResume.preferredLocation;
+          const noticePeriod = normalizeNoticePeriod(parsedResume.noticePeriod) || parsedResume.noticePeriod;
 
           // Upsert profile with parsed data
           await prisma.profile.upsert({
@@ -254,12 +287,14 @@ export async function POST(request: Request) {
               keyAchievements,
               certifications,
               languages,
-              noticePeriod: parsedResume.noticePeriod,
+              noticePeriod,
               whatDrivesYou: parsedResume.whatDrivesYou,
-              jobType: parsedResume.jobType,
-              preferredLocation: parsedResume.preferredLocation,
+              jobType,
+              preferredLocation,
+              salaryRange: parsedResume.salaryRange,
+              workMode,
               educationDetails,
-              suggestedRoles,
+              suggestedRoles: roleInsights,
             },
             update: {
               resumeUrl: fileUrl,
@@ -281,12 +316,14 @@ export async function POST(request: Request) {
               ...(keyAchievements && { keyAchievements }),
               ...(certifications && { certifications }),
               ...(languages && { languages }),
-              ...(parsedResume.noticePeriod && { noticePeriod: parsedResume.noticePeriod }),
+              ...(parsedResume.noticePeriod && { noticePeriod }),
               ...(parsedResume.whatDrivesYou && { whatDrivesYou: parsedResume.whatDrivesYou }),
-              ...(parsedResume.jobType && { jobType: parsedResume.jobType }),
-              ...(parsedResume.preferredLocation && { preferredLocation: parsedResume.preferredLocation }),
+              ...(parsedResume.jobType && { jobType }),
+              ...(parsedResume.preferredLocation && { preferredLocation }),
+              ...(parsedResume.salaryRange && { salaryRange: parsedResume.salaryRange }),
+              ...(parsedResume.workMode && { workMode }),
               ...(educationDetails && { educationDetails }),
-              ...(suggestedRoles && { suggestedRoles }),
+              ...(roleInsights && { suggestedRoles: roleInsights }),
             },
           });
           console.log("[upload] Profile saved to database");
@@ -294,7 +331,7 @@ export async function POST(request: Request) {
         } // end else (hasData)
       } catch (error) {
         parsingStatus = "failed";
-        parsingError = error instanceof Error ? error.message : "Unknown parsing error";
+        parsingError = sanitizeDiagnostic([error instanceof Error ? error.message : "Unknown parsing error"]);
         console.error("[upload] Resume parsing failed:", error);
         // Continue without parsed data - not a blocker
       }

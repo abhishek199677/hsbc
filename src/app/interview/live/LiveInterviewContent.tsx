@@ -664,7 +664,7 @@ export default function LiveInterviewContent() {
           if (fallbackRes.ok) {
             const fallbackData = await fallbackRes.json();
             if (fallbackData.success && fallbackData.interview?.id) {
-              interviewId = fallbackData.interview.id;
+              interviewId = String(fallbackData.interview.id);
               sessionStorage.setItem("tcInterviewId", interviewId);
             }
           }
@@ -708,6 +708,44 @@ export default function LiveInterviewContent() {
       }
     } finally {
       setLiveKitLoading(false);
+    }
+  };
+
+  /**
+   * Re-dispatch the agent into the room the candidate is already sitting in —
+   * used by the "Try again" button when the agent never joined. The candidate's
+   * WebRTC connection (camera, mic, room) is left untouched.
+   */
+  const redispatchAgent = async () => {
+    try {
+      let interviewId = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("id") || sessionStorage.getItem("tcInterviewId")
+        : null;
+
+      if (!interviewId) {
+        const res = await fetch("/api/interview", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.interview?.id) {
+            interviewId = String(data.interview.id);
+            sessionStorage.setItem("tcInterviewId", interviewId);
+          }
+        }
+      }
+      if (!interviewId) return;
+
+      const res = await fetch("/api/ai-agent", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interviewId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}) as { error?: string });
+        console.error("Agent re-dispatch failed:", data.error || res.status);
+      }
+    } catch (error) {
+      console.error("Agent re-dispatch failed:", error);
     }
   };
 
@@ -1140,6 +1178,7 @@ export default function LiveInterviewContent() {
         videoEnabled={videoEnabled}
         audioEnabled={audioEnabled}
         onDisconnected={handleLiveKitDisconnect}
+        onRetry={redispatchAgent}
       />
     );
   }

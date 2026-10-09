@@ -5,6 +5,7 @@
 // 3. WhatsApp Business API credentials
 
 import { timezoneLabel } from "@/lib/timezone";
+import { formatTimeLabel } from "@/lib/time";
 
 interface SendWhatsAppParams {
   to: string;
@@ -85,7 +86,7 @@ export function generateInterviewConfirmationWhatsApp(data: {
 Your 15-minute AI Interview is confirmed.
 
 📅 ${data.date}
-🕐 ${data.time} (${tz})
+🕐 ${formatTimeLabel(data.time)} (${tz})
 
 We're excited to connect with you and help you find the right opportunities.
 
@@ -105,7 +106,7 @@ export function generateReminderWhatsApp(data: {
 Interview Reminder: Your AI interview is in ${data.type}.
 
 📅 ${data.date}
-🕐 ${data.time} (${tz})
+🕐 ${formatTimeLabel(data.time)} (${tz})
 
 Get ready and make sure you're in a quiet location!
 

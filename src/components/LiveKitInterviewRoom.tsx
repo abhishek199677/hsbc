@@ -11,7 +11,7 @@
  * connection state, errors, and disconnect events.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -35,11 +35,19 @@ interface Props {
   token: string;
   /** Callback when the interview ends or the room disconnects */
   onDisconnected?: () => void;
+  /**
+   * Called when the AI agent has not joined within the grace period — the
+   * caller re-dispatches the agent without dropping the candidate's call.
+   */
+  onRetry?: () => void;
   /** Whether the user's camera is enabled */
   videoEnabled?: boolean;
   /** Whether the user's microphone is enabled */
   audioEnabled?: boolean;
 }
+
+/** How long the candidate waits for the agent before showing recovery options. */
+const AGENT_JOIN_TIMEOUT_MS = 25_000;
 
 /**
  * Inner component that renders the interview layout.
@@ -47,12 +55,14 @@ interface Props {
  */
 function InterviewLayout({
   onEndCall,
+  onRetry,
   videoEnabled,
   audioEnabled,
   onToggleVideo,
   onToggleAudio,
 }: {
   onEndCall: () => void;
+  onRetry?: () => void;
   videoEnabled: boolean;
   audioEnabled: boolean;
   onToggleVideo: () => void;
@@ -76,13 +86,36 @@ function InterviewLayout({
   const isAiConnected = !!aiParticipant;
   const isAiSpeaking = aiParticipant?.isSpeaking ?? false;
 
+  // Don't spin forever: if the agent hasn't joined in time, offer a way out.
+  const [agentMissing, setAgentMissing] = useState(false);
+
+  useEffect(() => {
+    if (isAiConnected) {
+      setAgentMissing(false);
+      return;
+    }
+    const startedAt = Date.now();
+    const id = window.setInterval(() => {
+      if (Date.now() - startedAt >= AGENT_JOIN_TIMEOUT_MS) {
+        setAgentMissing(true);
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [isAiConnected]);
+
   return (
     <div className="flex-1 flex flex-col">
       {/* Connection status banner */}
-      {!isAiConnected && (
+      {!isAiConnected && !agentMissing && (
         <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/30 flex items-center justify-center gap-2 text-yellow-300 text-sm">
           <Loader className="w-4 h-4 animate-spin" />
           <span>Connecting to AI interviewer...</span>
+        </div>
+      )}
+      {!isAiConnected && agentMissing && (
+        <div className="px-4 py-2 bg-red-500/10 border-b border-red-500/30 flex items-center justify-center gap-2 text-red-300 text-sm">
+          <AlertTriangle className="w-4 h-4" />
+          <span>AI interviewer unavailable — try again below</span>
         </div>
       )}
       {isAiConnected && (
@@ -120,7 +153,7 @@ function InterviewLayout({
               </div>
               <p className="text-white font-medium">AI Interviewer</p>
               <p className="text-white/70 text-sm">
-                {isAiConnected ? "Connected" : "Connecting..."}
+                {isAiConnected ? "Connected" : agentMissing ? "Unavailable" : "Connecting..."}
               </p>
             </div>
           </div>
@@ -130,11 +163,36 @@ function InterviewLayout({
               Speaking...
             </div>
           )}
-          {!isAiConnected && (
+          {!isAiConnected && !agentMissing && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <div className="flex items-center gap-2 text-white/80">
                 <Loader className="w-4 h-4 animate-spin" />
                 Waiting for AI agent...
+              </div>
+            </div>
+          )}
+          {!isAiConnected && agentMissing && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 p-4 text-center">
+              <AlertTriangle className="w-8 h-8 text-[#f59e0b] mb-2" />
+              <p className="text-white font-medium mb-1">The AI interviewer hasn't joined yet</p>
+              <p className="text-white/70 text-sm mb-4">
+                The interview agent may not be running. Try again — your camera and mic stay on.
+              </p>
+              <div className="flex gap-3">
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    className="px-4 py-2 bg-[#a78bfa] text-white rounded-lg hover:bg-[#8b5cf6] text-sm"
+                  >
+                    Try again
+                  </button>
+                )}
+                <button
+                  onClick={onEndCall}
+                  className="px-4 py-2 bg-[#27272a] text-white rounded-lg hover:bg-[#3f3f46] text-sm"
+                >
+                  End call
+                </button>
               </div>
             </div>
           )}
@@ -180,6 +238,7 @@ export default function LiveKitInterviewRoom({
   serverUrl,
   token,
   onDisconnected,
+  onRetry,
   videoEnabled: initialVideo = true,
   audioEnabled: initialAudio = true,
 }: Props) {
@@ -242,6 +301,7 @@ export default function LiveKitInterviewRoom({
         <ConnectionStateToast />
         <InterviewLayout
           onEndCall={handleDisconnect}
+          onRetry={onRetry}
           videoEnabled={videoEnabled}
           audioEnabled={audioEnabled}
           onToggleVideo={handleToggleVideo}

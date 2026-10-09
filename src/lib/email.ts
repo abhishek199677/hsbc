@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { escapeHtml } from "./security";
+import { formatTimeLabel } from "./time";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -100,7 +101,7 @@ export function generateInterviewConfirmationEmail(data: {
           
             <div class="detail-box">
               <div class="detail-label">🕐 Time</div>
-              <div class="detail-value">${escapeHtml(data.time)} (${escapeHtml(data.timezone || "Asia/Kolkata")})</div>
+              <div class="detail-value">${escapeHtml(formatTimeLabel(data.time))} (${escapeHtml(data.timezone || "Asia/Kolkata")})</div>
             </div>
             
             <div class="detail-box">
@@ -169,7 +170,7 @@ export function generateReminderEmail(data: {
           
             <div class="detail-box">
               <div class="detail-label">🕐 Time</div>
-              <div class="detail-value">${escapeHtml(data.time)} (${escapeHtml(data.timezone || "Asia/Kolkata")})</div>
+              <div class="detail-value">${escapeHtml(formatTimeLabel(data.time))} (${escapeHtml(data.timezone || "Asia/Kolkata")})</div>
             </div>
             
             <p style="margin-top: 20px;">Make sure you're prepared and in a quiet location with a stable internet connection.</p>
@@ -388,7 +389,7 @@ export function generateInterviewSchedulingEmail(data: {
                 <div class="detail-icon">🕐</div>
                 <div>
                   <div class="detail-label">Time</div>
-                  <div class="detail-value">${escapeHtml(data.time)} (${escapeHtml(data.timezone)})</div>
+                  <div class="detail-value">${escapeHtml(formatTimeLabel(data.time))} (${escapeHtml(data.timezone)})</div>
                 </div>
               </div>
               

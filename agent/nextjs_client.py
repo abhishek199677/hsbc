@@ -46,6 +46,14 @@ async def start_interview(auth_token: str, profile: dict) -> dict:
     return await _call_ai_interview("start", auth_token, profile=profile)
 
 
+async def get_coding_challenge(auth_token: str, difficulty: str | None = None) -> dict:
+    """Fetch the coding challenge so it can be read aloud in a voice interview."""
+    extra: dict = {}
+    if difficulty:
+        extra["difficulty"] = difficulty
+    return await _call_ai_interview("coding_challenge", auth_token, **extra)
+
+
 async def respond_to_candidate(
     auth_token: str,
     user_message: str,

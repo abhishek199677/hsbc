@@ -47,6 +47,8 @@ export interface ParsedResume {
   whatDrivesYou: string | null;
   jobType: string | null;
   preferredLocation: string | null;
+  salaryRange: string | null;
+  workMode: string | null;
   suggestedRoles: string[];
   bestFitRole: string | null;
 }

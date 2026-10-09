@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getActiveUser } from "@/lib/authorization";
+import { getTokenFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   createInterviewRoom,
@@ -11,12 +12,12 @@ import {
  *
  * This endpoint:
  * 1. Creates (or reuses) a LiveKit room for the interview
- * 2. Generates an access token for the candidate
- * 3. Stores the interview metadata needed by the agent
- * 4. Returns connection details for the frontend
- *
- * The Python agent (agent/agent.py) is dispatched separately via LiveKit Cloud
- * and reads the room metadata to authenticate and start the interview.
+ * 2. Puts the candidate profile + an auth token in the room metadata, which is
+ *    what agent/agent.py reads to call /api/ai-interview
+ * 3. Issues an explicit dispatch for the "interview-agent" worker, so LiveKit
+ *    actually starts a job for it (otherwise the candidate waits forever)
+ * 4. Generates an access token for the candidate
+ * 5. Returns connection details for the frontend
  */
 export async function POST(request: Request) {
   try {
@@ -68,8 +69,22 @@ export async function POST(request: Request) {
       skills: profile?.skills || "Not specified",
     };
 
-    // Create the LiveKit room and generate a candidate token
-    const { roomName, token } = await createInterviewRoom(interviewId, user.id);
+    // The agent needs a token for /api/ai-interview: reuse this request's
+    // session (it is the candidate's own credential, so nothing new is granted).
+    const authToken = getTokenFromRequest(request);
+
+    // Create the LiveKit room, hand the agent its metadata, and dispatch it
+    let roomName: string;
+    let token: string;
+    try {
+      ({ roomName, token } = await createInterviewRoom(interviewId, user.id, {
+        authToken: authToken ?? undefined,
+        profile: agentProfile,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to start the AI interviewer";
+      return NextResponse.json({ error: message }, { status: 503 });
+    }
 
     // Update the interview record with agent metadata
     await prisma.interview.update({
@@ -80,10 +95,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // The room metadata is already set by createInterviewRoom.
-    // We also store the auth token in the room metadata so the agent
-    // can authenticate with the Next.js API.
-    // Note: In production, use a more secure approach (e.g., short-lived tokens).
     const livekitUrl = process.env.LIVEKIT_URL || "wss://techcitta-b5zx3t8p.livekit.cloud";
 
     return NextResponse.json({

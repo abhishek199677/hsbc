@@ -4,6 +4,7 @@ import { getUserFromRequest } from "@/lib/auth";
 import { sendEmail, generateInterviewConfirmationEmail } from "@/lib/email";
 import { sendWhatsAppMessage, generateInterviewConfirmationWhatsApp } from "@/lib/whatsapp";
 import { getPlanLimits, isPlanActive } from "@/lib/plan";
+import { to24HourTime, formatTimeLabel } from "@/lib/time";
 
 // GET - Fetch interview
 export async function GET(request: Request) {
@@ -115,9 +116,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate time format (HH:MM, 24h)
-    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
-    if (typeof time !== "string" || !timeRegex.test(time)) {
+    // Validate time. The booking UI shows 12-hour labels ("01:30 PM"), so
+    // accept both shapes and canonicalise to HH:MM before storing.
+    const normalizedTime = typeof time === "string" ? to24HourTime(time) : null;
+    if (!normalizedTime) {
       return NextResponse.json(
         { error: "Invalid time format. Use HH:MM (24-hour)" },
         { status: 400 }
@@ -125,7 +127,7 @@ export async function POST(request: Request) {
     }
 
     // Reject past dates
-    const interviewDate = new Date(`${date}T${time}:00`);
+    const interviewDate = new Date(`${date}T${normalizedTime}:00`);
     if (interviewDate <= new Date()) {
       return NextResponse.json(
         { error: "Cannot schedule interviews in the past" },
@@ -161,7 +163,7 @@ export async function POST(request: Request) {
         where: { userId: user.userId },
         data: {
           date,
-          time,
+          time: normalizedTime,
           timezone: timezone || "Asia/Kolkata",
           mode: mode || "AI Video Interview",
           type: type || "Technical + Behavioral Assessment",
@@ -175,7 +177,7 @@ export async function POST(request: Request) {
         data: {
           userId: user.userId,
           date,
-          time,
+          time: normalizedTime,
           timezone: timezone || "Asia/Kolkata",
           mode: mode || "AI Video Interview",
           type: type || "Technical + Behavioral Assessment",
@@ -192,7 +194,7 @@ export async function POST(request: Request) {
         html: generateInterviewConfirmationEmail({
           name: userData.name || "there",
           date,
-          time,
+          time: formatTimeLabel(normalizedTime),
           mode: mode || "AI Video Interview",
           timezone,
         }),
@@ -212,7 +214,7 @@ export async function POST(request: Request) {
       const whatsappMessage = generateInterviewConfirmationWhatsApp({
         name: userData.name || "there",
         date,
-        time,
+        time: formatTimeLabel(normalizedTime),
         timezone,
       });
       

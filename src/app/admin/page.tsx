@@ -15,6 +15,7 @@ import OpenAIMetrics from "@/components/admin/OpenAIMetrics";
 import LoginLogsTab from "@/components/admin/LoginLogsTab";
 import AgencyDashboard from "@/components/admin/AgencyDashboard";
 import DataTable from "@/components/admin/DataTable";
+import { formatTimeLabel } from "@/lib/time";
 import EnterpriseSettings from "@/components/admin/EnterpriseSettings";
 
 interface Feedback {
@@ -129,7 +130,7 @@ export default function AdminDashboard() {
       Name: u.name || "",
       Email: u.email,
       Date: u.interview?.date || "",
-      Time: u.interview?.time || "",
+      Time: formatTimeLabel(u.interview?.time),
       Mode: u.interview?.mode || "AI Video",
       Status: u.interview?.status || "",
       Score: u.interview?.evaluationScore ?? "",
@@ -245,7 +246,7 @@ function InterviewsTab({ users, loading, onExport }: { users: UserData[]; loadin
       label: "Time",
       render: (u: Record<string, unknown>) => {
         const user = u as unknown as UserData;
-        return <span className="text-sm text-[#fafafa]">{user.interview?.time}</span>;
+        return <span className="text-sm text-[#fafafa]">{formatTimeLabel(user.interview?.time)}</span>;
       },
     },
     {

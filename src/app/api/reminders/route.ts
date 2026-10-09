@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, generateReminderEmail } from "@/lib/email";
 import { sendWhatsAppMessage, generateReminderWhatsApp } from "@/lib/whatsapp";
+import { to24HourTime, formatTimeLabel } from "@/lib/time";
 
 // Helper to parse interview date/time into a Date object
 function getInterviewDateTime(date: string, time: string): Date {
@@ -24,16 +25,10 @@ function getInterviewDateTime(date: string, time: string): Date {
     interviewDate = new Date(date);
   }
 
-  // Parse time (e.g., "01:30 PM")
-  const timeMatch = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (timeMatch) {
-    let hours = parseInt(timeMatch[1]);
-    const minutes = parseInt(timeMatch[2]);
-    const period = timeMatch[3].toUpperCase();
-    
-    if (period === "PM" && hours !== 12) hours += 12;
-    if (period === "AM" && hours === 12) hours = 0;
-    
+  // Parse time — accepts both "13:30" (stored form) and legacy "01:30 PM"
+  const time24 = to24HourTime(time);
+  if (time24) {
+    const [hours, minutes] = time24.split(":").map(Number);
     interviewDate.setHours(hours, minutes, 0, 0);
   }
 
@@ -74,7 +69,7 @@ export async function GET(request: Request) {
           // Send email reminder
           await sendEmail({
             to: interview.user.email,
-            subject: `Interview Reminder - Tomorrow at ${interview.time}`,
+            subject: `Interview Reminder - Tomorrow at ${formatTimeLabel(interview.time)}`,
             html: generateReminderEmail({
               name: interview.user.name || "there",
               type: "24 Hours",

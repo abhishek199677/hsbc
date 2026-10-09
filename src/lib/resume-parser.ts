@@ -5,7 +5,7 @@ import { fromPath } from "pdf2pic";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import type { ParsedResume, ParsedWorkExperience, ParsedProject, ParsedEducation } from "@/types/resume";
+import type { ParsedResume, ParsedWorkExperience, ParsedProject } from "@/types/resume";
 
 export type { ParsedResume, ParsedWorkExperience, ParsedProject, ParsedEducation } from "@/types/resume";
 
@@ -45,6 +45,8 @@ Return a JSON object with exactly these fields:
   "whatDrivesYou": "Career motivation from objective/summary or null",
   "jobType": "Employment type if mentioned or null",
   "preferredLocation": "Preferred work location or null",
+  "salaryRange": "Expected salary / CTC / compensation if mentioned (e.g. '15-20 LPA', 'Rs. 18 LPA', '$120,000') or null",
+  "workMode": "Preferred work mode if mentioned or clearly implied: exactly one of 'Remote', 'Hybrid', 'On-site', or null",
   "suggestedRoles": ["TOP 5 job roles that BEST match this candidate's skills, experience, and qualifications. Be specific (e.g. 'Senior Full Stack Developer', 'AI/ML Engineer', 'DevOps Lead'). Consider their tech stack, years of experience, and career trajectory. Order from best fit to good fit."],
   "bestFitRole": "The SINGLE best job role for this candidate based on their complete profile. Be specific (e.g. 'Senior Full Stack Developer with AI/ML focus').",
   "workExperience": [
@@ -100,6 +102,15 @@ ROLE SUGGESTION RULES:
 - Be specific with titles (e.g. "Senior AI/ML Engineer" not just "Engineer")
 - Order from best fit to good fit
 - The bestFitRole should be the single most suitable role based on the complete profile
+- bestFitRole is shown to the candidate as "your best fit role", so it must be a real, specific, currently-hiring job title that their resume genuinely supports
+
+PREFERENCE EXTRACTION RULES (jobType, preferredLocation, salaryRange, workMode):
+- Look in: professional summary, career objective, "Looking for", "Preferences", "Open to", header lines and call-to-action lines
+- jobType -> exactly one of "Full-time", "Part-time", "Contract", "Freelance" (normalise e.g. "full time" -> "Full-time")
+- preferredLocation -> the CITY only (e.g. "Bangalore"); strip states/countries and phrases like "open to"
+- salaryRange -> keep the candidate's own wording and units (e.g. "15-20 LPA", "Rs. 18 LPA", "$120,000"); NEVER invent or estimate a number
+- workMode -> exactly one of "Remote", "Hybrid", "On-site"; infer from phrases like "open to remote", "work from home", "hybrid preferred", "willing to work from office"
+- If a preference is not stated or implied, return null for that field
 
 SKILL EXTRACTION RULES (CRITICAL):
 - Scan EVERY line of the resume for technology names
@@ -145,6 +156,8 @@ function getDefaultParsedResume(): ParsedResume {
     whatDrivesYou: null,
     jobType: null,
     preferredLocation: null,
+    salaryRange: null,
+    workMode: null,
     suggestedRoles: [],
     bestFitRole: null,
   };
@@ -209,6 +222,8 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
     whatDrivesYou: (parsed.whatDrivesYou as string) || null,
     jobType: (parsed.jobType as string) || null,
     preferredLocation: (parsed.preferredLocation as string) || null,
+    salaryRange: (parsed.salaryRange as string) || null,
+    workMode: (parsed.workMode as string) || null,
     suggestedRoles: Array.isArray(parsed.suggestedRoles)
       ? (parsed.suggestedRoles as string[]).filter(Boolean)
       : [],
@@ -217,6 +232,34 @@ function mapParsedResponse(parsed: Record<string, unknown>): ParsedResume {
       ? (parsed.topProjects as string[]).filter(Boolean)
       : [],
   };
+}
+
+/**
+ * Used when the AI call itself fails (invalid key, rate limit, transient
+ * outage). The regex parser is best-effort, so we only return it when it
+ * actually found something — otherwise the upload route reports the failure and
+ * the candidate fills the form in manually instead of seeing invented fields.
+ */
+function fallbackOrEmpty(
+  fallback: ParsedResume,
+  diagnose?: (message: string) => void
+): ParsedResume {
+  const useful =
+    Boolean(
+      fallback.currentRole ||
+        fallback.summary ||
+        fallback.workExperience.length > 0 ||
+        fallback.skills.length > 0
+    );
+
+  if (useful) {
+    console.log("[resume-parser] AI call failed, using regex fallback extraction");
+    return fallback;
+  }
+
+  diagnose?.("the AI parser returned nothing and no fallback data could be read from the file");
+  console.log("[resume-parser] AI call failed and fallback found nothing, returning empty parsed resume");
+  return getDefaultParsedResume();
 }
 
 function extractWorkExperienceFromText(text: string, defaultRole: string, defaultSummary: string): ParsedWorkExperience[] {
@@ -518,7 +561,7 @@ function parseResumeFallback(text: string): ParsedResume {
   }
 
   let whatDrivesYou: string | null = null;
-  const drivesMatch = text.match(/(?:PASSION|MOTIVATION|DRIVE|GOAL|OBJECTIVE|WHAT\s+DRIVES)[:\s]*([^\n]+)/i);
+  const drivesMatch = text.match(/(?:\bPASSION\b|\bMOTIVATION\b|\bDRIVES?\b|\bGOAL\b|\bOBJECTIVE\b|WHAT\s+DRIVES?)[:\s]*([^\n]+)/i);
   if (drivesMatch) {
     whatDrivesYou = drivesMatch[1].trim();
   }
@@ -533,6 +576,30 @@ function parseResumeFallback(text: string): ParsedResume {
   const prefLocMatch = text.match(/(?:preferred\s+location|willing\s+to\s+relocate|location\s+preference)[:\s]*([^\n]+)/i);
   if (prefLocMatch) {
     preferredLocation = prefLocMatch[1].trim();
+  }
+
+  let workMode: string | null = null;
+  const workModeMatch = text.match(/\b(remote(?:[- ]first)?|hybrid|on[- ]site|wfh|work(?:ing)?\s+from\s+home)\b/i);
+  if (workModeMatch) {
+    const w = workModeMatch[1].toLowerCase();
+    workMode = w.includes("remote") || w.includes("from home") || w === "wfh"
+      ? "Remote"
+      : w.includes("hybrid")
+      ? "Hybrid"
+      : "On-site";
+  }
+
+  let salaryRange: string | null = null;
+  const salaryMatch = text.match(
+    /(?:expected\s+(?:salary|ctc)|salary\s+expectations?|compensation|drawn\s+(?:salary|ctc)|ctc|salary)\s*:?\s*([^\n]{3,40})/i
+  );
+  if (salaryMatch && /\d/.test(salaryMatch[1])) {
+    const value = salaryMatch[1].match(
+      /(?:₹|rs\.?\s*)?[\d][\d,.]*\s*(?:-\s*[\d][\d,.]*\s*)?(?:lpa|lakhs?|lacs?|k\b|per\s+annum|p\.?\s?a\.?|\/\s*year|usd)?/i
+    );
+    if (value && /\d/.test(value[0]) && value[0].trim().length >= 3) {
+      salaryRange = value[0].trim();
+    }
   }
 
   return {
@@ -558,6 +625,8 @@ function parseResumeFallback(text: string): ParsedResume {
     whatDrivesYou,
     jobType,
     preferredLocation,
+    salaryRange,
+    workMode,
     suggestedRoles: [],
     candidateSummary: null,
     topProjects: [],
@@ -687,9 +756,36 @@ async function parseTextWithAI(text: string): Promise<ParsedResume> {
   return mapParsedResponse(parsed);
 }
 
-export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  const result = await pdfParse(buffer);
-  return result.text;
+/**
+ * Extracts the text layer of a PDF.
+ *
+ * pdf.js intermittently reports "bad XRef entry" for files that are perfectly
+ * valid (it reproduces on identical bytes, roughly one parse in five under
+ * load), so a single failure must not be treated as a broken resume — we retry
+ * on a fresh copy of the buffer before giving up.
+ */
+export async function extractTextFromPDF(buffer: Buffer, attempts = 3): Promise<string> {
+  let lastError: unknown = new Error("PDF text extraction did not run");
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const result = await pdfParse(Buffer.from(buffer));
+      if (result.text && result.text.trim().length > 0) {
+        if (attempt > 0) console.log(`[resume-parser] PDF text extraction succeeded on attempt ${attempt + 1}`);
+        return result.text;
+      }
+      lastError = new Error("PDF contains no extractable text");
+    } catch (err) {
+      lastError = err;
+      console.error(
+        `[resume-parser] PDF text extraction attempt ${attempt + 1} failed:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 export async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
@@ -741,10 +837,14 @@ function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedRes
     keyAchievements: ai.keyAchievements && ai.keyAchievements.length > 0 ? ai.keyAchievements : fallback.keyAchievements,
     certifications: ai.certifications && ai.certifications.length > 0 ? ai.certifications : fallback.certifications,
     languages: ai.languages && ai.languages.length > 0 ? ai.languages : fallback.languages,
-    noticePeriod: ai.noticePeriod,
-    whatDrivesYou: ai.whatDrivesYou,
-    jobType: ai.jobType,
-    preferredLocation: ai.preferredLocation,
+    // The AI occasionally misses these even when the resume states them, so
+    // fall back to the regex parser rather than discarding a good extraction.
+    noticePeriod: ai.noticePeriod || fallback.noticePeriod,
+    whatDrivesYou: ai.whatDrivesYou || fallback.whatDrivesYou,
+    jobType: ai.jobType || fallback.jobType,
+    preferredLocation: ai.preferredLocation || fallback.preferredLocation,
+    salaryRange: ai.salaryRange || fallback.salaryRange,
+    workMode: ai.workMode || fallback.workMode,
     suggestedRoles: ai.suggestedRoles && ai.suggestedRoles.length > 0 ? ai.suggestedRoles : fallback.suggestedRoles,
     bestFitRole: ai.bestFitRole || fallback.bestFitRole,
     topProjects: ai.topProjects && ai.topProjects.length > 0 ? ai.topProjects : fallback.topProjects,
@@ -753,9 +853,15 @@ function mergeParsedResults(ai: ParsedResume, fallback: ParsedResume): ParsedRes
 
 export async function parseResume(
   buffer: Buffer,
-  filename: string
+  filename: string,
+  /** Receives human-readable failure reasons so the API can report them. */
+  onDiagnostic?: (message: string) => void
 ): Promise<ParsedResume> {
   const ext = filename.toLowerCase().split(".").pop() || "";
+  const diagnose = (message: string) => {
+    console.error(`[resume-parser] ${message}`);
+    onDiagnostic?.(message);
+  };
   console.log(`[resume-parser] Parsing file: ${filename} (type: ${ext}, size: ${buffer.length} bytes)`);
 
   if (ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp") {
@@ -771,7 +877,7 @@ export async function parseResume(
       pdfText = await extractTextFromPDF(buffer);
       console.log(`[resume-parser] Extracted ${pdfText.length} chars of text`);
     } catch (err) {
-      console.error("[resume-parser] PDF text extraction failed:", err instanceof Error ? err.message : err);
+      diagnose(`PDF text extraction failed: ${err instanceof Error ? err.message : String(err)}`);
     }
 
     if (pdfText.trim().length < 200) {
@@ -783,7 +889,10 @@ export async function parseResume(
           return parseImageWithVision(images, pdfText);
         }
       } catch (err) {
-        console.error("[resume-parser] PDF image conversion failed:", err instanceof Error ? err.message : err);
+        diagnose(`PDF image conversion failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      if (pdfText.trim().length === 0) {
+        diagnose("no extractable text in this PDF (it may be a scanned or image-only file)");
       }
       console.log("[resume-parser] Image conversion failed or produced no images, using fallback with extracted text");
     }
@@ -795,13 +904,8 @@ export async function parseResume(
       return mergeParsedResults(ai, fallback);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[resume-parser] AI text parsing failed:", msg);
-      // If the API key is invalid, don't use fallback (it returns garbage)
-      if (msg.includes("401") || msg.includes("invalid") || msg.includes("Unauthorized") || msg.includes("invalidated")) {
-        console.log("[resume-parser] API key invalid, returning empty parsed resume");
-        return getDefaultParsedResume();
-      }
-      return fallback;
+      diagnose(`AI text parsing failed: ${msg}`);
+      return fallbackOrEmpty(fallback, diagnose);
     }
   }
 
@@ -826,11 +930,8 @@ export async function parseResume(
       return mergeParsedResults(ai, fallback);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[resume-parser] AI text parsing failed:", msg);
-      if (msg.includes("401") || msg.includes("invalid") || msg.includes("Unauthorized") || msg.includes("invalidated")) {
-        return getDefaultParsedResume();
-      }
-      return fallback;
+      diagnose(`AI text parsing failed: ${msg}`);
+      return fallbackOrEmpty(fallback, diagnose);
     }
   }
 
@@ -840,10 +941,7 @@ export async function parseResume(
     return await parseTextWithAI(text);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[resume-parser] AI parsing failed for unknown type:", msg);
-    if (msg.includes("401") || msg.includes("invalid") || msg.includes("Unauthorized") || msg.includes("invalidated")) {
-      return getDefaultParsedResume();
-    }
-    return parseResumeFallback(text);
+    diagnose(`AI parsing failed for unknown file type: ${msg}`);
+    return fallbackOrEmpty(parseResumeFallback(text), diagnose);
   }
 }

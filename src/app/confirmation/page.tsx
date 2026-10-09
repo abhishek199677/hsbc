@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { timezoneLabel } from "@/lib/timezone";
+import { formatTimeLabel } from "@/lib/time";
 import { CheckCircle, Calendar, Clock, Video, Info, Mail, MessageCircle, ChevronRight, Shield, Star, X, ArrowRight } from "lucide-react";
 
 const steps = [
@@ -91,7 +92,8 @@ export default function ConfirmationPage() {
   const displayEmail = user?.email || "your email";
   const displayPhone = user?.phone || profile?.phone || "Not provided";
   const interviewDate = interview?.date || "2025-05-19";
-  const interviewTime = interview?.time || "01:30 PM";
+  // Stored as HH:MM (24-hour); older rows may still hold "01:30 PM".
+  const interviewTime = formatTimeLabel(interview?.time || "01:30 PM");
   const tzLabel = timezoneLabel(profile?.timezone || "Asia/Kolkata");
 
   const addToCalendar = () => {

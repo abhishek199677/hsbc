@@ -14,6 +14,7 @@ import {
   Sparkles,
   Play,
 } from "lucide-react";
+import { formatTimeLabel } from "@/lib/time";
 
 export interface CandidateProfile {
   isComplete: boolean;
@@ -283,7 +284,7 @@ export default function CandidateProfileModal({ user, onClose }: CandidateProfil
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {infoRow(<Clock className="w-4 h-4" />, "Date & Time",
                     interview?.date && interview?.time
-                      ? `${interview.date} at ${interview.time}${interview.timezone ? ` (${interview.timezone})` : ""}`
+                      ? `${interview.date} at ${formatTimeLabel(interview.time)}${interview.timezone ? ` (${interview.timezone})` : ""}`
                       : null)}
                   {infoRow(<Briefcase className="w-4 h-4" />, "Mode", interview?.mode)}
                   {infoRow(<FileText className="w-4 h-4" />, "Type", interview?.type)}

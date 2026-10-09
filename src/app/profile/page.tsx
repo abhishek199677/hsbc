@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
@@ -11,15 +11,22 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import AIChatbot from "@/components/AIChatbot";
-import type { ParsedWorkExperience, ParsedProject } from "@/types/resume";
+import DatePicker from "@/components/DatePicker";
+import type { ParsedWorkExperience, ParsedProject, ParsedEducation } from "@/types/resume";
+import { parseRoleInsights } from "@/lib/role-insights";
+import {
+  normalizeJobType,
+  normalizeWorkMode,
+  normalizePreferredLocation,
+  normalizeNoticePeriod,
+} from "@/lib/preferences";
 
 const steps = [
   { number: 1, label: "Profile", sublabel: "Tell us who you are" },
   { number: 2, label: "Resume", sublabel: "Your expertise" },
   { number: 3, label: "Skills & Projects", sublabel: "Your experience & tech stacks" },
-  { number: 4, label: "Preferences", sublabel: "What you're looking for" },
-  { number: 5, label: "AI Interview", sublabel: "Schedule assessment" },
-  { number: 6, label: "All Set!", sublabel: "You're all set!" },
+  { number: 4, label: "AI Interview", sublabel: "Schedule assessment" },
+  { number: 5, label: "All Set!", sublabel: "You're all set!" },
 ];
 
 const roles = [
@@ -31,13 +38,11 @@ const experiences = [
   "0-1 years", "1-3 years", "3-5 years", "5-8 years", "8-12 years", "12+ years"
 ];
 
-const locations = [
-  "Bangalore", "Mumbai", "Delhi NCR", "Hyderabad", "Chennai", "Pune", "Kolkata", "Remote"
-];
-
-const noticePeriods = [
-  "Immediate", "15 days", "30 days", "60 days", "90 days"
-];
+/**
+ * Preference values arrive from the AI in free-text form ("Full time",
+ * "Bengaluru, India", "work from home"). They are normalised in
+ * `@/lib/preferences` before they are written to the profile.
+ */
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -84,6 +89,17 @@ export default function ProfilePage() {
     workMode: "",
     preferredDate: "",
     preferredTimeSlot: "",
+  });
+
+  /**
+   * Latest committed formData for async handlers. Auto-fill must run outside a
+   * setState updater: React invokes updaters lazily during render, so filling
+   * an external `filled` array inside one (and reading it back immediately)
+   * would always see an empty array.
+   */
+  const formDataRef = useRef(formData);
+  useEffect(() => {
+    formDataRef.current = formData;
   });
 
   // Parsed structured lists for interactive form cards
@@ -232,8 +248,18 @@ export default function ProfilePage() {
           if (p.keyAchievements) {
             try { setAchievementsList(JSON.parse(p.keyAchievements)); } catch {}
           }
+          if (p.educationDetails) {
+            try { setEducationDetailsList(JSON.parse(p.educationDetails)); } catch {}
+          }
 
-          setCurrentStep(p.step || 1);
+          /* AI role match derived from the resume — persisted alongside suggestedRoles */
+          const insights = parseRoleInsights(p.suggestedRoles);
+          if (insights.roles.length > 0) setSuggestedRolesList(insights.roles);
+          if (insights.bestFitRole) setBestFitRole(insights.bestFitRole);
+          if (insights.candidateSummary) setCandidateSummary(insights.candidateSummary);
+          if (insights.topProjects.length > 0) setTopProjectsList(insights.topProjects);
+
+          setCurrentStep(Math.min(p.step || 1, steps.length));
         }
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -317,8 +343,10 @@ export default function ProfilePage() {
           const parsed = data.parsedResume;
           const filled: string[] = [];
 
-          setFormData((prev) => {
-            const updated = { ...prev };
+          // Computed synchronously (not inside a setState updater) so `filled`
+          // is populated before it is read on the next line.
+          const nextFormData = (() => {
+            const updated = { ...formDataRef.current };
             
             const autoFill = (field: keyof typeof updated, value: string, label: string) => {
               if (value && (!updated[field] || String(updated[field]).trim() === "")) {
@@ -335,10 +363,12 @@ export default function ProfilePage() {
             autoFill("aboutYou", parsed.summary, "About You");
             autoFill("strengths", parsed.strengths, "Strengths");
             autoFill("linkedinUrl", parsed.linkedinUrl, "LinkedIn");
-            autoFill("noticePeriod", parsed.noticePeriod, "Notice Period");
+            autoFill("noticePeriod", normalizeNoticePeriod(parsed.noticePeriod), "Notice Period");
             autoFill("whatDrivesYou", parsed.whatDrivesYou, "What Drives You");
-            autoFill("jobType", parsed.jobType, "Job Type");
-            autoFill("preferredLocation", parsed.preferredLocation, "Preferred Location");
+            autoFill("jobType", normalizeJobType(parsed.jobType), "Job Type");
+            autoFill("preferredLocation", normalizePreferredLocation(parsed.preferredLocation), "Preferred Location");
+            autoFill("salaryRange", parsed.salaryRange, "Salary Range");
+            autoFill("workMode", normalizeWorkMode(parsed.workMode), "Work Mode");
             
             if (parsed.skills?.length > 0) {
               const newSkills = parsed.skills.join(", ");
@@ -353,6 +383,12 @@ export default function ProfilePage() {
                   filled.push(`Skills (+${toAdd.length} new)`);
                 }
               }
+            }
+            // Step 3 renders the chips from `skillsList`, not from formData —
+            // keep them in sync or the Skills & Projects page looks empty.
+            const mergedSkills = (updated.skills || "").split(",").map((s) => s.trim()).filter(Boolean);
+            if (mergedSkills.length > 0 && skillsList.length === 0) {
+              setSkillsList(mergedSkills);
             }
             
             if (parsed.workExperience?.length > 0 && (!updated.workExperience || updated.workExperience === "")) {
@@ -376,7 +412,7 @@ export default function ProfilePage() {
               filled.push(`${parsed.certifications.length} Certifications`);
             }
             if (parsed.languages?.length > 0 && (!updated.languages || updated.languages === "")) {
-              updated.languages = JSON.stringify(parsed.languages);
+              updated.languages = parsed.languages.join(", ");
               filled.push("Languages");
             }
             if (parsed.educationDetails?.length > 0 && educationDetailsList.length === 0) {
@@ -406,7 +442,8 @@ export default function ProfilePage() {
               resumeUrl: data.file.url,
               resumeFileName: data.file.filename,
             };
-          });
+          })();
+          setFormData(nextFormData);
 
           if (filled.length > 0) {
             setResumeParsed(true);
@@ -429,8 +466,8 @@ export default function ProfilePage() {
             if (profileData.success && profileData.profile) {
               const p = profileData.profile;
               const filled: string[] = [];
-              setFormData((prev) => {
-                const updated = { ...prev };
+              const nextFormData = (() => {
+                const updated = { ...formDataRef.current };
                 const autoFill = (field: keyof typeof updated, value: string, label: string) => {
                   if (value && (!updated[field] || String(updated[field]).trim() === "")) {
                     (updated as Record<string, unknown>)[field] = value;
@@ -445,10 +482,12 @@ export default function ProfilePage() {
                 autoFill("aboutYou", p.aboutYou, "About You");
                 autoFill("strengths", p.strengths, "Strengths");
                 autoFill("linkedinUrl", p.linkedinUrl, "LinkedIn");
-                autoFill("noticePeriod", p.noticePeriod, "Notice Period");
+                autoFill("noticePeriod", normalizeNoticePeriod(p.noticePeriod), "Notice Period");
                 autoFill("whatDrivesYou", p.whatDrivesYou, "What Drives You");
-                autoFill("jobType", p.jobType, "Job Type");
-                autoFill("preferredLocation", p.preferredLocation, "Preferred Location");
+                autoFill("jobType", normalizeJobType(p.jobType), "Job Type");
+                autoFill("preferredLocation", normalizePreferredLocation(p.preferredLocation), "Preferred Location");
+                autoFill("salaryRange", p.salaryRange, "Salary Range");
+                autoFill("workMode", normalizeWorkMode(p.workMode), "Work Mode");
                 if (p.skills && (!updated.skills || updated.skills.trim() === "")) {
                   updated.skills = p.skills;
                   filled.push("Skills");
@@ -473,8 +512,39 @@ export default function ProfilePage() {
                   try { setAchievementsList(JSON.parse(p.keyAchievements)); } catch {}
                   filled.push("Achievements");
                 }
+                if (p.educationDetails && educationDetailsList.length === 0) {                  try {
+                    const details: ParsedEducation[] = JSON.parse(p.educationDetails);
+                    if (details.length > 0) {
+                      setEducationDetailsList(details);
+                      filled.push(`${details.length} Education Entries`);
+                    }
+                  } catch {}
+                }
+                if (p.languages && (!updated.languages || updated.languages.trim() === "")) {
+                  updated.languages = p.languages;
+                  filled.push("Languages");
+                }
+
+                // Step 3 renders skill chips from `skillsList`, not formData
+                const merged = (updated.skills || "").split(",").map((s) => s.trim()).filter(Boolean);
+                if (merged.length > 0 && skillsList.length === 0) setSkillsList(merged);
+
+                /* AI role match (best-fit role) persisted with suggestedRoles */
+                const insights = parseRoleInsights(p.suggestedRoles);
+                if (insights.roles.length > 0 && suggestedRolesList.length === 0) {
+                  setSuggestedRolesList(insights.roles);
+                  filled.push(`${insights.roles.length} Suggested Roles`);
+                }
+                if (insights.bestFitRole) {
+                  setBestFitRole(insights.bestFitRole);
+                  filled.push("Best Fit Role");
+                }
+                if (insights.candidateSummary) setCandidateSummary(insights.candidateSummary);
+                if (insights.topProjects.length > 0) setTopProjectsList(insights.topProjects);
+
                 return updated;
-              });
+              })();
+              setFormData(nextFormData);
               if (filled.length > 0) {
                 setResumeParsed(true);
                 setAutoFilledFields(filled);
@@ -522,9 +592,6 @@ export default function ProfilePage() {
         return null;
       case 3:
         if (!formData.skills.trim() && skillsList.length === 0) return "Please enter your technical skills & tech stacks";
-        return null;
-      case 4:
-        if (!formData.jobType) return "Please select a job type";
         return null;
       default:
         return null;
@@ -584,6 +651,40 @@ export default function ProfilePage() {
   }
 
   if (!user) return null;
+
+  /** AI Role Match — tells the candidate which role their resume fits best. */
+  const renderRoleMatchCard = () =>
+    (bestFitRole || suggestedRolesList.length > 0) ? (
+      <div className="bg-surface border-2 border-[#e050b0] p-6 ring-4 ring-[#e050b0]/10">
+        <div className="flex items-center gap-2 font-mono font-bold text-sm uppercase tracking-wider text-muted-foreground mb-2">
+          <Sparkles className="w-4 h-4 text-secondary animate-pulse" />
+          AI Role Match — Best Fit For You
+        </div>
+        {bestFitRole && (
+          <p className="text-2xl font-mono font-bold text-secondary break-words">{bestFitRole}</p>
+        )}
+        <p className="text-sm text-muted-foreground mt-2">
+          Matched against the skills, experience, projects and education extracted from your resume.
+        </p>
+        {suggestedRolesList.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {suggestedRolesList.slice(0, 5).map((role, i) => (
+              <span
+                key={i}
+                className={`inline-flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 ${
+                  i === 0 && !bestFitRole
+                    ? "bg-secondary text-primary-foreground"
+                    : "bg-surface-hover text-muted-foreground"
+                }`}
+              >
+                {i === 0 && <Sparkles className="w-3 h-3" />}
+                {role}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : null;
 
   const renderStep1 = () => (
     <div className="space-y-8">
@@ -678,6 +779,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* AI Role Match — tells the candidate which role they best fit */}
+      {renderRoleMatchCard()}
+
       {/* Professional Summary Box */}
       <div className={`bg-surface border-2 p-6 transition-all ${formData.aboutYou ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
         <div className="flex items-center justify-between mb-2">
@@ -725,6 +829,33 @@ export default function ProfilePage() {
           <span>Editable box - Synced with AI interviewer</span>
           <span>{formData.aboutYou.length} characters</span>
         </div>
+      </div>
+
+      {/* What Drives You — extracted from the resume objective / summary */}
+      <div className={`bg-surface border-2 p-6 transition-all ${formData.whatDrivesYou ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Award className="w-5 h-5 text-primary" />
+            What Drives You
+          </h3>
+          {formData.whatDrivesYou && (
+            <span className="text-xs font-mono bg-primary text-foreground font-bold px-3 py-1 flex items-center gap-1 uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-foreground" /> Auto-Filled
+            </span>
+          )}
+        </div>
+        <p className="text-sm font-mono text-muted-foreground mb-4 font-medium">
+          {formData.whatDrivesYou
+            ? "Pulled from your career objective / summary. Edit it to sound like you."
+            : "Your motivation and career goals — filled automatically when you upload your resume."}
+        </p>
+        <textarea
+          className="w-full border-2 border-border p-4 text-sm font-medium text-foreground resize-none focus:ring-2 focus:ring-[#e050b0] focus:border-[#e050b0] bg-background leading-relaxed placeholder-[#a0a0a0]"
+          rows={3}
+          placeholder="e.g. Building AI products that solve real business problems..."
+          value={formData.whatDrivesYou}
+          onChange={(e) => updateFormData({ whatDrivesYou: e.target.value })}
+        />
       </div>
 
       {/* Current Role Snapshot */}
@@ -775,6 +906,9 @@ export default function ProfilePage() {
 
   const renderStep3 = () => (
     <div className="space-y-8">
+      {/* AI Role Match repeated here so the answer follows the candidate through the flow */}
+      {renderRoleMatchCard()}
+
       {/* Technical Skills & Tech Stacks Box */}
       <div className={`bg-surface border-2 p-6 transition-all ${skillsList.length > 0 ? "border-[#e050b0] ring-4 ring-[#e050b0]/15" : "border-border"}`}>
         <div className="flex items-center justify-between mb-2">
@@ -1283,69 +1417,6 @@ export default function ProfilePage() {
 
   const renderStep4 = () => (
     <div className="bg-surface border border-border p-6">
-      <h3 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-wider">Your Preferences</h3>
-      <p className="text-sm font-mono text-muted-foreground mb-6">What kind of opportunities are you looking for?</p>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Preferred Job Type</label>
-          <select
-            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
-            value={formData.jobType}
-            onChange={(e) => updateFormData({ jobType: e.target.value })}
-          >
-            <option value="">Select job type</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-            <option value="Freelance">Freelance</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Expected Salary Range</label>
-          <input
-            type="text"
-            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
-            placeholder="e.g. 15-20 LPA"
-            value={formData.salaryRange}
-            onChange={(e) => updateFormData({ salaryRange: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Preferred Location</label>
-          <select
-            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
-            value={formData.preferredLocation}
-            onChange={(e) => updateFormData({ preferredLocation: e.target.value })}
-          >
-            <option value="">Select location</option>
-            {locations.map((loc) => (
-              <option key={loc} value={loc}>{loc}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Work Mode</label>
-          <div className="flex gap-4 mt-2">
-            {["Remote", "Hybrid", "On-site"].map((mode) => (
-              <label key={mode} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="workMode"
-                  className="w-4 h-4 text-primary"
-                  checked={formData.workMode === mode}
-                  onChange={() => updateFormData({ workMode: mode })}
-                />
-                <span className="text-sm font-mono text-foreground">{mode}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep5 = () => (
-    <div className="bg-surface border border-border p-6">
       <h3 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-wider">AI Interview Preparation</h3>
       <p className="text-sm font-mono text-muted-foreground mb-6">Get ready for your 15-minute AI-powered interview.</p>
       <div className="space-y-4">
@@ -1358,12 +1429,11 @@ export default function ProfilePage() {
           </ul>
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Preferred Interview Date</label>
-          <input
-            type="date"
-            className="w-full rounded-lg border border-border p-2.5 text-sm text-foreground bg-background focus:ring-2 focus:ring-[#e050b0]"
+          <label htmlFor="preferredDate" className="block text-xs font-medium text-muted-foreground mb-1">Preferred Interview Date</label>
+          <DatePicker
+            id="preferredDate"
             value={formData.preferredDate}
-            onChange={(e) => updateFormData({ preferredDate: e.target.value })}
+            onChange={(value) => updateFormData({ preferredDate: value })}
           />
         </div>
         <div>
@@ -1383,7 +1453,7 @@ export default function ProfilePage() {
     </div>
   );
 
-  const renderStep6 = () => (
+  const renderStep5 = () => (
     <div className="bg-surface border border-border p-6 text-center py-12">
       <div className="w-20 h-20 bg-surface border-2 border-[#4dacde] flex items-center justify-center mx-auto mb-4">
         <CheckCircle className="w-10 h-10 text-secondary" />
@@ -1514,7 +1584,6 @@ export default function ProfilePage() {
       case 3: return renderStep3();
       case 4: return renderStep4();
       case 5: return renderStep5();
-      case 6: return renderStep6();
       default: return renderStep1();
     }
   };

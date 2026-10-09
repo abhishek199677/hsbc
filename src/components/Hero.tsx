@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Play, Shield, Zap, Lock, X, Sparkles, CheckCircle2, Building2, Users, TrendingUp } from "lucide-react";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
@@ -36,6 +37,7 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
 export default function Hero() {
   const [showVideo, setShowVideo] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const router = useRouter();
 
   return (
     <section className="relative bg-background overflow-hidden min-h-[90vh] flex items-center">
@@ -78,13 +80,10 @@ export default function Hero() {
 
             {/* CTA buttons */}
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2.5 bg-gradient-to-r from-primary to-primary-hover text-primary-foreground px-8 py-4 font-semibold rounded-lg hover:shadow-[0_0_32px_rgba(167,139,250,0.3)] transition-all duration-300 text-sm tracking-wide"
-              >
+              <ShinyButton onClick={() => router.push("/signup")}>
                 Start Free Trial
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </ShinyButton>
               <button
                 onClick={() => setShowVideo(true)}
                 className="inline-flex items-center gap-2.5 bg-transparent border border-border text-foreground px-8 py-4 font-medium rounded-lg hover:bg-surface hover:border-primary/30 transition-all duration-300 text-sm"

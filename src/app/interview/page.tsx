@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import StepIndicator from "@/components/StepIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { timezoneLabel } from "@/lib/timezone";
+import { to24HourTime } from "@/lib/time";
 import { ChevronLeft, ChevronRight, CheckCircle, Clock, Lock, ArrowLeft, ArrowRight, Shield, Calendar, Video, Info } from "lucide-react";
 
 const steps = [
@@ -133,7 +134,8 @@ export default function InterviewSchedulePage() {
         },
         body: JSON.stringify({
           date: dateStr,
-          time: selectedTime,
+          // The slot labels are 12-hour ("01:30 PM"); the API expects HH:MM.
+          time: to24HourTime(selectedTime) ?? selectedTime,
         }),
       });
       const data = await response.json();

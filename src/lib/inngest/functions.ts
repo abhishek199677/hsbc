@@ -9,6 +9,7 @@ import {
 } from "@/lib/email";
 import OpenAI from "openai";
 import { trackedChatCompletion } from "@/lib/openai-usage";
+import { to24HourTime, formatTimeLabel } from "@/lib/time";
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -41,6 +42,13 @@ function getInterviewDateTime(date: string, time: string): Date {
     if (period === "AM" && hours === 12) hours = 0;
 
     interviewDate.setHours(hours, minutes, 0, 0);
+  } else {
+    // 24-hour form ("13:30") stored by /api/interview
+    const time24 = to24HourTime(time);
+    if (time24) {
+      const [hours, minutes] = time24.split(":").map(Number);
+      interviewDate.setHours(hours, minutes, 0, 0);
+    }
   }
 
   return interviewDate;
@@ -413,7 +421,7 @@ export const processReminderCheck = inngest.createFunction(
         await step.run(`send-24h-${interview.id}`, async () => {
           await sendEmail({
             to: interview.user.email,
-            subject: `Interview Reminder - Tomorrow at ${interview.time}`,
+            subject: `Interview Reminder - Tomorrow at ${formatTimeLabel(interview.time)}`,
             html: generateReminderEmail({
               name: interview.user.name || "there",
               type: "24 Hours",

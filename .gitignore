@@ -16,6 +16,9 @@ build/
 .env.production.local
 **/.env.local
 backend/.env
+.venv
+.venv-agent 
+.venv-ml 
 
 # debug
 npm-debug.log*
@@ -44,6 +47,9 @@ ml/__pycache__/
 # Python
 __pycache__/
 *.pyc
+.venv/
+.venv-agent/
+.venv-ml/
 
 # os files
 .DS_Store

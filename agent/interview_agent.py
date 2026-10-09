@@ -1,42 +1,91 @@
 """
-Interview Agent — a LiveKit Agents Agent that conducts AI interviews.
+Interview Agent — a LiveKit Agents agent that conducts the live voice interview.
 
-Flow:
-1. Agent joins a LiveKit room as a participant.
-2. Subscribes to the candidate's audio track.
-3. Streams audio to Deepgram for real-time STT.
-4. Sends transcribed text to Next.js /api/ai-interview for LLM response.
-5. Converts AI response to audio via OpenAI TTS and publishes back to the room.
-6. Repeats until the interview is complete (10 questions, 70/30 split).
+How the pieces fit together (livekit-agents 1.x):
 
-The agent does NOT call OpenAI directly for LLM reasoning — it routes through
-the existing Next.js API to reuse adaptive difficulty, prompt injection defense,
-and evaluation logic.
+  AgentSession(stt=Deepgram, vad=Silero, llm=InterviewLLM, tts=OpenAI)
+      │
+      ├─ STT transcribes the candidate, VAD detects turn boundaries
+      ├─ on every completed user turn the session asks InterviewLLM for a reply
+      │      InterviewLLM posts `action=respond` to Next.js /api/ai-interview
+      │      (adaptive difficulty, injection guard and evaluation stay there)
+      └─ the returned text is spoken with TTS and published to the room
+
+The interview lifecycle (greeting, closing, ending the call) is driven by
+InterviewAgent.on_enter / InterviewBackend, because the framework's lifecycle
+hooks are on_enter/on_exit/on_user_turn_completed — NOT the on_start/
+on_user_speech pair that livekit-agents <1.x used.
 """
 
-import json
+from __future__ import annotations
+
+import asyncio
 import logging
-from typing import Optional
+import re
 
-from livekit.agents import Agent, AgentSession
+from livekit.agents import Agent, AgentSession, llm
+from livekit.agents.llm import ChatChunk, ChoiceDelta, LLM, LLMStream
+from livekit.agents.types import (
+    APIConnectOptions,
+    DEFAULT_API_CONNECT_OPTIONS,
+    NotGivenOr,
+)
 
-from nextjs_client import start_interview, respond_to_candidate, evaluate_interview
+from nextjs_client import (
+    get_coding_challenge,
+    respond_to_candidate,
+    start_interview,
+)
 
 logger = logging.getLogger("agent.interview")
 
+# /api/ai-interview appends adaptive-state markers to every reply. They are for
+# the API client, never for the candidate's ears.
+_MARKER_RE = re.compile(r"\s*\[(?:DIFFICULTY|PHASE):\s*[a-z]+\]\s*", re.IGNORECASE)
 
-class InterviewAgent(Agent):
+FALLBACK_REPLY = (
+    "Sorry, I lost you for a second. Could you say that again?"
+)
+GREETING_FAILED = (
+    "Hi! I'm having trouble reaching the interview system on my side. "
+    "Please end the call and start the interview again."
+)
+
+
+def strip_markers(text: str) -> str:
+    """Remove [DIFFICULTY: ...] / [PHASE: ...] so they are never spoken."""
+    return _MARKER_RE.sub(" ", text).strip()
+
+
+def _speakable_challenge(challenge: dict) -> str:
+    """Turn a coding challenge payload into something that reads well aloud."""
+    title = str(challenge.get("title") or "a coding question")
+    description = re.sub(r"\s+", " ", str(challenge.get("description") or "")).strip()
+    parts = ["Let's switch to a quick coding question. It's called", f"{title}."]
+    if description:
+        parts.append(description)
+    parts.append(
+        "Take a moment, then talk me through your approach and your solution out loud."
+    )
+    return " ".join(parts)
+
+
+def _last_user_message(chat_ctx: llm.ChatContext) -> str | None:
+    for item in reversed(chat_ctx.items):
+        if isinstance(item, llm.ChatMessage) and item.role == "user":
+            text = (item.text_content or "").strip()
+            if text:
+                return text
+    return None
+
+
+class InterviewBackend:
     """
-    A LiveKit Agent that conducts a structured AI interview.
+    Single owner of the conversation state shared by the greeting (on_enter)
+    and every subsequent turn (InterviewLLM).
 
-    Interview structure (adaptive 70/30):
-    - Questions 1-2: Warm-up (easy behavioral)
-    - Questions 3-5: Core skills (70% skill-based, adaptive difficulty)
-    - Questions 6-7: Coding challenges (30% coding)
-    - Questions 8-9: Skill follow-up based on coding
-    - Question 10: Wrap-up
-
-    The agent tracks performance scores and adjusts difficulty dynamically.
+    /api/ai-interview keeps the source of truth for history + adaptive state in
+    the DB, so we only need to hand it the candidate's latest answer.
     """
 
     def __init__(
@@ -44,183 +93,216 @@ class InterviewAgent(Agent):
         auth_token: str,
         profile: dict,
         interview_id: str | None = None,
-    ):
-        super().__init__(
-            instructions=(
-                "You are an AI interviewer for HireRight, a job screening platform. "
-                "You are conducting a 15-minute professional interview with a 70/30 split: "
-                "70% skill-based questions, 30% coding challenges. "
-                "Be professional, friendly, and concise. "
-                "Ask one question at a time. "
-                "Keep responses short (2-3 sentences max). "
-                "Speak in simple, warm everyday English. Keep it friendly and natural. "
-                "Adapt difficulty based on how the candidate performs. "
-                "Adapt questions to their experience level: "
-                "FRESHERS get fundamentals and learning-focused questions; "
-                "MID-LEVEL (3-5 years) get practical project and ownership questions; "
-                "SENIORS (5+ years) get system design, leadership, and architecture questions."
-            )
-        )
+    ) -> None:
         self.auth_token = auth_token
         self.profile = profile
         self.interview_id = interview_id
-        self.conversation_history: list[dict] = []
-        self.question_count = 0
-        self.max_questions = 10
+        self.completed = False
+        self._session: AgentSession | None = None
+        self._end_interview = None  # callable set by the entrypoint
+        self._lock = asyncio.Lock()
 
-        # Adaptive state
-        self.difficulty = "easy"
-        self.phase = "warmup"
-        self.coding_count = 0
-        self.skill_count = 0
-        self.performance_scores: list[int] = []
-        self.last_was_coding = False
+    def attach(self, session: AgentSession, end_interview) -> None:
+        """Wire in the LiveKit session and the room-teardown callback."""
+        self._session = session
+        self._end_interview = end_interview
 
-    async def on_start(self, session: AgentSession) -> None:
-        """Called when the agent is started and connected to the room."""
-        logger.info(
-            "Interview agent starting for candidate: %s",
-            self.profile.get("name", "Unknown"),
-        )
-
-        # Call the Next.js API to generate the intro and first question
-        result = await start_interview(self.auth_token, self.profile)
-
-        if result.get("success"):
-            ai_message = result.get("message", "")
-            if ai_message:
-                self.conversation_history.append({
-                    "role": "assistant",
-                    "content": ai_message,
-                })
-                self.question_count = 1
-                self.difficulty = result.get("difficulty", "easy")
-                self.phase = result.get("phase", "warmup")
-                # Speak the first question via TTS
-                await session.say(ai_message)
-                logger.info("Agent spoke first question (%d chars)", len(ai_message))
-        else:
-            error_msg = (
-                "I'm sorry, I'm having trouble connecting to the interview system. "
-                "Please try refreshing the page."
-            )
-            await session.say(error_msg)
-            logger.error("Failed to start interview: %s", result.get("error"))
-
-    async def on_user_speech(self, text: str, session: AgentSession) -> None:
-        """
-        Called when the candidate's speech has been transcribed by Deepgram.
-        """
-        if not text or not text.strip():
-            logger.warning("Empty transcription received, skipping")
-            return
-
-        cleaned = text.strip()
-        logger.info(
-            "Candidate said (%d words): %.100s...",
-            len(cleaned.split()),
-            cleaned,
-        )
-
-        # Add user message to conversation history
-        self.conversation_history.append({
-            "role": "user",
-            "content": cleaned,
-        })
-
-        # Get AI response from the Next.js backend with interview state
-        result = await respond_to_candidate(
-            self.auth_token,
-            cleaned,
-            self.conversation_history,
-            interview_state={
-                "messageCount": self.question_count,
-                "difficulty": self.difficulty,
-                "phase": self.phase,
-                "codingCount": self.coding_count,
-                "skillCount": self.skill_count,
-                "performanceScores": self.performance_scores,
-                "lastWasCoding": self.last_was_coding,
-            },
-        )
+    async def greet(self) -> str:
+        """Fetch the intro + first question from /api/ai-interview."""
+        try:
+            result = await start_interview(self.auth_token, self.profile)
+        except Exception:
+            logger.exception("start_interview raised")
+            return GREETING_FAILED
 
         if not result.get("success"):
-            error_msg = (
-                "I'm sorry, I didn't catch that. Could you please repeat your answer?"
-            )
-            await session.say(error_msg)
+            logger.error("Failed to start interview: %s", result.get("error"))
+            return GREETING_FAILED
+
+        return strip_markers(result.get("message") or "") or GREETING_FAILED
+
+    async def respond(self, user_text: str) -> str:
+        """Get the interviewer's next line for the candidate's latest answer."""
+        if self.completed:
+            return FALLBACK_REPLY
+
+        async with self._lock:
+            try:
+                result = await respond_to_candidate(self.auth_token, user_text, [])
+            except Exception:
+                logger.exception("respond_to_candidate raised")
+                return FALLBACK_REPLY
+
+        if not result.get("success"):
             logger.error("Failed to get AI response: %s", result.get("error"))
+            return FALLBACK_REPLY
+
+        message = strip_markers(result.get("message") or "")
+
+        # The API only announces that a coding challenge is on screen — in a
+        # voice call we read the actual problem aloud instead.
+        if result.get("triggerCoding"):
+            message = await self._coding_challenge_line(message)
+
+        if result.get("isComplete"):
+            self.completed = True
+            logger.info("Interview complete — closing the room")
+            self._schedule_close()
+
+        return message or FALLBACK_REPLY
+
+    async def _coding_challenge_line(self, fallback: str) -> str:
+        try:
+            result = await get_coding_challenge(self.auth_token)
+        except Exception:
+            logger.exception("coding_challenge raised")
+            return fallback
+        if not result.get("success") or not result.get("challenge"):
+            return fallback
+        return _speakable_challenge(result["challenge"])
+
+    def _schedule_close(self) -> None:
+        """After the closing line has been spoken, hang up for everyone."""
+        if self._end_interview is None:
             return
 
-        ai_message = result.get("message", "")
-        is_complete = result.get("isComplete", False)
-        trigger_coding = result.get("triggerCoding", False)
+        async def _close() -> None:
+            try:
+                session = self._session
+                if session is not None:
+                    try:
+                        # Let the closing message finish playing first
+                        await asyncio.wait_for(session.wait_for_idle(), timeout=45)
+                    except (asyncio.TimeoutError, TimeoutError):
+                        await asyncio.sleep(10)
+                    except Exception:
+                        await asyncio.sleep(10)
+                await self._end_interview()
+            except Exception:
+                logger.exception("Failed to close the interview room")
 
-        if not ai_message:
-            await session.say("I'm sorry, could you please repeat that?")
-            return
+        asyncio.create_task(_close())
 
-        # Update adaptive state
-        self.difficulty = result.get("difficulty", self.difficulty)
-        self.phase = result.get("phase", self.phase)
-        if result.get("codingCount") is not None:
-            self.coding_count = result["codingCount"]
-        if result.get("skillCount") is not None:
-            self.skill_count = result["skillCount"]
-        if result.get("performanceScores"):
-            self.performance_scores = result["performanceScores"]
-        self.last_was_coding = result.get("lastWasCoding", False)
 
-        # Add AI response to history
-        self.conversation_history.append({
-            "role": "assistant",
-            "content": ai_message,
-        })
+class InterviewLLM(LLM):
+    """
+    Makes POST /api/ai-interview look like an LLM to the AgentSession.
 
-        if trigger_coding:
-            # The API wants to trigger a coding challenge
-            await session.say(ai_message)
-            # The coding challenge is handled by the frontend — the agent
-            # continues listening for the candidate's next voice input after
-            # the coding challenge is completed.
-            logger.info("Coding challenge triggered at question %d", self.question_count)
-            return
+    The session handles turn detection, interruption and TTS for us; we only
+    supply the text. The API builds its own system prompt and keeps state, so
+    the rest of the chat context is intentionally ignored.
+    """
 
-        if is_complete:
-            # Interview is complete — speak the closing message
-            await session.say(ai_message)
-            logger.info(
-                "Interview complete after %d exchanges",
-                len(self.conversation_history) // 2,
-            )
-            # Evaluate the interview in the background
-            await self._evaluate(session)
-            # Disconnect the agent from the room
-            await session.disconnect()
-        else:
-            self.question_count += 1
-            await session.say(ai_message)
-            logger.info(
-                "Agent spoke question %d (phase: %s, difficulty: %s, %d chars)",
-                self.question_count,
-                self.phase,
-                self.difficulty,
-                len(ai_message),
-            )
+    def __init__(self, backend: InterviewBackend) -> None:
+        super().__init__()
+        self._backend = backend
 
-    async def on_interruption(self, session: AgentSession) -> None:
-        """Called when the candidate interrupts the agent's speech."""
-        logger.info("Candidate interrupted the agent")
+    @property
+    def model(self) -> str:
+        return "hireright-ai-interview"
 
-    async def _evaluate(self, session: AgentSession) -> None:
-        """Evaluate the interview after it completes."""
-        logger.info("Starting interview evaluation...")
-        result = await evaluate_interview(
-            self.auth_token,
-            self.profile,
-            self.conversation_history,
+    @property
+    def provider(self) -> str:
+        return "hireright"
+
+    def chat(
+        self,
+        *,
+        chat_ctx: llm.ChatContext,
+        tools: list[llm.Tool] | None = None,
+        conn_options: APIConnectOptions = DEFAULT_API_CONNECT_OPTIONS,
+        parallel_tool_calls: NotGivenOr[bool] = None,
+        tool_choice: NotGivenOr[llm.ToolChoice] = None,
+        extra_kwargs: NotGivenOr[dict] = None,
+    ) -> LLMStream:
+        return InterviewLLMStream(
+            self,
+            chat_ctx=chat_ctx,
+            tools=tools or [],
+            conn_options=conn_options,
+            backend=self._backend,
         )
-        if result.get("success"):
-            logger.info("Interview evaluation completed successfully")
-        else:
-            logger.error("Interview evaluation failed: %s", result.get("error"))
+
+
+class InterviewLLMStream(LLMStream):
+    def __init__(self, llm_client: InterviewLLM, *, chat_ctx, tools, conn_options, backend):
+        super().__init__(
+            llm_client,
+            chat_ctx=chat_ctx,
+            tools=tools,
+            conn_options=conn_options,
+        )
+        self._backend = backend
+
+    async def _run(self) -> None:
+        user_message = _last_user_message(self._chat_ctx)
+        if not user_message:
+            logger.warning("No user message in chat context, skipping reply")
+            return
+
+        logger.info("Asking interview API for a reply (%d chars)", len(user_message))
+        reply = await self._backend.respond(user_message)
+
+        self._event_ch.send_nowait(
+            ChatChunk(
+                id="ai-interview",
+                delta=ChoiceDelta(role="assistant", content=reply),
+            )
+        )
+        logger.info("Interview reply ready (%d chars)", len(reply))
+
+
+class InterviewAgent(Agent):
+    """Greets the candidate when they join and follows the API's script."""
+
+    def __init__(self, backend: InterviewBackend) -> None:
+        super().__init__(
+            instructions=(
+                "You are the AI interviewer for HireRight. You conduct a 15-minute "
+                "screening interview: one question at a time, short and friendly."
+            )
+        )
+        self._backend = backend
+        self._session: AgentSession | None = None
+        self._ctx = None  # JobContext, set by the entrypoint
+
+    def bind(self, session: AgentSession, ctx=None) -> None:
+        self._session = session
+        self._ctx = ctx
+
+    async def on_enter(self) -> None:
+        """Fired once the session starts — say hello and ask question 1."""
+        # Run in the background so the STT pipeline starts listening immediately.
+        asyncio.create_task(self._open_interview())
+
+    async def _open_interview(self) -> None:
+        session = self._session
+        if session is None:
+            logger.error("InterviewAgent has no session bound")
+            return
+
+        # The agent is usually dispatched before the candidate joins; wait a
+        # little so the greeting isn't spoken into an empty room.
+        ctx = self._ctx
+        if ctx is not None:
+            try:
+                await asyncio.wait_for(ctx.wait_for_participant(), timeout=20)
+            except (asyncio.TimeoutError, TimeoutError):
+                logger.warning("Candidate did not join within 20s, greeting anyway")
+            except Exception:
+                logger.exception("wait_for_participant failed")
+
+        try:
+            greeting = await self._backend.greet()
+        except Exception:
+            logger.exception("greeting failed")
+            greeting = GREETING_FAILED
+
+        try:
+            await session.say(greeting)
+            logger.info("Agent greeted the candidate (%d chars)", len(greeting))
+        except Exception:
+            logger.exception("Failed to speak greeting")
+
+    # on_user_turn_completed is left to the framework: it hands the turn to
+    # InterviewLLM, whose stream asks /api/ai-interview for the next question.
